@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import app from '../../firebaseconfig'; // Firebase 앱 인스턴스 import
+import app from '../../firebaseConfig'; // Firebase 앱 인스턴스 import
 import * as Yup from 'yup';
 
 const SignupSchema = Yup.object().shape({
