@@ -26,13 +26,13 @@ const Header = ({isShow, setIsShow}) => {
    return(
    <View style={{flexDirection:'row',justifyContent: 'space-between', marginTop: 10,}}>
      <View>
-       <Text style={{fontSize: 16,color:'#fff',fontWeight:'500'}}> Story highlights </Text>
-       <Text style={{color:'#fff'}}> Keep your favorite stories on your profile </Text>
+       <Text style={{fontSize: 16,color:'#000',fontWeight:'500'}}> Story highlights </Text>
+       <Text style={{color:'#666'}}> Keep your favorite stories on your profile </Text>
      </View>
      <TouchableOpacity
      	style={{padding:5}}
      	onPress={() => setIsShow(!isShow)}>
-       <ChevronUpIcon color='#fff' size={25} />
+       <ChevronUpIcon color='#000' size={25} />
      </TouchableOpacity>
    </View>
    );
@@ -79,9 +79,9 @@ const Story = () => {
 
 const styles = StyleSheet.create({
   container: {
-   color: 'white',
-   marginTop: 13,
-   paddingBottom: 12,
+    color: '#000',
+    marginTop: 13,
+    paddingBottom: 12,
   },
   image: {
     height: 60,
@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
     borderWidth: 3,
-    borderColor:'#555',
+    borderColor:'#dbdbdb',
   },
   text: {
-   marginTop: 5,
-   fontSize: 16,
-   color: 'white',
+    marginTop: 5,
+    fontSize: 16,
+    color: '#000',
   },
 });
 

@@ -1,61 +1,31 @@
-
-import { ScrollView, View, StyleSheet, TouchableOpacity, Text, Image, } from 'react-native';
-
-import { PROFILE, } from '../../data/users';
-import { Bars3Icon, LockClosedIcon, LinkIcon, ChevronDownIcon, } from 'react-native-heroicons/solid';
-import { PlusCircleIcon, } from 'react-native-heroicons/outline';
-
-import StoryHighlights from './StoryHighlights';
-
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const ProfileHeader = ({ username }) => {
-
-  return(
-   <View style={{marginHorizontal:8,}}>
-    <Header username={username} />
-   </View>
-  );
-}
-
-
-const Header = ({ username }) => {
-
-  return(
-   <View style={styles.container}>
-    <TouchableOpacity style={styles.leftRow}>
-      <LockClosedIcon color='#fff' size={18} />
-      <Text style={styles.userText}> {username} </Text>
-      <ChevronDownIcon color='#fff' size={24} />
-    </TouchableOpacity>
-
-    <View style={styles.leftRow}>
-      <TouchableOpacity style={{padding: 8}}>
-        <PlusCircleIcon color='#fff' size={27} />
-      </TouchableOpacity>
-      <TouchableOpacity style={{padding: 8}}>
-        <Bars3Icon color='#fff' size={27} />
+  return (
+    <View style={styles.header}>
+      <Text style={styles.username}>{username}</Text>
+      <TouchableOpacity>
+        <Ionicons name="menu-outline" size={24} color="#000" />
       </TouchableOpacity>
     </View>
-   </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-   flexDirection:'row',
-   justifyContent:'space-between',
-   borderBottomWidth: 0.5,
-   borderColor:'gray',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#dbdbdb',
   },
-  leftRow: {
-   flexDirection:'row',
-   alignItems: 'center',
-  },
-  userText:{
-   color:'#fff',
-   fontSize: 18,
-   fontWeight: '600',
-   padding: 2
+  username: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
