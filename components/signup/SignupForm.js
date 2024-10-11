@@ -85,7 +85,7 @@ const SignupForm = () => {
     });
 
     if (!result.cancelled) {
-      setSelectedImage(result.uri);  // 선택된 이미지 설정
+      setSelectedImage(result.uri);  // 선택된 이미지 설정1 
     }
   };
 
