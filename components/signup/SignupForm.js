@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import app from '../../firebaseConfig'; // Firebase 앱 인스턴스 import
+import app from '../../firebaseConfig';
 import * as Yup from 'yup';
+import * as ImagePicker from 'expo-image-picker';
 
 const SignupSchema = Yup.object().shape({
   email: Yup.string().email('올바른 이메일 형식을 입력해주세요').required('이메일을 입력해주세요'),
@@ -20,6 +21,7 @@ const SignupForm = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null); // 이미지 상태 추가
 
   useEffect(() => {
     validateForm();
@@ -57,7 +59,6 @@ const SignupForm = () => {
     try {
       const auth = getAuth(app);
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await createUserProfile(user, { displayName: email.split('@')[0] });
       alert('회원가입이 완료되었습니다.');
       navigation.navigate('UserVerification');
     } catch (error) {
@@ -74,6 +75,20 @@ const SignupForm = () => {
     }
   };
 
+  // 이미지 선택 핸들러
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],  // 정사각형 비율로 자르기
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setSelectedImage(result.uri);  // 선택된 이미지 설정
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Image
@@ -81,6 +96,16 @@ const SignupForm = () => {
         style={styles.logo}
       />
       <Text style={styles.subtitle}>친구들의 사진과 동영상을 보려면 가입하세요.</Text>
+
+      {/* 이미지 업로드 영역 */}
+      <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+        {selectedImage ? (
+          <Image source={{ uri: selectedImage }} style={styles.image} />
+        ) : (
+          <Text style={styles.imagePlaceholder}>image</Text>
+        )}
+      </TouchableOpacity>
+
       <TextInput
         style={styles.input}
         placeholder="이메일 주소"
@@ -148,33 +173,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  facebookButton: {
-    backgroundColor: '#3797EF',
-    width: '100%',
-    padding: 12,
-    borderRadius: 5,
+  imageContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 1,
+    borderColor: '#dbdbdb',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
-  facebookButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  orContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#dbdbdb',
-  },
-  orText: {
-    marginHorizontal: 10,
+  imagePlaceholder: {
     color: '#999',
-    fontWeight: '600',
+    fontSize: 18,
+  },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   input: {
     width: '100%',
