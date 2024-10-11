@@ -6,7 +6,7 @@ export const REELS = [
     id: 1,
     user: USERS[0].user,
     profileImg: USERS[0].image,
-    title: 'Play music on termux #shorts #reels',
+    title: 'Play music on termux #shorts #cstangga',
     video: 'https://m.youtube.com/shorts/xFpkmnw-Axg',
     likes: '2k',
     isLike:true,
