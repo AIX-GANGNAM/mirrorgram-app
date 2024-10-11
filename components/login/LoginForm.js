@@ -1,21 +1,99 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import app from '../../firebaseConfig';
+import * as Yup from 'yup';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const LoginSchema = Yup.object().shape({
+  email: Yup.string().email('올바른 이메일 형식이 아닙니다').required('이메일을 입력해주세요'),
+  password: Yup.string().min(8, '비밀번호는 8자리 이상이어야 합니다').required('비밀번호를 입력해주세요'),
+});
 
 const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const navigation = useNavigation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  const handleLogin = () => {
-    console.log('Login button pressed');
-    console.log('Current isAuthenticated:', isAuthenticated);
-    setIsAuthenticated(!isAuthenticated);
-    console.log('New isAuthenticated:', !isAuthenticated);
-    
-    // 로그인 성공 후 홈 화면으로 이동
-    if (!isAuthenticated) {
-      navigation.navigate('Home');
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
+    clientId: 'YOUR_GOOGLE_CLIENT_ID', // Google 클라이언트 ID를 여기에 입력하세요
+  });
+
+  useEffect(() => {
+    validateForm();
+  }, [email, password]);
+
+  const validateForm = async () => {
+    try {
+      if (email === '' && password === '') {
+        setErrors({});
+        setIsFormValid(false);
+        return;
+      }
+      await LoginSchema.validate({ email, password }, { abortEarly: false });
+      setErrors({});
+      setIsFormValid(true);
+    } catch (error) {
+      const newErrors = {};
+      error.inner.forEach((err) => {
+        if (err.path === 'email' && email !== '') {
+          newErrors[err.path] = err.message;
+        }
+        if (err.path === 'password' && password !== '') {
+          newErrors[err.path] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      setIsFormValid(false);
     }
+  };
+
+  const handleLogin = async () => {
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      const userRef = doc(db, 'users', user.uid);
+      const userSnapshot = await getDoc(userRef);
+      
+      if (userSnapshot.exists()) {
+        setIsAuthenticated(true);
+        navigation.navigate('BottomTab', { screen: 'Home' });
+      } else {
+        navigation.navigate('UserVerification');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await googlePromptAsync();
+      if (result.type === 'success') {
+        const { id_token } = result.params;
+        const credential = GoogleAuthProvider.credential(id_token);
+        await signInWithCredential(auth, credential);
+        setIsAuthenticated(true);
+        navigation.navigate('Home');
+      }
+    } catch (error) {
+      console.error('Google 로그인 오류:', error);
+      alert('Google 로그인에 실패했습니다.');
+    }
+  };
+
+  const handleGithubSignIn = () => {
+    alert('기능 개발 예정입니다 ㅠㅠ');
   };
 
   return (
@@ -26,22 +104,30 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       />
       <TextInput
         style={styles.input}
-        placeholder="전화번호, 사용자 이름 또는 이메일"
+        placeholder="이메일을 입력해주세요"
         placeholderTextColor="#999"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
       />
+      {email !== '' && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
       <TextInput
         style={styles.input}
-        placeholder="비밀번호"
+        placeholder="비밀번호를 입력해주세요"
         placeholderTextColor="#999"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
+      {password !== '' && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
       <TouchableOpacity
         onPress={handleLogin}
-        style={styles.button}
+        style={[styles.button, !isFormValid && styles.disabledButton]}
+        disabled={!isFormValid}
       >
         <Text style={styles.buttonText}>로그인</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.forgotPassword}>
+      <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.forgotPasswordText}>비밀번호를 잊으셨나요?</Text>
       </TouchableOpacity>
       <View style={styles.orContainer}>
@@ -50,16 +136,10 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         <View style={styles.orLine} />
       </View>
       <View style={styles.socialLoginContainer}>
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignIn}>
           <FontAwesome name="google" size={20} color="#DB4437" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="facebook" size={20} color="#3b5998" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="apple" size={20} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity style={styles.socialButton} onPress={handleGithubSignIn}>
           <FontAwesome name="github" size={20} color="#333" />
         </TouchableOpacity>
       </View>
@@ -192,6 +272,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#dbdbdb',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#B2DFFC',
   },
 });
 

@@ -27,13 +27,26 @@ const SignupForm = () => {
 
   const validateForm = async () => {
     try {
+      if (email === '' && password === '' && confirmPassword === '') {
+        setErrors({});
+        setIsFormValid(false);
+        return;
+      }
       await SignupSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
       setErrors({});
       setIsFormValid(true);
     } catch (error) {
       const newErrors = {};
       error.inner.forEach((err) => {
-        newErrors[err.path] = err.message;
+        if (err.path === 'email' && email !== '') {
+          newErrors[err.path] = err.message;
+        }
+        if (err.path === 'password' && password !== '') {
+          newErrors[err.path] = err.message;
+        }
+        if (err.path === 'confirmPassword' && confirmPassword !== '') {
+          newErrors[err.path] = err.message;
+        }
       });
       setErrors(newErrors);
       setIsFormValid(false);
@@ -43,9 +56,10 @@ const SignupForm = () => {
   const handleSignup = async () => {
     try {
       const auth = getAuth(app);
-      await createUserWithEmailAndPassword(auth, email, password);
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      await createUserProfile(user, { displayName: email.split('@')[0] });
       alert('회원가입이 완료되었습니다.');
-      navigation.navigate('Login');
+      navigation.navigate('UserVerification');
     } catch (error) {
       console.error(error);
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
@@ -75,7 +89,7 @@ const SignupForm = () => {
         onChangeText={setEmail}
         keyboardType="email-address"
       />
-      {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+      {email !== '' && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
@@ -84,7 +98,7 @@ const SignupForm = () => {
         value={password}
         onChangeText={setPassword}
       />
-      {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+      {password !== '' && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
       <TextInput
         style={styles.input}
         placeholder="비밀번호 확인"
@@ -93,7 +107,7 @@ const SignupForm = () => {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
       />
-      {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+      {confirmPassword !== '' && errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
       <TouchableOpacity 
         style={[styles.signupButton, !isFormValid && styles.disabledButton]} 
         onPress={handleSignup}
@@ -102,7 +116,7 @@ const SignupForm = () => {
         <Text style={styles.signupButtonText}>가입</Text>
       </TouchableOpacity>
       <Text style={styles.termsText}>
-        가입하면 Instagram의 약관, 데이터 정책 및 쿠키 정책에 동의하게 됩니다.
+        가입하면 Mirrorgram의 약관, 데이터 정책 및 쿠키 정책에 동의하게 됩니다.
       </Text>
       <View style={styles.loginContainer}>
         <Text style={styles.loginText}>계정이 있으신가요?</Text>
