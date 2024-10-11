@@ -21,6 +21,7 @@ import { userImg } from './components/home/Post';
 import { Ionicons } from '@expo/vector-icons';
 
 import Status from './components/home/Status';
+import SignupForm from './components/signup/SignupForm';
 
 
 const  App = () => {
@@ -107,23 +108,26 @@ const  App = () => {
 
 	return(
 		<NavigationContainer>
-		{
-		 !isAuthenticated?(
-			<LoginScreen isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}/>
-		 ): (
-		 	
-		  <Stack.Navigator
-		  		screenOptions={{
-		  		    headerShown: false,
-		  		 }}>
-		    <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-		    <Stack.Screen name="Activity" component={ActivityScreen} />
-		    <Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
-		    <Stack.Screen name="Status" component={Status} />
-		    <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-		  </Stack.Navigator>
-		  )
-		}
+			<Stack.Navigator
+				screenOptions={{
+					headerShown: false,
+				}}
+			>
+				{!isAuthenticated ? (
+					<Stack.Screen name="Login">
+						{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+					</Stack.Screen>
+				) : (
+					<>
+						<Stack.Screen name="BottomTab" component={BottomTabScreen} />
+						<Stack.Screen name="Activity" component={ActivityScreen} />
+						<Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
+						<Stack.Screen name="Status" component={Status} />
+						<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+					</>
+				)}
+				<Stack.Screen name="Signup" component={SignupForm} />
+			</Stack.Navigator>
 		</NavigationContainer>
 	);
 }

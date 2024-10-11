@@ -9,10 +9,7 @@ const instaLogo = './../assets/logo/Instagram-logo.png';
 const LoginScreen = ({isAuthenticated,setIsAuthenticated}) => {
 
    return(
-    <SafeAreaView style={styles.container}>
-      <Logo />
       <LoginForm isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}/>
-    </SafeAreaView>
    );
 }
 
