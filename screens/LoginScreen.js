@@ -1,5 +1,5 @@
 
-import {StyleSheet, SafeAreaView, Image, View, Text, TouchableOpacity, } from 'react-native';
+import {StyleSheet, SafeAreaView, Image, View, Text, TouchableOpacity, Platform } from 'react-native';
 import {ChevronDownIcon,} from 'react-native-heroicons/solid';
 import LoginForm from '../components/login/LoginForm';
 

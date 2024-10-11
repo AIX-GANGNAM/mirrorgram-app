@@ -1,5 +1,5 @@
 import React, {useState, } from 'react';
-import { View, Text, TouchableOpacity, Image, } from 'react-native';
+import { View, Text, TouchableOpacity, Image} from 'react-native';
 // import FriendsProfileData from './../../data/users';
 
 const Earlier = ({ navigation, FriendsProfileData }) => {

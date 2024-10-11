@@ -1,10 +1,11 @@
 import React, {useEffect} from 'react';
-import { SafeAreaView, View, KeyboardAvoidingView, Text, StyleSheet, ScrollView, BackHandler, Alert, } from 'react-native';
+import { SafeAreaView, View, KeyboardAvoidingView, Text, StyleSheet, ScrollView, BackHandler, Alert } from 'react-native';
 
 import Header from '../components/home/Header';
 import Stories from '../components/home/Stories';
 import Post from '../components/home/Post';
 import { POSTS } from '../data/posts';
+import { Platform } from 'react-native';
 
 const HomeScreen = () => {
 

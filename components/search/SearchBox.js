@@ -9,7 +9,7 @@ const SearchBox = () => {
   return (
     <View>
       <TouchableOpacity style={styles.searchContainer}>
-        <Ionicons style={styles.searchIcon} name="ios-search" size={24} color="#fff" />
+      <Ionicons style={styles.searchIcon} name="search-outline" size={24} color="#fff" />
         <TextInput
           placeholder="Search here.."
           placeholderTextColor="gray"

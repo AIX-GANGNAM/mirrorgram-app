@@ -1,9 +1,9 @@
 import React,{useState, } from 'react';
-import { StyleSheet, TouchableOpacity, SafeAreaView, Platform, View, ScrollView, Text, StatusBar, Dimensions, Image, } from 'react-native';
+import { StyleSheet, TouchableOpacity, SafeAreaView, View, ScrollView, Text, StatusBar, Dimensions, Image, } from 'react-native';
 import { Ionicons, Feather} from '@expo/vector-icons';
 import SearchContent from '../components/search/SearchContent';
 import SearchBox from '../components/search/SearchBox';
-
+import { Platform } from 'react-native';
 
 const { height, width } = Dimensions.get('window');
 
