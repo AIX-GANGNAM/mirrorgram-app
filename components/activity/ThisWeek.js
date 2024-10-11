@@ -7,12 +7,12 @@ const ThisWeek = ({ navigation, FriendsProfileData }) => {
 	return(
 	<>	
 	   <Text style={{
-	   		color: '#fff',
+	   		color: 'black',
 	   		fontWeight: 'bold',
 	   		
 	   	 }} >This Week </Text>
 		{
-		 FriendsProfileData.slice(1,3).map((data, index) =>{
+		 FriendsProfileData.slice(0,4).map((data, index) =>{
 			const [ follow, setFollow ] = useState(data.follow);
 
 		 	return(
@@ -52,7 +52,7 @@ const ThisWeek = ({ navigation, FriendsProfileData }) => {
 		 		     		// marginVertical: 20,
 		 		     		marginRight: 10,
 		 		     	}}/>
-		 		     <Text style={{color: '#fff', fontSize: 15,}}>
+		 		     <Text style={{color: 'black', fontSize: 15,}}>
 		 		     	<Text style={{fontWeight: 'bold'}}>{data.name} </Text>
 		 		     	 Who you know, is on Instagram
 		 		     </Text>
@@ -72,7 +72,8 @@ const ThisWeek = ({ navigation, FriendsProfileData }) => {
 		 		     	alignItems: 'center',
 		 		     	
 		 		     }}>
-		 		       <Text style={{color:follow?'#1af': '#fff', fontWeight: 'bold'}}>{follow? 'Following': 'Follow'}</Text>
+						
+		 		       <Text style={{color:follow?'purple': '#fff', fontWeight: 'bold'}}>{follow? 'Following': 'Follow'}</Text>
 		 		     </View>
 		 		   </TouchableOpacity>
 		 		 </View>
