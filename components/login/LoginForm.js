@@ -8,6 +8,8 @@ import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCred
 import app from '../../firebaseConfig';
 import * as Yup from 'yup';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../store/slice/userSlice.js';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,6 +26,8 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const [isFormValid, setIsFormValid] = useState(false);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+  const dispatch = useDispatch();
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
     clientId: 'YOUR_GOOGLE_CLIENT_ID', // Google 클라이언트 ID를 여기에 입력하세요
@@ -65,6 +69,8 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       const userSnapshot = await getDoc(userRef);
       
       if (userSnapshot.exists()) {
+        const userData = userSnapshot.data();
+        dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {

@@ -5,6 +5,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import app from '../../firebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../store/slice/userSlice.js';
 
 const UserVerification = () => {
   const navigation = useNavigation();
@@ -18,21 +20,25 @@ const UserVerification = () => {
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  const dispatch = useDispatch();
+
   const handleSaveProfile = async () => {
     try {
       const user = auth.currentUser;
       if (user) {
         const userRef = doc(db, 'users', user.uid);
         const now = new Date();
-        await setDoc(userRef, {
+        const profileData = {
           profile: {
-            userId : username,
-            userName : name,
+            userId: username,
+            userName: name,
             birthdate: birthdate.toISOString(),
-            userPhone : phone,
+            userPhone: phone,
             createdAt: now.toISOString(),
           }
-        }, { merge: true });
+        };
+        await setDoc(userRef, profileData, { merge: true });
+        dispatch(setUser({ uid: user.uid, ...profileData }));
         navigation.navigate('BottomTab', { screen: 'Home' });
       }
     } catch (error) {
