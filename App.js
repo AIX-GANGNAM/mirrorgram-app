@@ -21,7 +21,14 @@ import { userImg } from './components/home/Post';
 import { Ionicons } from '@expo/vector-icons';
 
 import Status from './components/home/Status';
+import SignupForm from './components/signup/SignupForm';
 
+import ForgotPassword from './components/login/ForgotPassword';
+
+import UserVerification from './components/auth/UserVerification.js';
+
+import { Provider } from 'react-redux';
+import store from './store';
 
 const  App = () => {
   const Tab = createBottomTabNavigator();
@@ -106,25 +113,32 @@ const  App = () => {
   }
 
 	return(
-		<NavigationContainer>
-		{
-		 !isAuthenticated?(
-			<LoginScreen isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}/>
-		 ): (
-		 	
-		  <Stack.Navigator
-		  		screenOptions={{
-		  		    headerShown: false,
-		  		 }}>
-		    <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-		    <Stack.Screen name="Activity" component={ActivityScreen} />
-		    <Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
-		    <Stack.Screen name="Status" component={Status} />
-		    <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-		  </Stack.Navigator>
-		  )
-		}
-		</NavigationContainer>
+		<Provider store={store}>
+			<NavigationContainer>
+				<Stack.Navigator
+					screenOptions={{
+						headerShown: false,
+					}}
+				>
+					{!isAuthenticated ? (
+						<Stack.Screen name="Login">
+							{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+						</Stack.Screen>
+					) : (
+						<>
+							<Stack.Screen name="BottomTab" component={BottomTabScreen} />
+							<Stack.Screen name="Activity" component={ActivityScreen} />
+							<Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
+							<Stack.Screen name="Status" component={Status} />
+							<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+						</>
+					)}
+					<Stack.Screen name="Signup" component={SignupForm} />
+					<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
+					<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
+				</Stack.Navigator>
+			</NavigationContainer>
+		</Provider>
 	);
 }
 
