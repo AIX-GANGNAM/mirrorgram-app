@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, TouchableOpacity, Image, Animated } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, TouchableOpacity, Image, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const Status = ({ route, navigation }) => {

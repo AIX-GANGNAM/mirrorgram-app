@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { StyleSheet, SafeAreaView, Platform, Dimensions, View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, SafeAreaView, Dimensions, View, Text, TextInput, TouchableOpacity, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SEARCHDATA } from '../../data/search';
 

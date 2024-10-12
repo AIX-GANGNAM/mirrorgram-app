@@ -1,20 +1,23 @@
-import {SafeAreaView,Platform, ScrollView, StyleSheet, View, Text, } from 'react-native';
-import ProfileHeader from '../components/profile/ProfileHeader';
-import CenterTab from '../components/profile/CenterTab';
-import ProfileBody from '../components/profile/ProfileBody';
+import React from 'react';
+import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
-
+import ProfileHeader from '../components/profile/ProfileHeader';
+import ProfileInfo from '../components/profile/ProfileInfo';
+import ProfileActions from '../components/profile/ProfileActions';
+import ProfileHighlights from '../components/profile/ProfileHighlights';
+import ProfileGallery from '../components/profile/ProfileGallery';
 
 const ProfileScreen = () => {
-
   const user = useSelector((state) => state.user.profile);
 
-  return(
+  return (
     <SafeAreaView style={styles.container}>
-      <ProfileHeader username={user.username} />
       <ScrollView>
-        <ProfileBody />
-        <CenterTab />
+        <ProfileHeader username={user.username} />
+        <ProfileInfo user={user} />
+        <ProfileActions user={user} />
+        <ProfileHighlights />
+        <ProfileGallery user={user} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -22,11 +25,9 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-  flex:1,
-  paddingTop: Platform.OS === 'ios'? 0 : 35,
-  backgroundColor:'black',
+    flex: 1,
+    backgroundColor: '#fff',
   },
-
 });
 
 export default ProfileScreen;

@@ -30,7 +30,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const dispatch = useDispatch();
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: 'YOUR_GOOGLE_CLIENT_ID', // Google 클라이언트 ID를 여기에 입력하세요
+    clientId: 'project-673415729459', // Google 클라이언트 ID를 여기에 입력하세요
   });
 
   useEffect(() => {
