@@ -7,12 +7,11 @@ const ThisMonth = ({ navigation, FriendsProfileData }) => {
 	return(
 	<>	
 	   <Text style={{
-	   		color: '#fff',
+	   		color: 'black',
 	   		fontWeight: 'bold',
-	   		
 	   	 }} >This Month </Text>
 		{
-		 FriendsProfileData.slice(2,7).map((data, index) =>{
+		 FriendsProfileData.slice(0,8).map((data, index) =>{
 			const [ follow, setFollow ] = useState(data.follow);
 
 		 	return(
@@ -49,10 +48,9 @@ const ThisMonth = ({ navigation, FriendsProfileData }) => {
 		 		     		width:45,
 		 		     		backgroundColor: 'gray',
 		 		     		borderRadius: 100,
-		 		     		// marginVertical: 20,
 		 		     		marginRight: 10,
 		 		     	}}/>
-		 		     <Text style={{color: '#fff', fontSize: 15,}}>
+		 		     <Text style={{color: 'black', fontSize: 15,}}>
 		 		     	<Text style={{fontWeight: 'bold'}}>{data.name} </Text>
 		 		     	 Who you know, is on Instagram
 		 		     </Text>

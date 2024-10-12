@@ -87,7 +87,7 @@ export const USERS = [
 
 export const  FriendsProfileData = [
 	{
-		name: 'Ram',
+		name: 'ChoiChanguk',
 		accountName: 'Ram Charan',
 		profileImage: 'https://randomuser.me/api/portraits/men/18.jpg',
 		posts: 54,

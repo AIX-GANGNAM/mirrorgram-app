@@ -6,6 +6,7 @@ const Header = ({name, navigation}) => {
 
 	return(
 	 <>
+	 
 	  <View style={{
 	  	flexDirection: 'row',
 	  	justifyContent: 'space-between',
@@ -14,6 +15,7 @@ const Header = ({name, navigation}) => {
 	  	borderColor: 'gray',
 	  	paddingBottom:3,
 	  }}>
+		
 	    <View style={{
 	    	flexDirection: 'row',
 	    	justifyContent: 'center',
@@ -23,7 +25,7 @@ const Header = ({name, navigation}) => {
 	      	onPress={() => navigation.goBack()}>
 	         <Ionicons style={{paddingRight: 7}} name="ios-arrow-back-sharp" size={26} color="#fff" />
 	      </TouchableOpacity>
-	      <Text style={{color: '#fff', paddingLeft: 6, fontSize: 18, fontWeight: '900'}}> {name} </Text>
+	      <Text style={{color: 'black', paddingLeft: 6, fontSize: 18, fontWeight: '900'}}> {name} </Text>
 	    </View>
 	     <TouchableOpacity>
 	       <Ionicons name="ios-ellipsis-vertical-sharp" size={24} color="#fff" />

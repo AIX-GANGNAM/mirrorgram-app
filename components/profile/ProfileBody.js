@@ -7,67 +7,67 @@ import { useNavigation } from '@react-navigation/native';
 
 import StoryHighlights from './StoryHighlights';
 
+import { useSelector } from 'react-redux';
+import { FontAwesome } from '@expo/vector-icons';
+
 const ProfileBody = () => {
+  const user = useSelector(state => state.user.profile);
 
   return(
-   <View style={{marginHorizontal:8,}}>
-    <ProfileStatus />
-    <UserInfo />
+    <View style={{marginHorizontal:8,}}>
+    <ProfileStatus user={user} />
+    <UserInfo user={user} />
     <ProfessionalDashboard />
-    <ProfileAction />
+    <ProfileAction user={user} />
     <StoryHighlights />
    </View>
   );
 }
 
-const ProfileStatus = () => {
-
+const ProfileStatus = ({ user }) => {
   return(
    <View style={styles.profileContainer}>
     <TouchableOpacity>
-     <Image
-        style={styles.profileImg}
-        source={{uri: PROFILE.profileImg}} />
+      {user.profileImg ? (
+        <Image
+          style={styles.profileImg}
+          source={{uri: user.profileImg}}
+        />
+      ) : (
+        <FontAwesome name="user-circle" size={80} color="#fff" />
+      )}
     </TouchableOpacity>
     <TouchableOpacity style={styles.status} >
-     <Text style={[styles.userText,{fontSize:18,fontWeight: 'bold'}]}>39</Text>
+     <Text style={[styles.userText,{fontSize:18,fontWeight: 'bold'}]}>0</Text>
      <Text style={styles.userText} >Posts</Text>
     </TouchableOpacity>
    <TouchableOpacity style={styles.status}>
-     <Text style={[styles.userText,{fontSize: 18, fontWeight: 'bold'}]} >69</Text>
+     <Text style={[styles.userText,{fontSize: 18, fontWeight: 'bold'}]} >0</Text>
      <Text style={styles.userText} >Followers</Text>
     </TouchableOpacity>
     <TouchableOpacity style={styles.status}>
-     <Text style={[styles.userText,{fontSize: 18,fontWeight: 'bold'}]}>39</Text>
+     <Text style={[styles.userText,{fontSize: 18,fontWeight: 'bold'}]}>0</Text>
      <Text style={styles.userText}>Following</Text>
     </TouchableOpacity>
    </View>
   );
 }
 
-const UserInfo = () => {
-
+const UserInfo = ({ user }) => {
   return(
    <View style={styles.infoContainer}>
     <TouchableOpacity >
-     <Text style={[styles.infoText, {fontSize:16, fontWeight: 'bold', marginTop: -5}]} >{PROFILE.name}</Text>
+     <Text style={[styles.infoText, {fontSize:16, fontWeight: 'bold', marginTop: -5}]} >{user.name}</Text>
     </TouchableOpacity>
    <TouchableOpacity >
-     <Text style={[styles.infoText, {color:'gray'}]} >CTFs Players </Text>
+     <Text style={[styles.infoText, {color:'gray'}]} >@{user.username}</Text>
     </TouchableOpacity>
     <TouchableOpacity >
-     <Text style={[styles.infoText]}>Lafanga, bekamko</Text>
+     <Text style={[styles.infoText]}>생년월일: {new Date(user.birthdate).toLocaleDateString()}</Text>
     </TouchableOpacity>
-
-    {PROFILE.links.slice(0,2).map((link, index) =>(
-    <TouchableOpacity
-    	key={index}
-    	style={{flexDirection:'row', alignItems:'center'}} >
-     <LinkIcon color='#fff' size={15} />
-     <Text style={[styles.infoText,{color:'blue', marginLeft:4}]}>{link}</Text>
+    <TouchableOpacity >
+     <Text style={[styles.infoText]}>전화번호: {user.phone}</Text>
     </TouchableOpacity>
-     ))
-	 }
    </View>
   );
 }
@@ -87,21 +87,17 @@ const ProfessionalDashboard = () => {
   );
 }
 
-const ProfileAction = () => {
+const ProfileAction = ({ user }) => {
   const navigation = useNavigation();
 
-  const goToProfile = () =>{
-  	  navigation.push('EditProfile',{
-  	        name: PROFILE.name,
-  	        userName: PROFILE.userName,
-  	        profileImg: PROFILE.profileImg,
-  	        webSite: PROFILE.webSite,
-  	        links: PROFILE.links,
-  	        bio: PROFILE.bio,
-  	        posts: PROFILE.posts,
-  	        followers: PROFILE.followers,
-            following: PROFILE.following,
-  	})
+  const goToProfile = () => {
+    navigation.push('EditProfile', {
+      name: user.name,
+      userName: user.username,
+      profileImg: user.profileImg,
+      birthdate: user.birthdate,
+      phone: user.phone,
+    });
   }
 
   const onShare = async () => {

@@ -8,23 +8,23 @@ import { PlusCircleIcon, } from 'react-native-heroicons/outline';
 import StoryHighlights from './StoryHighlights';
 
 
-const ProfileHeader = () => {
+const ProfileHeader = ({ username }) => {
 
   return(
    <View style={{marginHorizontal:8,}}>
-    <Header />
+    <Header username={username} />
    </View>
   );
 }
 
 
-const Header = () => {
+const Header = ({ username }) => {
 
   return(
    <View style={styles.container}>
     <TouchableOpacity style={styles.leftRow}>
       <LockClosedIcon color='#fff' size={18} />
-      <Text style={styles.userText}> {PROFILE.name} </Text>
+      <Text style={styles.userText}> {username} </Text>
       <ChevronDownIcon color='#fff' size={24} />
     </TouchableOpacity>
 

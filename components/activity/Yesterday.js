@@ -7,12 +7,12 @@ const Yesterday = ({ navigation, FriendsProfileData }) => {
 	return(
 	<>	
 	   <Text style={{
-	   		color: '#fff',
+	   		color: 'black',
 	   		fontWeight: 'bold',
 	   		
 	   	 }} >Yesterday </Text>
 		{
-		 FriendsProfileData.slice(2,5).map((data, index) =>{
+		 FriendsProfileData.slice(0,4).map((data, index) =>{
 			const [ follow, setFollow ] = useState(data.follow);
 					 	return(
 		 		<View key={index} style={{width:'100%'}}>
@@ -51,7 +51,7 @@ const Yesterday = ({ navigation, FriendsProfileData }) => {
 		 		     		// marginVertical: 20,
 		 		     		marginRight: 10,
 		 		     	}}/>
-		 		     <Text style={{color: '#fff', fontSize: 15,}}>
+		 		     <Text style={{color: 'black', fontSize: 15,}}>
 		 		     	<Text style={{fontWeight: 'bold'}}>{data.name} </Text>
 		 		     	 Who you know, is on Instagram
 		 		     </Text>
