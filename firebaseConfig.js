@@ -10,6 +10,7 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
+
 const firebaseConfig = {
   apiKey: FIREBASE_API_KEY,
   authDomain: FIREBASE_AUTH_DOMAIN,
@@ -23,10 +24,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { auth };
-export default app;
-
-export const createUserProfile = async (user, additionalData) => {
+const createUserProfile = async (user, additionalData) => {
   if (!user) return;
 
   const userRef = doc(db, 'users', user.uid);
@@ -49,3 +47,6 @@ export const createUserProfile = async (user, additionalData) => {
 
   return userRef;
 };
+
+export { auth, db, createUserProfile };
+export default app;

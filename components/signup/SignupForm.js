@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import app from '../../firebaseConfig'; // Firebase 앱 인스턴스 import
 import * as Yup from 'yup';
+import { createUserProfile } from '../../firebaseConfig';
 
 const SignupSchema = Yup.object().shape({
   email: Yup.string().email('올바른 이메일 형식을 입력해주세요').required('이메일을 입력해주세요'),
