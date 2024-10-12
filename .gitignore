@@ -10,9 +10,11 @@ npm-debug.*
 *.orig.*
 web-build/
 .env
+.package-lock.json
 
 # macOS
 .DS_Store
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
+
