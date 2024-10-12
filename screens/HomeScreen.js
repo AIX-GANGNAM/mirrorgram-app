@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Platform.OS==='ios'? 0 : 25,
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
   },
 });

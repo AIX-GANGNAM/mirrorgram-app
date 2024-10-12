@@ -84,12 +84,11 @@ const  App = () => {
   				 	          {...rest}
   				 	           style={{
   				 	           		alignItems: 'center',
-  				 		      	 	top: -25,
   				 		       		borderBottomWidth: rest.focused ? 5 : 0,
   				 		       		borderColor: 'skyblue',
   				 		      		 borderRadius: 50,
   				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='red' />
+  				 		    <Ionicons name="add-circle-outline" size={50} color='white' />
   				 	     </TouchableOpacity>
   				 	     );
   				 	   },
