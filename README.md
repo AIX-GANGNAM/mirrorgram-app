@@ -62,12 +62,12 @@ Mirrorgram 은 사용자의 감정을 기록하고 공유할 수 있는 혁신�
 
 1. 저장소를 클론합니다:
    ```
-   git clone https://github.com/yourusername/my-emotional-diary.git
+   git clone https://github.com/AIX-GANGNAM/mirrorgram-app.git
    ```
 
 2. 프로젝트 디렉토리로 이동합니다:
    ```
-   cd my-emotional-diary
+   cd mirrorgram-app
    ```
 
 3. 필요한 패키지를 설치합니다:
@@ -76,8 +76,7 @@ Mirrorgram 은 사용자의 감정을 기록하고 공유할 수 있는 혁신�
    ```
 
 4. 환경 변수를 설정합니다:
-   - `.env.example` 파일을 복사하여 `.env` 파일을 생성합니다.
-   - 필요한 API 키와 설정 값을 입력합니다.
+   - .env 파일 생성후 firebase api key 삽입합니다.
 
 5. 개발 서버를 실행합니다:
    ```
