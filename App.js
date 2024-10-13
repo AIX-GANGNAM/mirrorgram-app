@@ -47,8 +47,8 @@ const BottomTabScreen = () => {
         headerShown: false,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          height: 50,
-          backgroundColor: 'black'
+          height: 80,
+          backgroundColor: 'white'
         },
         tabBarIcon: ({ focused, size, color }) => {
           let iconName;
@@ -56,10 +56,10 @@ const BottomTabScreen = () => {
             iconName = focused ? "home-sharp" : "home-outline";
             size = focused ? size + 4 : size + 2;
           } else if (route.name === "Search") {
-            iconName = focused ? "search" : "ios-search-outline";
+            iconName = focused ? "search" : "search-outline";
             size = focused ? size + 4 : size + 2;
           } else if (route.name === "NewPost") {
-            iconName = focused ? "add-circle-outline" : "add-circle-outline";
+            iconName = focused ? "add-circle" : "add-circle-outline";
             size = focused ? size + 4 : size + 2;
           } else if (route.name === "Reels") {
             iconName = focused ? "film" : "film-outline";
