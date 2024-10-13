@@ -6,14 +6,15 @@ const ProfileActions = ({ user }) => {
   const navigation = useNavigation();
 
   const handleEditProfile = () => {
+    
     navigation.navigate('EditProfile', {
-      name: user.name,
-      userName: user.username,
-      profileImg: user.profileImg,
-      birthdate: user.birthdate,
-      phone: user.phone,
-      mbti: user.mbti,
-      personality: user.personality,
+      name: user?.profile?.userName,
+      userId: user?.userId,
+      profileImg: user?.profileImg,
+      birthdate: user?.profile?.birthdate,
+      phone: user?.userPhone,
+      mbti: user?.profile?.mbti,
+      personality: user?.profile?.personality,
     });
   };
 
