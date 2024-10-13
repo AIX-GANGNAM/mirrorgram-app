@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const Header = ({ name, navigation, onSave }) => {
+const Header = ({ navigation, onSave }) => {
   const handleBack = () => {
     navigation.goBack();
   };
@@ -14,7 +14,6 @@ const Header = ({ name, navigation, onSave }) => {
       </TouchableOpacity>
       <Text style={styles.headerTitle}>프로필 수정</Text>
       <TouchableOpacity onPress={onSave}>
-        {/* 저장 버튼 */}
         <Ionicons name="checkmark" size={28} color="#3897f0" />
       </TouchableOpacity>
     </View>

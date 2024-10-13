@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, ScrollView, SafeAreaView, View, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAuth } from 'firebase/auth';
@@ -13,40 +13,48 @@ const EditProfileScreen = ({route, navigation}) => {
 	const db = getFirestore();
 	const currentUser = useSelector(state => state.user.user);
 
-	const { 
-		name, 
-		userId, 
-		profileImg, 
-		birthdate, 
-		phone, 
-		mbti, 
-		personality 
-	} = route.params;
+	const [updatedProfile, setUpdatedProfile] = useState(route.params);
 
-	const handleSave = async (updatedProfile) => {
+	const handleFormChange = (newData) => {
+		setUpdatedProfile(prevData => ({...prevData, ...newData}));
+	};
+
+	const handleSave = async () => {
 		console.log('updatedProfile', updatedProfile);
 		try {
 			const user = auth.currentUser;
 			if (user) {
-				// Firebase Firestore 업데이트
 				const userRef = doc(db, 'users', user.uid);
-				await updateDoc(userRef, {
-					profile : {
+				
+				const updateData = {
+					profile: {
 						userName: updatedProfile.name,
 						birthdate: updatedProfile.birthdate,
-						mbti: updatedProfile.mbti,
-						personality: updatedProfile.personality,
 					},
 					userId: updatedProfile.userId,
-					profileImg: updatedProfile.profileImg,
 					userPhone: updatedProfile.phone,
-				});
+				};
+
+				if (updatedProfile.mbti) updateData.profile.mbti = updatedProfile.mbti;
+				if (updatedProfile.personality) updateData.profile.personality = updatedProfile.personality;
+				if (updatedProfile.profileImg) updateData.profileImg = updatedProfile.profileImg;
+
+				console.log('Updating with data:', updateData);
+				await updateDoc(userRef, updateData);
 
 				// Redux 상태 업데이트
-				const updatedUser = { ...currentUser, ...updatedProfile };
-				dispatch(setUser(updatedUser));
+				const updatedUserData = {
+					...currentUser,
+					...updatedProfile,
+					profile: {
+						...currentUser.profile,
+						...updateData.profile
+					}
+				};
+				dispatch(setUser(updatedUserData));
 
 				console.log('프로필이 성공적으로 업데이트되었습니다.');
+				console.log('Updated Redux State:', updatedUserData);
 				navigation.goBack();
 			}
 		} catch (error) {
@@ -57,17 +65,11 @@ const EditProfileScreen = ({route, navigation}) => {
 
 	return (
 		<SafeAreaView style={styles.safe}>
-			<Header name={name} navigation={navigation} onSave={handleSave} />
+			<Header navigation={navigation} onSave={handleSave} />
 			<ScrollView showsVerticalScrollIndicator={false}>
 				<EditForm
-					name={name}
-					userId={userId}
-					profileImg={profileImg}
-					birthdate={birthdate}
-					phone={phone}
-					mbti={mbti}
-					personality={personality}
-					onSave={handleSave}
+						{...updatedProfile}
+						onSave={handleFormChange}
 				/>
 			</ScrollView>
 		</SafeAreaView>

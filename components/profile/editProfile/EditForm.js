@@ -1,22 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
 const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave }) => {
-  const [newName, setNewName] = useState(name || '');
-  const [newUserId, setNewUserId] = useState(userId || '');
-  const [newProfileImg, setNewProfileImg] = useState(profileImg || '');
-  const [newBirthdate, setNewBirthdate] = useState(birthdate || '');
-  const [newPhone, setNewPhone] = useState(phone || '');
-  const [newMbti, setNewMbti] = useState(mbti || '');
-  const [newPersonality, setNewPersonality] = useState(personality || '');
+  const [formData, setFormData] = useState({
+    name: name || '',
+    userId: userId || '',
+    profileImg: profileImg || '',
+    birthdate: birthdate || '',
+    phone: phone || '',
+    mbti: mbti || '',
+    personality: personality || '',
+  });
+
+  useEffect(() => {
+    console.log('Current form data:', formData);
+  }, [formData]);
+
+  const handleChange = (field, value) => {
+    setFormData(prevData => {
+      const newData = { ...prevData, [field]: value };
+      onSave(newData);
+      return newData;
+    });
+  };
 
   const handlePhoneChange = (text) => {
     const cleaned = text.replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{0,4})(\d{0,4})$/);
     if (match) {
-      setNewPhone(`${match[1]}${match[2] ? '-' : ''}${match[2]}${match[3] ? '-' : ''}${match[3]}`);
+      setFormData(prevData => {
+        const newData = { ...prevData, phone: `${match[1]}${match[2] ? '-' : ''}${match[2]}${match[3] ? '-' : ''}${match[3]}` };
+        onSave(newData);
+        return newData;
+      });
     } else {
-      setNewPhone(cleaned);
+      setFormData(prevData => {
+        const newData = { ...prevData, phone: cleaned };
+        onSave(newData);
+        return newData;
+      });
     }
   };
 
@@ -36,27 +58,17 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
   };
 
   const handleDateChange = (text) => {
-    setNewBirthdate(formatDate(text));
-  };
-
-  const handleSave = () => {
-    const updatedProfile = {
-      name: newName,
-      userId: newUserId,
-      profileImg: newProfileImg,
-      birthdate: newBirthdate,
-      phone: newPhone,
-      mbti: newMbti,
-      personality: newPersonality,
-    };
-    // console.log('Sending updated profile:', updatedProfile);
-    onSave(updatedProfile);
+    setFormData(prevData => {
+      const newData = { ...prevData, birthdate: formatDate(text) };
+      onSave(newData);
+      return newData;
+    });
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileImageContainer}>
-        <Image source={{ uri: newProfileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
+        <Image source={{ uri: profileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
         <TouchableOpacity style={styles.changePhotoButton}>
           <Text style={styles.changePhotoText}>프로필 사진 변경</Text>
         </TouchableOpacity>
@@ -67,8 +79,8 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>이름</Text>
           <TextInput
             style={styles.input}
-            value={newName}
-            onChangeText={setNewName}
+            value={formData.name}
+            onChangeText={(text) => handleChange('name', text)}
             placeholder="이름"
             placeholderTextColor="#999"
           />
@@ -78,8 +90,8 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>사용자 ID</Text>
           <TextInput
             style={styles.input}
-            value={newUserId}
-            onChangeText={setNewUserId}
+            value={formData.userId}
+            onChangeText={(text) => handleChange('userId', text)}
             placeholder="사용자 ID"
             placeholderTextColor="#999"
           />
@@ -89,7 +101,7 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>생년월일</Text>
           <TextInput
             style={styles.input}
-            value={newBirthdate}
+            value={formData.birthdate}
             onChangeText={handleDateChange}
             placeholder="YYYY-MM-DD"
             placeholderTextColor="#999"
@@ -102,7 +114,7 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>전화번호</Text>
           <TextInput
             style={styles.input}
-            value={newPhone}
+            value={formData.phone}
             onChangeText={handlePhoneChange}
             placeholder="전화번호"
             placeholderTextColor="#999"
@@ -114,8 +126,8 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>MBTI</Text>
           <TextInput
             style={styles.input}
-            value={newMbti}
-            onChangeText={setNewMbti}
+            value={formData.mbti}
+            onChangeText={(text) => handleChange('mbti', text)}
             placeholder="MBTI"
             placeholderTextColor="#999"
           />
@@ -125,8 +137,8 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
           <Text style={styles.label}>성격</Text>
           <TextInput
             style={styles.input}
-            value={newPersonality}
-            onChangeText={setNewPersonality}
+            value={formData.personality}
+            onChangeText={(text) => handleChange('personality', text)}
             placeholder="성격"
             placeholderTextColor="#999"
           />
