@@ -74,7 +74,7 @@ const Status = ({ route, navigation }) => {
           <TouchableOpacity
           		onPress={() => navigation.goBack()}>
              <Ionicons
-             	name="ios-close"
+             	name="close"
              	size={24}
              	color="#fff"
              	style={{opacity: 0.6}}/>

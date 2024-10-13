@@ -1,28 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView, Platform, Modal } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personality, onSave }) => {
+const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave }) => {
   const [newName, setNewName] = useState(name || '');
-  const [newUserName, setNewUserName] = useState(userName || '');
+  const [newUserId, setNewUserId] = useState(userId || '');
   const [newProfileImg, setNewProfileImg] = useState(profileImg || '');
-  const [newBirthdate, setNewBirthdate] = useState(birthdate ? new Date(birthdate) : new Date());
+  const [newBirthdate, setNewBirthdate] = useState(birthdate || '');
   const [newPhone, setNewPhone] = useState(phone || '');
   const [newMbti, setNewMbti] = useState(mbti || '');
   const [newPersonality, setNewPersonality] = useState(personality || '');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date(newBirthdate));
-
-  const handleDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || tempDate;
-    setTempDate(currentDate);
-  };
-
-  const confirmDate = () => {
-    setNewBirthdate(tempDate);
-    setShowDatePicker(false);
-  };
 
   const handlePhoneChange = (text) => {
     const cleaned = text.replace(/\D/g, '');
@@ -34,30 +20,41 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
     }
   };
 
+  const formatDate = (text) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    let formatted = '';
+    if (cleaned.length > 0) {
+      formatted += cleaned.substr(0, 4);
+      if (cleaned.length > 4) {
+        formatted += '-' + cleaned.substr(4, 2);
+        if (cleaned.length > 6) {
+          formatted += '-' + cleaned.substr(6, 2);
+        }
+      }
+    }
+    return formatted;
+  };
+
+  const handleDateChange = (text) => {
+    setNewBirthdate(formatDate(text));
+  };
+
   const handleSave = () => {
-    onSave({
+    const updatedProfile = {
       name: newName,
-      userName: newUserName,
+      userId: newUserId,
       profileImg: newProfileImg,
-      birthdate: newBirthdate.toISOString(),
+      birthdate: newBirthdate,
       phone: newPhone,
       mbti: newMbti,
       personality: newPersonality,
-    });
+    };
+    // console.log('Sending updated profile:', updatedProfile);
+    onSave(updatedProfile);
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="close-outline" size={28} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로필 수정</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Ionicons name="checkmark" size={28} color="#3897f0" />
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.profileImageContainer}>
         <Image source={{ uri: newProfileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
         <TouchableOpacity style={styles.changePhotoButton}>
@@ -78,23 +75,27 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>사용자 이름</Text>
+          <Text style={styles.label}>사용자 ID</Text>
           <TextInput
             style={styles.input}
-            value={newUserName}
-            onChangeText={setNewUserName}
-            placeholder="사용자 이름"
+            value={newUserId}
+            onChangeText={setNewUserId}
+            placeholder="사용자 ID"
             placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>생년월일</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-            <Text style={styles.dateText}>
-              {newBirthdate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </Text>
-          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={newBirthdate}
+            onChangeText={handleDateChange}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            maxLength={10}
+          />
         </View>
 
         <View style={styles.inputContainer}>
@@ -131,34 +132,6 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
           />
         </View>
       </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showDatePicker}
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>생년월일 선택</Text>
-            <DateTimePicker
-              value={tempDate}
-              mode="date"
-              display="spinner"
-              onChange={handleDateChange}
-              style={styles.datePicker}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDate} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>확인</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 };
@@ -167,18 +140,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#dbdbdb',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   profileImageContainer: {
     alignItems: 'center',
@@ -213,43 +174,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#dbdbdb',
     paddingVertical: 10,
     fontSize: 16,
-  },
-  dateText: {
-    fontSize: 16,
     color: '#262626',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  datePicker: {
-    height: 200,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  modalButton: {
-    padding: 10,
-  },
-  modalButtonText: {
-    color: '#3897f0',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 const ProfileHeader = ({ username }) => {
   return (
     <View style={styles.header}>
-      <Text style={styles.username}>{username}</Text>
+      <Text style={styles.username}>@ {username}</Text>
       <TouchableOpacity>
         <Ionicons name="menu-outline" size={24} color="#000" />
       </TouchableOpacity>

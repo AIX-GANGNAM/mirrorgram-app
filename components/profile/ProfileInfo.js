@@ -11,8 +11,8 @@ const ProfileInfo = ({ user }) => {
         ) : (
           <FontAwesome name="user-circle" size={80} color="#000" />
         )}
-        <Text style={styles.name}>{user.name}</Text>
-        <Text style={styles.username}>@{user.username}</Text>
+        <Text style={styles.name}>{user?.profile?.userName}</Text>
+        <Text style={styles.username}>@{user?.userId}</Text>
       </View>
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
