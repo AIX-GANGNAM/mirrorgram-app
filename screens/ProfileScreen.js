@@ -9,11 +9,11 @@ import ProfileGallery from '../components/profile/ProfileGallery';
 
 const ProfileScreen = () => {
   const user = useSelector((state) => state.user.profile);
-
+console.log(user);
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <ProfileHeader username={user.username} />
+        <ProfileHeader username={user.profile.userName} />
         <ProfileInfo user={user} />
         <ProfileActions user={user} />
         <ProfileHighlights />

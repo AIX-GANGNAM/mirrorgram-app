@@ -70,11 +70,12 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();
+        console.log(userData);
         dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
-        navigation.navigate('UserVerification');
+        navigation.navigate('UserVerificationStep1');
       }
     } catch (error) {
       console.error(error);
