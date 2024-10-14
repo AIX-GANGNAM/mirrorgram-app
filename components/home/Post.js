@@ -2,10 +2,11 @@ import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, T
 import { Divider } from 'react-native-elements';
 import { HeartIcon as FillHeartIcon, BookmarkIcon as FilledBookmarkIcon, EllipsisVerticalIcon, CheckBadgeIcon, XMarkIcon } from 'react-native-heroicons/solid';
 import { HeartIcon, BookmarkIcon, ChatBubbleOvalLeftIcon, PaperAirplaneIcon, } from 'react-native-heroicons/outline';
-import React, {useState, } from 'react';
+import React, {useState, useEffect } from 'react';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import {getFirestore, doc, updateDoc ,collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import {getFirestore, doc, updateDoc ,collection, query, where, getDocs, orderBy, getDoc } from 'firebase/firestore';
 import {  PencilIcon, TrashIcon } from 'react-native-heroicons/outline';
+import { useSelector } from 'react-redux';
 
 
 
@@ -23,7 +24,9 @@ const Post = ({post}) => {
        const updatedComments = [...comments, { user: 'CurrentUser', comment: newComment, likes: 0 }];
        setComments(updatedComments);
        setNewComment('');
+
        // 여기에 Firebase에 댓글을 저장하는 로직을 추가할 수 있습니다.
+       
      }
    };
 
@@ -76,6 +79,26 @@ const Post = ({post}) => {
 
 const PostHeader = ({post, onEdit, onDelete}) => {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [profileImg, setProfileImg] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = post.userId;
+      const db = getFirestore();
+      const postDoc = doc(db, 'users', user);
+      try {
+        const docSnap = await getDoc(postDoc);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setProfileImg(userData.profileImg);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [post.userId]);
 
   const handleEdit = () => {
     setShowOptionsModal(false);
@@ -86,14 +109,14 @@ const PostHeader = ({post, onEdit, onDelete}) => {
     setShowOptionsModal(false);
     onDelete(post);
   };
-
+  
   return(
     <View style={styles.header}>
       <View style={{flexDirection:'row',marginTop:3,}}>
         <TouchableOpacity>
           <Image
             style={styles.image}
-            source={post.profileImg ? {uri: post.profileImg} : require('../../assets/no-profile.png')} />
+            source={profileImg ? {uri: profileImg} : require('../../assets/no-profile.png')} />
         </TouchableOpacity>
 
         <View style={{flexDirection:'row', alignItems: 'center' }}>
@@ -179,39 +202,29 @@ const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentMod
       console.log(error);
     }
   }
+
   return(
-   <View style={styles.postFooter}>
-   <View style={styles.postIcon}>
-    <TouchableOpacity
-	onPress={() => likepress()}
-	style={styles.icon} >
-     {!like?
-      <HeartIcon color='black' size={35} />
-      :
-       <FillHeartIcon color='red' size={35} />
-      }
-    </TouchableOpacity>
-    <TouchableOpacity
-	      onPress={() => setShowCommentModal(true)}
-        style={styles.icon} >
-      <ChatBubbleOvalLeftIcon color='black' size={35} />
-    </TouchableOpacity>
-    <TouchableOpacity style={styles.icon} >
-      <PaperAirplaneIcon
-	color='black'
-	size={35}
-	style={{transform: [{rotate: '-45deg'}],marginTop:-10}} />
-    </TouchableOpacity>
-   </View>
-   <TouchableOpacity
-	onPress={bookmarkBtn}
-	
-	style={{marginRight: 20, padding: 5,}}>
-     {bookmark === true? <FilledBookmarkIcon color='lightblue' size={35} />
-                       : <BookmarkIcon color='black' size={35} />
-      }
-    </TouchableOpacity>
-   </View>
+    <View>
+      <View style={styles.postFooter}>
+        <View style={styles.postIcon}>
+          <TouchableOpacity onPress={likepress} style={styles.icon}>
+            {like ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowCommentModal(true)} style={styles.icon}>
+            <ChatBubbleOvalLeftIcon color='black' size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.icon}>
+            <PaperAirplaneIcon color='black' size={28} style={{transform: [{rotate: '-45deg'}], marginTop: -5}} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => setBookmark(!bookmark)} style={{marginRight: 10}}>
+          <BookmarkIcon color={bookmark ? 'black' : 'black'} size={28} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.likeSection}>
+        <Text style={styles.likeText}>좋아요 {post.likes}개</Text>
+      </View>
+    </View>
   );
 }
 
@@ -232,7 +245,7 @@ const Caption = ({post, showFullCaption, setShowFullCaption}) => {
    return(
     <View style={{marginLeft: 12, marginBottom: 5}}>
       <Text style={{color:'black'}}>
-        <Text style={{fontWeight:'600'}}>{post.nick}  </Text>
+        <Text style={{fontWeight:'800' , fontSize: 16}}>{post.nick} </Text>
         <Text>
           {showFullCaption ? post.caption : post.caption.slice(0, maxLength)}
           {isLongCaption && !showFullCaption && '... '}
@@ -264,6 +277,7 @@ const CommentsPreview = ({comments, setShowCommentModal}) => {
 }
 
 const CommentModal = ({visible, setVisible, comments, setComments, newComment, setNewComment, addComment, post}) => {
+  const user = useSelector(state => state.user.user);
   return (
     <Modal
       animationType="slide"
@@ -284,7 +298,7 @@ const CommentModal = ({visible, setVisible, comments, setComments, newComment, s
             <View key={index} style={styles.commentItem}>
               <Image
                 style={styles.commentAvatar}
-                source={require('../../assets/no-profile.png')}
+                source={user.profileImg ? {uri: user.profileImg} : require('../../assets/no-profile.png')}
               />
               <View style={styles.commentContent}>
                 <Text style={styles.commentUser}>{comment.user}</Text>
@@ -296,7 +310,7 @@ const CommentModal = ({visible, setVisible, comments, setComments, newComment, s
         <View style={styles.commentInputContainer}>
           <Image
             style={styles.commentAvatar}
-            source={require('../../assets/no-profile.png')}
+            source={user.profileImg ? {uri: user.profileImg} : require('../../assets/no-profile.png')}
           />
           <TextInput
             style={styles.commentInput}
@@ -314,28 +328,7 @@ const CommentModal = ({visible, setVisible, comments, setComments, newComment, s
   );
 }
 
-const PostComment = ({ newComment, setNewComment, addComment }) => {
-   return(
-   <>
-   <TouchableOpacity style={styles.comInput}>
-      <Image
-          source={{uri: '../../assets/no-profile.png'}}
-          style={[styles.image, {marginRight:3, width: 25,height: 25,}]}/>
-        <TextInput
-        	placeholder='Add a comment...'
-        	placeholderTextColor='black'
-        	style={{flexDirection:'row', width: '75%', color:'#fff'}}
-        	value={newComment}
-        	onChangeText={setNewComment}
-        	onSubmitEditing={addComment}
-        />
-        <TouchableOpacity onPress={addComment}>
-          <Text style={{color: '#3493D9'}}>Post</Text>
-        </TouchableOpacity>
-     </TouchableOpacity>
-   </>
-   );
-}
+
 
 const styles = StyleSheet.create({
   container: {
@@ -354,8 +347,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 2,
     marginLeft: 8,
-    borderWidth: 2,
-    borderColor:'#FF8501',
   },
   user:{
    color: 'black',
@@ -369,18 +360,26 @@ const styles = StyleSheet.create({
    borderRadius: 10,
   },
   postFooter: {
-   flexDirection: 'row',
-   justifyContent: 'space-between',
-   paddingTop: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   postIcon: {
-   flexDirection: 'row',
-   justifyContent:'center',
-   alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  icon:{
-   marginLeft: 10,
-   padding: 5,
+  icon: {
+    marginRight: 15,
+  },
+  likeSection: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
+  },
+  likeText: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: 'black',
   },
   likes: {
    padding:3,
