@@ -173,6 +173,11 @@ const  App = () => {
 							<Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
 							<Stack.Screen name="Status" component={Status} />
 							<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
+              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
 						</>
 					)}
 					<Stack.Screen name="Signup" component={SignupForm} />
@@ -183,54 +188,6 @@ const  App = () => {
 		</Provider>
 	);
 }
-
-const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          {!isAuthenticated ? (
-            <>
-              <Stack.Screen name="Login">
-                {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
-              </Stack.Screen>
-              <Stack.Screen name="Signup" component={SignupForm} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
-              <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
-              <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
-              <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
-              <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
-              <Stack.Screen name="UserVerificationSummary">
-                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
-              </Stack.Screen>
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-              <Stack.Screen name="Activity" component={ActivityScreen} />
-              <Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
-              <Stack.Screen name="Status" component={Status} />
-              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-              <Stack.Screen name="Chat" component={ChatScreen} />
-              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
-              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
-              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
-              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </Provider>
-  );
-
-// 여기서 부터 expo 알림 설정 ----------------------------------------
-
 
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
@@ -283,7 +240,6 @@ async function registerForPushNotificationsAsync() {
   return token;
 
 }
-//   여기까지 expo 알림 설정 ----------------------------------------
 
 const styles = StyleSheet.create({
   debugContainer: {
