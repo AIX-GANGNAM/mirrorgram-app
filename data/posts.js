@@ -1,4 +1,4 @@
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import app from '../firebaseConfig';
 
@@ -13,7 +13,7 @@ export const POSTS = async (currentUserUid) => {
 
   try {
     const postsRef = collection(db, 'feeds');
-    const q = query(postsRef, where('userId', '==', currentUserUid));
+    const q = query(postsRef, where('userId', '==', currentUserUid) , orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
     const posts = [];
@@ -22,6 +22,7 @@ export const POSTS = async (currentUserUid) => {
     });
 
     console.log('필터링된 게시물:', posts);
+
     return posts;
   } catch (error) {
     console.error('게시물 가져오기 오류:', error);
