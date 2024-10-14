@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
 import { useSelector } from 'react-redux';
+
 import Header from '../components/home/Header';
 import Stories from '../components/home/Stories';
 import Post from '../components/home/Post';
@@ -34,25 +36,81 @@ const HomeScreen = () => {
 
   const keyExtractor = useCallback((item) => item.id.toString(), []);
 
+
   return (
     <SafeAreaView style={styles.container}>
       <Header />
       <ScrollView>
         <Stories />
+
       {isLoading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
         posts.map((post) => <Post key={post.id} post={post} />)
       )}
       </ScrollView>
+
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+
     backgroundColor: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  modalContent: {
+    backgroundColor: '#FFF5E6', // 웜톤 배경색
+    padding: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    height: '40%', // 모달 크기 증가
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#8B4513', // 웜톤 제목 색상
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 30,
+    textAlign: 'center',
+    color: '#A0522D', // 웜톤 텍스트 색상
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  button: {
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D2691E', // 웜톤 버튼 테두리 색상
+    width: '48%',
+  },
+  buttonText: {
+    color: '#D2691E', // 웜톤 버튼 텍스트 색상
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  primaryButton: {
+    backgroundColor: '#D2691E', // 웜톤 주 버튼 배경색
+  },
+  primaryButtonText: {
+    color: 'white',
   },
 });
 
