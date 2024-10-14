@@ -10,7 +10,7 @@ export const userImg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEA
 
 
 
-const Post = ({post }) => {
+const Post = ({post}) => {
    const [comment, setComment] = useState(false);
    const [like, setLike] = useState(false);
 

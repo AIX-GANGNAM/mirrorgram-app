@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect , useState} from 'react';
 import { SafeAreaView, View, KeyboardAvoidingView, Text, StyleSheet, ScrollView, BackHandler, Alert } from 'react-native';
 
 import Header from '../components/home/Header';
@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 
 const HomeScreen = () => {
 
+  console.log('home 화면 확인해보자');
 
   useEffect(() => {
           const backAction = () => {
@@ -31,13 +32,25 @@ const HomeScreen = () => {
           return () => backHandler.remove();
         }, []);
 
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const posts = await POSTS();
+
+      console.log('post 값을 혹인해보자',posts);
+      setPosts(posts);
+    };
+    fetchPosts();
+  }, [POSTS]);
+
   return(
    <SafeAreaView style={styles.container}>
      <Header />
      <ScrollView>
      <Stories />
        {
-	POSTS.map((post, index) => (
+	posts.map((post, index) => (
           <Post post={post} key={index} />
 	))}
      </ScrollView>
