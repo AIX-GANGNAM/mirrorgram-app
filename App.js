@@ -54,8 +54,6 @@ const  App = () => {
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
-
-
   
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
@@ -88,8 +86,8 @@ const  App = () => {
 				 headerShown: false,  				
   				tabBarHideOnKeyboard: true,
   				tabBarStyle: {
-  					height: 50,	
-  					backgroundColor: 'black'
+  			  height: 80,
+          backgroundColor: 'white'
   				},
   				
   				tabBarIcon: ({style, focused, size, color}) => {
@@ -98,7 +96,7 @@ const  App = () => {
   						iconName= focused? "home-sharp" : "home-outline";
   						size= focused? size + 4 : size + 2;
   					}else if(route.name === "Search"){
-  						iconName= focused? "search" : "ios-search-outline";
+  						iconName= focused? "search" : "search-outline";
   						size= focused? size + 4  : size+2  ;
   					}else if(route.name === "NewPost"){
   						iconName= focused? "add-circle-outline" : "add-circle-outline";
@@ -130,7 +128,7 @@ const  App = () => {
   				 		       		borderColor: 'skyblue',
   				 		      		 borderRadius: 50,
   				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='white' />
+  				 		    <Ionicons name="add-circle-outline" size={50} color='black' />
   				 	     </TouchableOpacity>
   				 	     );
   				 	   },
@@ -234,7 +232,7 @@ async function registerForPushNotificationsAsync() {
       token = `${e}`;
     }
   } else {
-    alert('Must use physical device for Push Notifications');
+    // alert('Must use physical device for Push Notifications');
   }
 
   return token;

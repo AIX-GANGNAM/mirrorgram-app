@@ -7,6 +7,7 @@ import Header from '../components/home/Header';
 import Stories from '../components/home/Stories';
 import Post from '../components/home/Post';
 import { POSTS } from '../data/posts';
+import ProfileHighlights from '../components/profile/ProfileHighlights';
 
 const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
@@ -41,8 +42,8 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       <Header />
       <ScrollView>
-        <Stories />
-
+        {/* <Stories /> */}
+        <ProfileHighlights />
       {isLoading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (

@@ -9,7 +9,7 @@ import ProfileGallery from '../components/profile/ProfileGallery';
 
 const ProfileScreen = () => {
   const user = useSelector((state) => state.user.user);
-  console.log(user);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
