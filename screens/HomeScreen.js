@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, BackHandler, TouchableOpacity, Modal, Animated } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, BackHandler, TouchableOpacity, Modal, Animated, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import Header from '../components/home/Header';
@@ -14,6 +14,7 @@ const HomeScreen = () => {
   const user = useSelector(state => state.user.user);
   const [isModalVisible, setModalVisible] = useState(false);
   const [slideAnimation] = useState(new Animated.Value(0));
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     if (!user.profile.mbti) {
@@ -25,7 +26,6 @@ const HomeScreen = () => {
       }).start();
     }
   }, [user, slideAnimation]);
-
 
   useEffect(() => {
     const backAction = () => {
@@ -48,6 +48,15 @@ const HomeScreen = () => {
     return () => backHandler.remove();
   }, []);
 
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const fetchedPosts = await POSTS();
+      console.log('post 값을 확인해보자', fetchedPosts);
+      setPosts(fetchedPosts);
+    };
+    fetchPosts();
+  }, []);
+
   const handleLater = () => {
     Animated.timing(slideAnimation, {
       toValue: 0,
@@ -66,7 +75,7 @@ const HomeScreen = () => {
       <Header />
       <ScrollView>
         <Stories />
-        {POSTS.map((post, index) => (
+        {posts.map((post, index) => (
           <Post post={post} key={index} />
         ))}
       </ScrollView>
@@ -89,7 +98,6 @@ const HomeScreen = () => {
                   },
                 ],
               },
-
             ]}
           >
             <Text style={styles.modalTitle}>추가 정보 입력</Text>
@@ -108,30 +116,6 @@ const HomeScreen = () => {
         </View>
       </Modal>
     </SafeAreaView>
-
-  const [posts, setPosts] = useState([]);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      const posts = await POSTS();
-
-      console.log('post 값을 혹인해보자',posts);
-      setPosts(posts);
-    };
-    fetchPosts();
-  }, [POSTS]);
-
-  return(
-   <SafeAreaView style={styles.container}>
-     <Header />
-     <ScrollView>
-     <Stories />
-       {
-	posts.map((post, index) => (
-          <Post post={post} key={index} />
-	))}
-     </ScrollView>
-   </SafeAreaView>
   );
 }
 
