@@ -10,7 +10,7 @@ const AddNewPost = () => {
 
    return(
    <View style={styles.mainContainer}>
-     <Header />
+     <Header/>
      <FormikPostUploader />
    </View>
    );

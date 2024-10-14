@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert ,FlatList,RefreshControl} from 'react-native';
 import { useSelector } from 'react-redux';
+import {useFocusEffect} from '@react-navigation/native';
 
 import Header from '../components/home/Header';
 import Stories from '../components/home/Stories';
@@ -11,7 +12,25 @@ import { POSTS } from '../data/posts';
 const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const user = useSelector((state) => state.user.user);
+
+  // const onRefresh = useCallback(() => {
+  //   setRefreshing(true);
+  //   fetchPosts().then(() => setRefreshing(false));
+  // }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchPosts();
+    setRefreshing(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts();
+    }, [])
+  );
 
   const fetchPosts = useCallback(async () => {
     if (user && user.uid) {
@@ -39,16 +58,16 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header />
-      <ScrollView>
-        <Stories />
-
-      {isLoading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : (
-        posts.map((post) => <Post key={post.id} post={post} />)
-      )}
-      </ScrollView>
+      <Header/>
+      <Stories/>
+      <FlatList
+        data={posts}
+        renderItem={({ item }) => <Post post={item} />}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      />
 
     </SafeAreaView>
   );

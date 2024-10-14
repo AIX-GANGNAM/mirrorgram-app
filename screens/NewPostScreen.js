@@ -69,7 +69,7 @@ const NewPostScreen = ({ navigation }) => {
 
       const uuid = generateUUID();
       const storage = getStorage();
-      const storageRef = ref(storage, `feeds/${user.uid}/${uuid}`);
+      const storageRef = ref(storage, `${user.uid}/feeds/${uuid}`);
 
       const uploadTask = uploadBytesResumable(storageRef, blob);
 
