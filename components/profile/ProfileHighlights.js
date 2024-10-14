@@ -1,15 +1,21 @@
 import React from 'react';
 import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileHighlights = () => {
+  const navigation = useNavigation();
   const highlights = [
-    { id: 1, title: '기쁜놈', image: 'https://img1.daumcdn.net/thumb/R1280x0/?fname=http://t1.daumcdn.net/brunch/service/user/gI8/image/nl4J4OCc7QyIoC8rBK8Fn1kYVCc.jpg' },
-    { id: 2, title: '화남놈', image: 'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/201506/28/htm_20150628083828504.jpg' },
-    { id: 3, title: '까칠이', image: 'https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75' },
-    { id: 4, title: '슬픔', image: 'https://d3ihz389yobwks.cloudfront.net/1597427709625898634218810800.jpg' },
-    { id: 5, title: '선비', image: 'https://img.newspim.com/news/2017/01/31/1701311632536400.jpg' },
+    { id: 1, title: '기쁜놈', persona: 'Joy',  image: 'https://img1.daumcdn.net/thumb/R1280x0/?fname=http://t1.daumcdn.net/brunch/service/user/gI8/image/nl4J4OCc7QyIoC8rBK8Fn1kYVCc.jpg' },
+    { id: 2, title: '화남놈', persona: 'Anger', image: 'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/201506/28/htm_20150628083828504.jpg' },
+    { id: 3, title: '까칠이', persona: 'Disgust', image: 'https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75' },
+    { id: 4, title: '슬픔', persona: 'Sadness', image: 'https://d3ihz389yobwks.cloudfront.net/1597427709625898634218810800.jpg' },
+    { id: 5, title: '선비', persona: 'Fear', image: 'https://img.newspim.com/news/2017/01/31/1701311632536400.jpg' },
   ];
+
+  const handleHighlightPress = (highlight) => {
+    navigation.navigate('Chat', { highlightTitle: highlight.title, highlightImage: highlight.image, persona: highlight.persona });
+  };
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
@@ -20,7 +26,11 @@ const ProfileHighlights = () => {
         <Text style={styles.highlightText}>New</Text>
       </TouchableOpacity>
       {highlights.map((highlight) => (
-        <TouchableOpacity key={highlight.id} style={styles.highlightItem}>
+        <TouchableOpacity 
+          key={highlight.id} 
+          style={styles.highlightItem}
+          onPress={() => handleHighlightPress(highlight)}
+        >
           <View style={styles.highlightImageContainer}>
             <Image source={{ uri: highlight.image }} style={styles.highlightImage} />
           </View>
