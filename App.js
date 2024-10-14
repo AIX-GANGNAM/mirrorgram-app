@@ -32,6 +32,12 @@ import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
 import UserVerificationSummary from './components/auth/UserVerificationSummary.js';
 
+import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
+import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
+import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
+import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
+
+import ChatScreen from './screens/ChatScreen';
 
 import { Provider } from 'react-redux';
 import store from './store';
@@ -145,6 +151,11 @@ const App = () => {
               <Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
               <Stack.Screen name="Status" component={Status} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
+              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
             </>
           )}
         </Stack.Navigator>
