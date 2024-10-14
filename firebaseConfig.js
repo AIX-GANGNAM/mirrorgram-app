@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getAnalytics } from "firebase/analytics";
 import {
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
@@ -23,6 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const analytics = getAnalytics(app);
 
 const createUserProfile = async (user, additionalData) => {
   if (!user) return;
@@ -48,5 +50,5 @@ const createUserProfile = async (user, additionalData) => {
   return userRef;
 };
 
-export { auth, db, createUserProfile };
+export { auth, db,analytics, createUserProfile };
 export default app;
