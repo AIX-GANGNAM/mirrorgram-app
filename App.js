@@ -24,21 +24,53 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
-import UserVerificationStep4 from './components/auth/UserVerificationStep4.js';
-import UserVerificationStep3 from './components/auth/UserVerificationStep3.js';
-import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
-import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
-import UserVerificationSummary from './components/auth/UserVerificationSummary.js';
+
 
 
 import { Provider } from 'react-redux';
 import store from './store';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true ,
+  }),
+});
+
 
 const  App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   // const Stack = createStackNavigator();
   const [ isAuthenticated, setIsAuthenticated ] = useState(false);
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState(false);
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+
+  
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => {
+      if (token) setExpoPushToken(token);
+      console.log("토큰 값 : ", token);
+    });
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+      console.log("알림정보 : ", notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
   
 
   const BottomTabScreen = () => {
@@ -118,6 +150,7 @@ const  App = () => {
 	return(
 		<Provider store={store}>
 			<NavigationContainer>
+        <Text>Expo Push Token: {expoPushToken}</Text>
 				<Stack.Navigator
 					screenOptions={{
 						headerShown: false,
@@ -189,7 +222,6 @@ async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
-      console.log("토큰 값 :",token);
     } catch (e) {
       token = `${e}`;
     }
