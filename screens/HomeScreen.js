@@ -1,130 +1,64 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, BackHandler, TouchableOpacity, Modal, Animated, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
+import React, { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
+import { useSelector } from 'react-redux';
 
 import Header from '../components/home/Header';
 import Stories from '../components/home/Stories';
 import Post from '../components/home/Post';
 import { POSTS } from '../data/posts';
-import { Platform } from 'react-native';
-import { useSelector } from 'react-redux';
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
-  const user = useSelector(state => state.user.user);
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [slideAnimation] = useState(new Animated.Value(0));
   const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const user = useSelector((state) => state.user.user);
 
-  useEffect(() => {
-    if (!user.profile.mbti) {
-      setModalVisible(true);
-      Animated.timing(slideAnimation, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+  const fetchPosts = useCallback(async () => {
+    if (user && user.uid) {
+      try {
+        setIsLoading(true);
+        const fetchedPosts = await POSTS(user.uid);
+        setPosts(fetchedPosts);
+      } catch (error) {
+        console.error('포스트 데이터 가져오기 실패:', error);
+        Alert.alert('오류', '포스트를 불러오는 데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [user, slideAnimation]);
+  }, [user]);
 
   useEffect(() => {
-    const backAction = () => {
-      Alert.alert('잠깐!', '정말로 앱을 종료하시겠습니까?', [
-        {
-          text: '취소',
-          onPress: () => null,
-          style: 'cancel',
-        },
-        { text: '예', onPress: () => BackHandler.exitApp() },
-      ]);
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
-    );
-
-    return () => backHandler.remove();
-  }, []);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      const fetchedPosts = await POSTS();
-      console.log('post 값을 확인해보자', fetchedPosts);
-      setPosts(fetchedPosts);
-    };
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
-  const handleLater = () => {
-    Animated.timing(slideAnimation, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => setModalVisible(false));
-  };
+  const renderItem = useCallback(({ item }) => <Post post={item} />, []);
 
-  const handleInputNow = () => {
-    handleLater();
-    navigation.navigate('UserInfoStep1');
-  };
+  const keyExtractor = useCallback((item) => item.id.toString(), []);
+
 
   return (
     <SafeAreaView style={styles.container}>
       <Header />
       <ScrollView>
         <Stories />
-        {posts.map((post, index) => (
-          <Post post={post} key={index} />
-        ))}
+
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        posts.map((post) => <Post key={post.id} post={post} />)
+      )}
       </ScrollView>
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="none"
-      >
-        <View style={styles.modalOverlay}>
-          <Animated.View 
-            style={[
-              styles.modalContent,
-              {
-                transform: [
-                  {
-                    translateY: slideAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [300, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text style={styles.modalTitle}>추가 정보 입력</Text>
-            <Text style={styles.modalText}>
-              추가 정보를 입력해주세요! 입력하면 페르소나가 더욱 사용자와의 대화를 자세하게 합니다.
-            </Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={handleLater}>
-                <Text style={styles.buttonText}>나중에</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleInputNow}>
-                <Text style={[styles.buttonText, styles.primaryButtonText]}>지금 입력</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
+
     </SafeAreaView>
   );
 }
 
-export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 0 : 25,
+
     backgroundColor: '#fff',
   },
   modalOverlay: {
@@ -179,3 +113,5 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+
+export default HomeScreen;
