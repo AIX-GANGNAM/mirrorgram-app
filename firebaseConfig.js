@@ -9,7 +9,7 @@ import {
 } from '@env';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: FIREBASE_API_KEY,
@@ -23,7 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
+const storage = getStorage(app);
 const createUserProfile = async (user, additionalData) => {
   if (!user) return;
 
@@ -49,5 +49,5 @@ const createUserProfile = async (user, additionalData) => {
   return userRef;
 };
 
-export { auth, db, createUserProfile };
+export { auth, db, createUserProfile, storage };
 export default app;

@@ -4,25 +4,20 @@ import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useSelector } from 'react-redux';
+import { getStorage, ref , uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getFirestore, addDoc, collection } from 'firebase/firestore';
+
+
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
 
-  // const takePicture = async () => {
-  //   const { status } = await Camera.requestPermissionsAsync();
-  //   if (status === 'granted') {
-  //     const result = await ImagePicker.launchCameraAsync({
-  //       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  //       allowsEditing: true,
-  //       aspect: [4, 3],
-  //       quality: 1,
-  //     });
+  const [isLoading, setIsLoading] = useState(false);
+  const user = useSelector((state) => state.user.user);
 
-  //     if (!result.cancelled) {
-  //       setImage(result.uri);
-  //     }
-  //   }
-  // };
+  console.log('user', user);
+
 
   const takePicture = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -40,19 +35,6 @@ const NewPostScreen = ({ navigation }) => {
     }
   };
 
-  // const pickImage = async () => {
-  //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  //     allowsEditing: true,
-  //     aspect: [4, 3],
-  //     quality: 1,
-  //   });
-
-  //   if (!result.cancelled) {
-  //     setImage(result.uri);
-  //   }
-  // };
-
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -66,15 +48,68 @@ const NewPostScreen = ({ navigation }) => {
     }
   };
 
-  const handlePost = () => {
-    // 여기에 포스트 업로드 로직을 구현합니다.
-    console.log('Image:', image);
-    console.log('Caption:', caption);
-    // 포스트 업로드 후 홈 화면으로 이동
-    
-    setCaption('');
-    setImage(null); 
-    navigation.navigate('Home');
+  function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  const handlePost = async () => {
+    if (!image) {
+      alert('이미지를 선택해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(image);
+      const blob = await response.blob();
+
+      const uuid = generateUUID();
+      const storage = getStorage();
+      const storageRef = ref(storage, `feeds/${user.uid}/${uuid}`);
+
+      const uploadTask = uploadBytesResumable(storageRef, blob);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
+        },
+        (error) => {
+          console.error('Upload error:', error);
+          setIsLoading(false);
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          const post = {
+            id: uuid,
+            image: downloadURL,
+            caption: caption,
+            likes: 0,
+            comments: [],
+            createdAt: new Date(),
+            userId: user.uid,
+          };
+
+          const db = getFirestore();
+          await addDoc(collection(db, 'feeds'), post);
+
+          console.log('포스트 업로드 완료');
+          setCaption('');
+          setImage(null);
+          setIsLoading(false);
+          navigation.navigate('Home');
+        }
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      setIsLoading(false);
+      alert('포스트 업로드에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   return (
