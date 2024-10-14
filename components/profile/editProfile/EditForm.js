@@ -1,65 +1,74 @@
-import React, { useState } from 'react';
-import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView, Platform, Modal } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personality, onSave }) => {
-  const [newName, setNewName] = useState(name || '');
-  const [newUserName, setNewUserName] = useState(userName || '');
-  const [newProfileImg, setNewProfileImg] = useState(profileImg || '');
-  const [newBirthdate, setNewBirthdate] = useState(birthdate ? new Date(birthdate) : new Date());
-  const [newPhone, setNewPhone] = useState(phone || '');
-  const [newMbti, setNewMbti] = useState(mbti || '');
-  const [newPersonality, setNewPersonality] = useState(personality || '');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date(newBirthdate));
+const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave }) => {
+  const [formData, setFormData] = useState({
+    name: name || '',
+    userId: userId || '',
+    profileImg: profileImg || '',
+    birthdate: birthdate || '',
+    phone: phone || '',
+    mbti: mbti || '',
+    personality: personality || '',
+  });
 
-  const handleDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || tempDate;
-    setTempDate(currentDate);
-  };
+  useEffect(() => {
+    console.log('Current form data:', formData);
+  }, [formData]);
 
-  const confirmDate = () => {
-    setNewBirthdate(tempDate);
-    setShowDatePicker(false);
+  const handleChange = (field, value) => {
+    setFormData(prevData => {
+      const newData = { ...prevData, [field]: value };
+      onSave(newData);
+      return newData;
+    });
   };
 
   const handlePhoneChange = (text) => {
     const cleaned = text.replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{0,4})(\d{0,4})$/);
     if (match) {
-      setNewPhone(`${match[1]}${match[2] ? '-' : ''}${match[2]}${match[3] ? '-' : ''}${match[3]}`);
+      setFormData(prevData => {
+        const newData = { ...prevData, phone: `${match[1]}${match[2] ? '-' : ''}${match[2]}${match[3] ? '-' : ''}${match[3]}` };
+        onSave(newData);
+        return newData;
+      });
     } else {
-      setNewPhone(cleaned);
+      setFormData(prevData => {
+        const newData = { ...prevData, phone: cleaned };
+        onSave(newData);
+        return newData;
+      });
     }
   };
 
-  const handleSave = () => {
-    onSave({
-      name: newName,
-      userName: newUserName,
-      profileImg: newProfileImg,
-      birthdate: newBirthdate.toISOString(),
-      phone: newPhone,
-      mbti: newMbti,
-      personality: newPersonality,
+  const formatDate = (text) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    let formatted = '';
+    if (cleaned.length > 0) {
+      formatted += cleaned.substr(0, 4);
+      if (cleaned.length > 4) {
+        formatted += '-' + cleaned.substr(4, 2);
+        if (cleaned.length > 6) {
+          formatted += '-' + cleaned.substr(6, 2);
+        }
+      }
+    }
+    return formatted;
+  };
+
+  const handleDateChange = (text) => {
+    setFormData(prevData => {
+      const newData = { ...prevData, birthdate: formatDate(text) };
+      onSave(newData);
+      return newData;
     });
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="close-outline" size={28} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로필 수정</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Ionicons name="checkmark" size={28} color="#3897f0" />
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.profileImageContainer}>
-        <Image source={{ uri: newProfileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
+        <Image source={{ uri: profileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
         <TouchableOpacity style={styles.changePhotoButton}>
           <Text style={styles.changePhotoText}>프로필 사진 변경</Text>
         </TouchableOpacity>
@@ -70,38 +79,42 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
           <Text style={styles.label}>이름</Text>
           <TextInput
             style={styles.input}
-            value={newName}
-            onChangeText={setNewName}
+            value={formData.name}
+            onChangeText={(text) => handleChange('name', text)}
             placeholder="이름"
             placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>사용자 이름</Text>
+          <Text style={styles.label}>사용자 ID</Text>
           <TextInput
             style={styles.input}
-            value={newUserName}
-            onChangeText={setNewUserName}
-            placeholder="사용자 이름"
+            value={formData.userId}
+            onChangeText={(text) => handleChange('userId', text)}
+            placeholder="사용자 ID"
             placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>생년월일</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-            <Text style={styles.dateText}>
-              {newBirthdate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </Text>
-          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={formData.birthdate}
+            onChangeText={handleDateChange}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            maxLength={10}
+          />
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>전화번호</Text>
           <TextInput
             style={styles.input}
-            value={newPhone}
+            value={formData.phone}
             onChangeText={handlePhoneChange}
             placeholder="전화번호"
             placeholderTextColor="#999"
@@ -113,8 +126,8 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
           <Text style={styles.label}>MBTI</Text>
           <TextInput
             style={styles.input}
-            value={newMbti}
-            onChangeText={setNewMbti}
+            value={formData.mbti}
+            onChangeText={(text) => handleChange('mbti', text)}
             placeholder="MBTI"
             placeholderTextColor="#999"
           />
@@ -124,41 +137,13 @@ const EditForm = ({ name, userName, profileImg, birthdate, phone, mbti, personal
           <Text style={styles.label}>성격</Text>
           <TextInput
             style={styles.input}
-            value={newPersonality}
-            onChangeText={setNewPersonality}
+            value={formData.personality}
+            onChangeText={(text) => handleChange('personality', text)}
             placeholder="성격"
             placeholderTextColor="#999"
           />
         </View>
       </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showDatePicker}
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>생년월일 선택</Text>
-            <DateTimePicker
-              value={tempDate}
-              mode="date"
-              display="spinner"
-              onChange={handleDateChange}
-              style={styles.datePicker}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDate} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>확인</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 };
@@ -167,18 +152,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#dbdbdb',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   profileImageContainer: {
     alignItems: 'center',
@@ -213,43 +186,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#dbdbdb',
     paddingVertical: 10,
     fontSize: 16,
-  },
-  dateText: {
-    fontSize: 16,
     color: '#262626',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  datePicker: {
-    height: 200,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  modalButton: {
-    padding: 10,
-  },
-  modalButtonText: {
-    color: '#3897f0',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

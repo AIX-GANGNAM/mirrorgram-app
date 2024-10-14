@@ -40,6 +40,7 @@ const createUserProfile = async (user, additionalData) => {
       await setDoc(userRef, {
         email,
         createdAt,
+        uid : user.uid,
         ...additionalData
       });
     } catch (error) {

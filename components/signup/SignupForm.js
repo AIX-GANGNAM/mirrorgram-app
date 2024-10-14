@@ -60,7 +60,8 @@ const SignupForm = () => {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       await createUserProfile(user, { displayName: email.split('@')[0] });
       alert('회원가입이 완료되었습니다.');
-      navigation.navigate('UserVerification');
+      // 여기서 UserVerificationStep1으로 네비게이션을 변경합니다.
+      navigation.navigate('UserVerificationStep1');
     } catch (error) {
       console.error(error);
       let errorMessage = '회원가입 중 오류가 발생했습니다.';

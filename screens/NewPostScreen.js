@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -116,7 +116,8 @@ const NewPostScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    paddingTop: Platform.OS==='ios'? 40 : 0,
+    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
