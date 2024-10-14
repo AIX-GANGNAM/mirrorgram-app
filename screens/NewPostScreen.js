@@ -3,11 +3,10 @@ import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform } 
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useSelector } from 'react-redux';
-import { getStorage, ref , uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
-
+import axios from 'axios'; // Axios import 추가
 
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
@@ -91,13 +90,23 @@ const NewPostScreen = ({ navigation }) => {
             caption: caption,
             likes: 0,
             comments: [],
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
             userId: user.uid,
             nick: user.userId
           };
 
           const db = getFirestore();
+          
+          // Firestore에 데이터 추가
           await addDoc(collection(db, 'feeds'), post);
+
+          // /feed 엔드포인트로 Axios 요청
+          try {
+            await axios.post('https://localhost:3000/feed', post);
+            console.log('API 요청 성공');
+          } catch (error) {
+            console.error('API 요청 실패:', error);
+          }
 
           console.log('포스트 업로드 완료');
           setCaption('');

@@ -24,7 +24,7 @@ const SearchScreen = () => {
 	   		showsVerticalScrollIndicator={false} >
 	     <SearchContent data={getData}/>
 	   <TouchableOpacity style={{marginTop: 10, alignItems: 'center', justifyContent:'center'}}>
-		<Ionicons name="ios-add-circle-outline" size={50} color="gray" />
+		<Ionicons name="add-circle-outline" size={50} color="gray" />
 	   </TouchableOpacity>
 	   </ScrollView>
 
