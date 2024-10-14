@@ -93,6 +93,7 @@ const NewPostScreen = ({ navigation }) => {
             comments: [],
             createdAt: new Date(),
             userId: user.uid,
+            nick: user.userId
           };
 
           const db = getFirestore();
