@@ -26,6 +26,7 @@ const HomeScreen = () => {
     }
   }, [user, slideAnimation]);
 
+
   useEffect(() => {
     const backAction = () => {
       Alert.alert('잠깐!', '정말로 앱을 종료하시겠습니까?', [
@@ -88,6 +89,7 @@ const HomeScreen = () => {
                   },
                 ],
               },
+
             ]}
           >
             <Text style={styles.modalTitle}>추가 정보 입력</Text>
@@ -106,6 +108,30 @@ const HomeScreen = () => {
         </View>
       </Modal>
     </SafeAreaView>
+
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const posts = await POSTS();
+
+      console.log('post 값을 혹인해보자',posts);
+      setPosts(posts);
+    };
+    fetchPosts();
+  }, [POSTS]);
+
+  return(
+   <SafeAreaView style={styles.container}>
+     <Header />
+     <ScrollView>
+     <Stories />
+       {
+	posts.map((post, index) => (
+          <Post post={post} key={index} />
+	))}
+     </ScrollView>
+   </SafeAreaView>
   );
 }
 

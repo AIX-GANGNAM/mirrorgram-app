@@ -1,7 +1,25 @@
 {
   "expo": {
-    "name": "instagram",
-    "slug": "instagram",
+    "plugins": [
+         [
+           "expo-notifications",
+           {
+             "icon": "./local/path/to/your/notification-icon.png",
+             "color": "#ffffff",
+             "defaultChannel": "default",
+             "sounds": ["./local/path/to/your/notification-sound.wav"]
+           }
+         ]
+       ],
+    "scheme": "mirrorgram",
+    
+    "extra": {
+      "eas": {
+        "projectId": "aa3da179-a05f-42f0-bedc-7ba213227d1d"
+      }
+    },
+    "name": "mirrorgram",
+    "slug": "mirrorgram",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo/Mirrorgram-icon.png",
@@ -23,14 +41,16 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo/Mirrorgram-icon.png",
         "backgroundColor": "#000"
-      }
+      },
+      "package": "com.himedia.mirrorgram"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "mirrorgram"
+    "owner": "cstangga"
   }
 }
