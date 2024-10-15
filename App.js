@@ -7,7 +7,8 @@ import 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
+import { TextInput } from 'react-native';
 
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
@@ -24,7 +25,6 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
-
 
 import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
 import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
@@ -44,11 +44,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
 const  App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
-  // const Stack = createStackNavigator();
   const [ isAuthenticated, setIsAuthenticated ] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState(false);
@@ -78,77 +76,36 @@ const  App = () => {
   
 
   const BottomTabScreen = () => {
-
-  	return(
-  		<Tab.Navigator
-  			screenOptions={({route}) => ({
-  				tabBarShowLabel: false,
-				 headerShown: false,  				
-  				tabBarHideOnKeyboard: true,
-  				tabBarStyle: {
-  			  height: 80,
-          backgroundColor: 'white'
-  				},
-  				
-  				tabBarIcon: ({style, focused, size, color}) => {
-  					let iconName;
-  					if(route.name === 'Home'){
-  						iconName= focused? "home-sharp" : "home-outline";
-  						size= focused? size + 4 : size + 2;
-  					}else if(route.name === "Search"){
-  						iconName= focused? "search" : "search-outline";
-  						size= focused? size + 4  : size+2  ;
-  					}else if(route.name === "NewPost"){
-  						iconName= focused? "add-circle-outline" : "add-circle-outline";
-  						size= focused? size+4  : size + 2  ;
-  					}else if(route.name === "Reels"){
-  						iconName= focused? "film" : "film-outline";
-  						size= focused? size +4 : size+2 ;
-  					}else if(route.name === "Profile"){
-  						iconName= focused? "person-circle" : "person-circle-outline";
-  						size= focused? size + 4 : size + 2;
-  					}
-
-  					return <Ionicons style={focused? styles.active : null} name={iconName} size={size} color={color} />;
-  				}
-  			})}>
-  			<Tab.Screen name="Home" component={HomeScreen} />
-  			<Tab.Screen name="Search" component={SearchScreen} />
-  			<Tab.Screen
-  				name="NewPost"
-  				component={NewPostScreen}
-  				options={{
-  				   tabBarButton: ({ state, route, ...rest }) => {
-  				 	   return (
-  				   	     <TouchableOpacity
-  				 	          {...rest}
-  				 	           style={{
-  				 	           		alignItems: 'center',
-  				 		       		borderBottomWidth: rest.focused ? 5 : 0,
-  				 		       		borderColor: 'skyblue',
-  				 		      		 borderRadius: 50,
-  				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='black' marginTop={15}/>
-  				 	     </TouchableOpacity>
-  				 	     );
-  				 	   },
-  				 }}/>
-  			<Tab.Screen name="Reels" component={ReelsScreen} />
-  			<Tab.Screen
-  				name="Profile"
-  				component={ProfileScreen}
-  				 options={{
-	    			tabBarIcon: ({ color, size, focused}) => (
-	     				<View style={[focused? styles.active : null,{padding:5}]}>
-              				{focused?  <Image style={[styles.userCircle,{borderWidth:3,}]} source={{uri: userImg }} />
-                			  : <Image style={styles.userCircle} source={{uri: userImg }} />
-	     					}
-	     			 	</View>
-          			),
-         		}}
-  				/>
-  		</Tab.Navigator>
-  	);
+    return (
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Search') {
+              iconName = focused ? 'search' : 'search-outline';
+            } else if (route.name === 'NewPost') {
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            } else if (route.name === 'Reels') {
+              iconName = focused ? 'videocam' : 'videocam-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: 'tomato',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Search" component={SearchScreen} />
+        <Tab.Screen name="NewPost" component={NewPostScreen} />
+        <Tab.Screen name="Reels" component={ReelsScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
+    );
   }
 
 	return(
