@@ -268,6 +268,7 @@ const PostImage = ({post}) => {
 const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentModal}) => {
   const [bookmark, setBookmark] = useState(false);
   const db = getFirestore();
+  const user = useSelector(state => state.user.user);
 
   const bookmarkBtn = () => {
   		const message = bookmark ? 'Bookmark removed' : 'Bookmark added succesfully';
@@ -284,27 +285,31 @@ const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentMod
   const likepress = async () => {
     const postDoc = doc(db, 'feeds', post.folderId);
 
-    try{
-      if(like){
+    try {
+      if (post.likes.includes(user.uid)) {
+        // 좋아요 취소
+        await updateDoc(postDoc, {
+          likes: arrayRemove(user.uid)
+        });
         setLike(false);
-        post.likes = post.likes - 1;
-        await updateDoc(postDoc, { likes: post.likes });
-      }else{
+      } else {
+        // 좋아요 추가
+        await updateDoc(postDoc, {
+          likes: arrayUnion(user.uid)
+        });
         setLike(true);
-        post.likes = post.likes + 1;
-        await updateDoc(postDoc, { likes: post.likes });
       }
-    }catch(error){
+    } catch (error) {
       console.log(error);
     }
   }
 
-  return(
+  return (
     <View>
       <View style={styles.postFooter}>
         <View style={styles.postIcon}>
           <TouchableOpacity onPress={likepress} style={styles.icon}>
-            {like ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
+            {post.likes.includes(user.uid) ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowCommentModal(true)} style={styles.icon}>
             <ChatBubbleOvalLeftIcon color='black' size={28} />
