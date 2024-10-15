@@ -83,7 +83,6 @@ const  App = () => {
   
 
   const BottomTabScreen = () => {
-
     return (
       <Tab.Navigator
         screenOptions={({ route }) => ({
@@ -102,44 +101,21 @@ const  App = () => {
             }
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: 'tomato',
-          tabBarInactiveTintColor: 'gray',
-          headerShown: false,
+          tabBarActiveTintColor: 'tomato', // 활성화된 탭 색상
+          tabBarInactiveTintColor: 'gray', // 비활성화된 탭 색상
+          headerShown: false, // 헤더 숨김
         })}
       >
-  			<Tab.Screen name="Home" component={HomeScreen} />
-  			<Tab.Screen name="Search" component={SearchScreen} />
-  			<Tab.Screen
-  				name="NewPost"
-  				component={NewPostScreen}
-  				options={{
-  				   tabBarButton: ({ state, route, ...rest }) => {
-  				 	   return (
-  				   	     <TouchableOpacity
-  				 	          {...rest}
-  				 	           style={{ marginBottom: 10, alignItems: 'center', justifyContent: 'center' }} >
-  				 		   <Ionicons name="add-circle-outline" size={50} color="gray" />
-  				 	     </TouchableOpacity>
-  				 	     );
-  				 	   },
-  				 }}/>
-  			<Tab.Screen name="Generate" component={ReelsScreen} />
-  			<Tab.Screen
-  				name="Profile"
-  				component={ProfileScreen}
-  				 options={{
-	    			tabBarIcon: ({ color, size, focused}) => (
-	     				<View style={[focused? styles.active : null,{padding:5}]}>
-              				{focused?  <Image style={[styles.userCircle,{borderWidth:3,}]} source={{uri: userImg }} />
-                			  : <Image style={styles.userCircle} source={{uri: userImg }} />
-	     					}
-	     			 	</View>
-          			),
-         		}}
-  				/>
-  		</Tab.Navigator>
-  	);
-  }
+
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Search" component={SearchScreen} />
+        <Tab.Screen name="NewPost" component={NewPostScreen} />
+        <Tab.Screen name="Reels" component={ReelsScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
+    );
+  };
+
 
 	return(
 		<Provider store={store}>
