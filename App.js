@@ -143,11 +143,13 @@ const  App = () => {
 					<Stack.Screen name="Signup" component={SignupForm} />
 					<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
 					<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationSummary" component={UserVerificationSummary} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationSummary">
+                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
 				</Stack.Navigator>
 			</NavigationContainer>
 		</Provider>
