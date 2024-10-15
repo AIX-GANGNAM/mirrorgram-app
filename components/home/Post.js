@@ -1,184 +1,139 @@
+// 필요한 라이브러리 및 컴포넌트 임포트
 import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, Text, Image, ToastAndroid, Modal, Platform } from 'react-native';
 import { Divider } from 'react-native-elements';
 import { HeartIcon as FillHeartIcon, BookmarkIcon as FilledBookmarkIcon, EllipsisVerticalIcon, CheckBadgeIcon, XMarkIcon } from 'react-native-heroicons/solid';
-import { HeartIcon, BookmarkIcon, ChatBubbleOvalLeftIcon, PaperAirplaneIcon, } from 'react-native-heroicons/outline';
-import React, {useState, useEffect } from 'react';
-import ImageViewer from 'react-native-image-zoom-viewer';
-import {getFirestore, doc, updateDoc ,collection, query, where, getDocs, orderBy, getDoc , addDoc, setDoc, arrayUnion, arrayRemove} from 'firebase/firestore';
-import {  PencilIcon, TrashIcon } from 'react-native-heroicons/outline';
+import { HeartIcon, BookmarkIcon, ChatBubbleOvalLeftIcon, PaperAirplaneIcon, PencilIcon, TrashIcon } from 'react-native-heroicons/outline';
+import React, { useState, useEffect } from 'react';
+import { getFirestore, doc, updateDoc, addDoc, getDoc, collection } from 'firebase/firestore';
 import { useSelector } from 'react-redux';
-import { getRandomBytes } from 'expo-random';
-import { HeartIcon as HeartOutline } from 'react-native-heroicons/outline';
-import { HeartIcon as HeartSolid } from 'react-native-heroicons/solid';
-import { ChevronDownIcon, ChevronUpIcon } from 'react-native-heroicons/outline';
+import { useNavigation } from '@react-navigation/native';
+import { HeartIcon as HeartOutline, HeartIcon as HeartSolid, ChevronDownIcon, ChevronUpIcon } from 'react-native-heroicons/outline';
 
+const Post = ({ post, refreshPosts }) => {
+  if (!post) {
+    return null; // post가 undefined인 경우 처리
+  }
 
+  const comments = post.comments || [];
+  const [comment, setComment] = useState(false);
+  const [like, setLike] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [showFullCaption, setShowFullCaption] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const user = useSelector((state) => state.user.user);
+  const db = getFirestore();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
+  useEffect(() => {
+    if (Array.isArray(post.likes)) {
+      setIsLiked(post.likes.includes(user.uid));
+      setLikeCount(post.likes.length);
+    } else {
+      setIsLiked(false);
+      setLikeCount(0);
+    }
+  }, [post.likes, user.uid]);
 
-const Post = ({post, refreshPosts}) => {
-   // post가 undefined인 경우를 처리
-   if (!post) {
-     return null; // 또는 로딩 인디케이터나 에러 메시지를 표시할 수 있습니다.
-   }
+  const handleLike = async () => {
+    try {
+      const postRef = doc(db, 'feeds', post.folderId);
+      let updatedLikes = Array.isArray(post.likes) ? [...post.likes] : [];
 
-   // post.comments가 없으면 빈 배열로 초기화
-   const comments = post.comments || [];
+      if (isLiked) {
+        updatedLikes = updatedLikes.filter((id) => id !== user.uid);
+      } else {
+        updatedLikes.push(user.uid);
+      }
 
-   const [comment, setComment] = useState(false);
-   const [like, setLike] = useState(false);
-   const [newComment, setNewComment] = useState('');
-   const [showFullCaption, setShowFullCaption] = useState(false);
-   const [showCommentModal, setShowCommentModal] = useState(false);
+      await updateDoc(postRef, { likes: updatedLikes });
+      setIsLiked(!isLiked);
+      setLikeCount(updatedLikes.length);
+    } catch (error) {
+      console.error('좋아요 처리 중 오류 발생:', error);
+    }
+  };
 
-   const user = useSelector(state => state.user.user);
-   const db = getFirestore();
-   const [isLiked, setIsLiked] = useState(false);
-   const [likeCount, setLikeCount] = useState(0);
-
-   useEffect(() => {
-     if (Array.isArray(post.likes)) {
-       setIsLiked(post.likes.includes(user.uid));
-       setLikeCount(post.likes.length);
-     } else {
-       setIsLiked(false);
-       setLikeCount(0);
-     }
-   }, [post.likes, user.uid]);
-
-   const handleLike = async () => {
-     try {
-       const postRef = doc(db, 'feeds', post.folderId);
-       let updatedLikes = Array.isArray(post.likes) ? [...post.likes] : [];
-
-       if (isLiked) {
-         updatedLikes = updatedLikes.filter(id => id !== user.uid);
-       } else {
-         updatedLikes.push(user.uid);
-       }
-
-       await updateDoc(postRef, { likes: updatedLikes });
-
-       setIsLiked(!isLiked);
-       setLikeCount(updatedLikes.length);
-     } catch (error) {
-       console.error('좋아요 처리 중 류 발생:', error);
-     }
-   };
-
-   const addComment = async () => {
-
-      console.log('newComment 확인중우우우우우', newComment);
-
-
-     if (newComment.trim() !== '') {
-      
-
-       // 여기에 Firebase에 댓글을 저장하는 로직을 추가할 수 있습니다.
-
-       const commentInfo ={
+  const addComment = async () => {
+    if (newComment.trim() !== '') {
+      const commentInfo = {
         nick: user.userId,
         content: newComment,
         profileImg: user.profileImg,
         uid: user.uid,
         createdAt: new Date().toISOString(),
         subCommentId: [],
-       }
+      };
 
-       const db = getFirestore();
-       const docRef = await addDoc(collection(db, 'subcomment'), commentInfo);
-       console.log('docRef', docRef.id);
-       
-       console.log('postadfasdf', post.folderId);
-       
-       const db2 = getFirestore();
-       const postRef = doc(db2, 'feeds', post.folderId);
-
-       console.log('postRef', postRef);
-       const newCommentData = {
-          subCommentId: docRef.id,
-          nick: user.userId,
-          content: newComment,
-          profileImg: user.profileImg,
-          uid: user.uid,
-          createdAt: new Date().toISOString(),
-       }
-       const docSnap = await getDoc(postRef);
-      if (docSnap.exists()) {
-        const currentData = docSnap.data();
-        const currentSubComments = currentData.subCommentId || [];
-        const newSubComments = [...currentSubComments, newCommentData];
-
-        // Firestore 업데이트
-        await updateDoc(postRef, { subCommentId: newSubComments });
-
-        // 로컬 상태 업데이트
-        setComments(prevComments => [...prevComments, newCommentData]);
-        setNewComment('');
-
-        console.log('댓글이 성공적으로 추가되었습니다.');
-      } else {
-        console.log('문서가 존재하지 않습니다.');
+      try {
+        const docRef = await addDoc(collection(db, 'subcomment'), commentInfo);
+        const postRef = doc(db, 'feeds', post.folderId);
+        const docSnap = await getDoc(postRef);
+        if (docSnap.exists()) {
+          const currentData = docSnap.data();
+          const currentSubComments = currentData.subCommentId || [];
+          const newSubComments = [...currentSubComments, commentInfo];
+          await updateDoc(postRef, { subCommentId: newSubComments });
+          setNewComment('');
+        } else {
+          console.log('문서가 존재하지 않습니다.');
+        }
+      } catch (error) {
+        console.error('댓글 추가 중 오류 발생:', error);
       }
+    }
+  };
 
-      
-       
-     }
-   };
+  const today = new Date();
+  const postDate = new Date(post.createdAt);
+  const diffTime = Math.abs(today.getTime() - postDate.getTime());
+  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-   const today = new Date();
-   const postDate = new Date(post.createdAt);
-   const diffTime = Math.abs(today.getTime() - postDate.getTime());
-   const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  let timeAgo;
+  if (diffDays === 0) {
+    if (diffHours === 0) {
+      timeAgo = '방금 전';
+    } else {
+      timeAgo = `${diffHours}시간 전`;
+    }
+  } else if (diffDays === 1) {
+    timeAgo = '어제';
+  } else {
+    timeAgo = `${diffDays}일 전`;
+  }
 
-   let timeAgo;
-   if (diffDays === 0) {
-     if (diffHours === 0) {
-       timeAgo = '방금 전';
-     } else {
-       timeAgo = `${diffHours}시간 전`;
-     }
-   } else if (diffDays === 1) {
-     timeAgo = '어제';
-   } else {
-     timeAgo = `${diffDays}일 전`;
-   }
+  return (
+    <View style={styles.container}>
+      <Divider width={1} orientation="vertical" />
+      <PostHeader post={post} />
+      <ScrollView>
+        <PostImage post={post} />
+      </ScrollView>
+      <PostFooter post={post} setShowCommentModal={setShowCommentModal} commentCount={comments.length} />
+      <Likes like={like} post={post} />
+      <Caption post={post} showFullCaption={showFullCaption} setShowFullCaption={setShowFullCaption} />
+      <CommentsPreview commentCount={comments.length} setShowCommentModal={setShowCommentModal} />
+      <CommentModal
+        visible={showCommentModal}
+        setVisible={setShowCommentModal}
+        newComment={newComment}
+        setNewComment={setNewComment}
+        addComment={addComment}
+        post={post}
+      />
+      {comment && (
+        <PostComment newComment={newComment} setNewComment={setNewComment} addComment={addComment} />
+      )}
+      <Text style={[styles.Texts, { fontWeight: 'bold', color: 'gray', padding: 4 }]}> {timeAgo} </Text>
+    </View>
+  );
+};
 
-
-   
-
-   return(
-     <View style={styles.container}>
-	<Divider width={1} orientation='vertical'/>
-	<PostHeader post={post} />
-	<ScrollView>
-	  <PostImage post={post} />
-	</ScrollView>
-	<PostFooter 
-	  post={post} 
-	  setShowCommentModal={setShowCommentModal} 
-	  commentCount={comments.length}
-	/>
-	<Likes like={like} post={post} />
-	<Caption post={post} showFullCaption={showFullCaption} setShowFullCaption={setShowFullCaption} />
-	<CommentsPreview commentCount={comments.length} setShowCommentModal={setShowCommentModal} />
-	<CommentModal visible={showCommentModal} setVisible={setShowCommentModal} newComment={newComment} setNewComment={setNewComment} addComment={addComment} post={post} />
-	{ comment &&
- 	<PostComment
-  newComment={newComment}
-  setNewComment={setNewComment}
-  addComment={addComment}
-/>
-	}
-	<Text style={[styles.Texts, {fontWeight:'bold',color:'gray', padding:4}]} > {timeAgo} </Text>
-     </View>
-   );
-}
-
-
-const PostHeader = ({post, onEdit, onDelete}) => {
+const PostHeader = ({ post, onEdit, onDelete }) => {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [profileImg, setProfileImg] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -192,7 +147,7 @@ const PostHeader = ({post, onEdit, onDelete}) => {
           setProfileImg(userData.profileImg);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error('사용자 데이터 가져오기 오류:', error);
       }
     };
 
@@ -209,25 +164,35 @@ const PostHeader = ({post, onEdit, onDelete}) => {
     onDelete(post);
   };
 
+  const navigateToFriendProfile = () => {
+    navigation.push('FriendProfile', {
+      name: post.nick,
+      accountName: post.nick,
+      profileImage: profileImg || post.profile_picture,
+      post: post.posts,
+      followers: post.followers,
+      following: post.following,
+    });
+  };
 
-  
-  return(
+  return (
     <View style={styles.header}>
-      <View style={{flexDirection:'row',marginTop:3,}}>
-        <TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity onPress={navigateToFriendProfile}>
           <Image
             style={styles.image}
-            source={profileImg ? {uri: profileImg} : require('../../assets/no-profile.png')} />
+            source={profileImg ? { uri: profileImg } : require('../../assets/no-profile.png')}
+          />
         </TouchableOpacity>
-
-        <View style={{flexDirection:'row', alignItems: 'center' }}>
-          <Text style={styles.user}> {post.nick} </Text>
+        <View style={{ marginLeft: 1 }}>
+          <TouchableOpacity onPress={navigateToFriendProfile}>
+            <Text style={styles.user}>{post.nick}</Text>
+          </TouchableOpacity>
         </View>
       </View>
       <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
-        <EllipsisVerticalIcon color='black' size={30} />
+        <EllipsisVerticalIcon color="black" size={30} />
       </TouchableOpacity>
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -237,15 +202,15 @@ const PostHeader = ({post, onEdit, onDelete}) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.modalOption} onPress={handleEdit}>
-              <PencilIcon color='#0095F6' size={24} />
-              <Text style={[styles.modalOptionText, {color: '#0095F6'}]}>피드 수정</Text>
+              <PencilIcon color="#0095F6" size={24} />
+              <Text style={[styles.modalOptionText, { color: '#0095F6' }]}>피드 수정</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalOption} onPress={handleDelete}>
-              <TrashIcon color='red' size={24} />
-              <Text style={[styles.modalOptionText, {color: 'red'}]}>피드 삭제</Text>
+              <TrashIcon color="red" size={24} />
+              <Text style={[styles.modalOptionText, { color: 'red' }]}>피드 삭제</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalOption} onPress={() => setShowOptionsModal(false)}>
-              <XMarkIcon color='black' size={24} />
+              <XMarkIcon color="black" size={24} />
               <Text style={styles.modalOptionText}>뒤로가기</Text>
             </TouchableOpacity>
           </View>
@@ -253,7 +218,8 @@ const PostHeader = ({post, onEdit, onDelete}) => {
       </Modal>
     </View>
   );
-}
+};
+
 
 
 const PostImage = ({post}) => {

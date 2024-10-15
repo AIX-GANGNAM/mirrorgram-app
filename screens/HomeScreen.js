@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert ,FlatList,RefreshControl, Platform} from 'react-native';
+import { SafeAreaView, StyleSheet, View, FlatList, RefreshControl, Platform, Alert } from 'react-native';
 import { useSelector } from 'react-redux';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 import Header from '../components/home/Header';
-import Stories from '../components/home/Stories';
+import ProfileHighlights from '../components/profile/ProfileHighlights';
 import Post from '../components/home/Post';
 import { POSTS } from '../data/posts';
-import ProfileHighlights from '../components/profile/ProfileHighlights';
 
 const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
@@ -15,10 +14,7 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const user = useSelector((state) => state.user.user);
 
-  // const onRefresh = useCallback(() => {
-  //   setRefreshing(true);
-  //   fetchPosts().then(() => setRefreshing(false));
-  // }, []);
+  const navigation = useNavigation();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -51,40 +47,34 @@ const HomeScreen = () => {
     fetchPosts();
   }, [fetchPosts]);
 
-  const renderItem = useCallback(({ item }) => <Post post={item} />, []);
-
-  const keyExtractor = useCallback((item) => item.id.toString(), []);
-
-
   return (
     <SafeAreaView style={styles.container}>
-      <Header/>
-      {/* <Stories/> */}
+      <Header />
       <View style={styles.highlightsContainer}>
-        <ProfileHighlights/>
+        <ProfileHighlights />
       </View>
       <FlatList
         data={posts}
-        renderItem={({ item }) => <Post post={item} />}
+        renderItem={({ item }) => (
+          <Post post={item} navigation={navigation} /> // navigation을 전달합니다.
+        )}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
-
     </SafeAreaView>
   );
-}
-
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS==='ios'? 0 : 25,
+    paddingTop: Platform.OS === 'ios' ? 0 : 25,
     backgroundColor: '#fff',
   },
   highlightsContainer: {
-    marginBottom: 0, // ProfileHighlights 아래에 여백 추가
+    marginBottom: 0,
   },
   modalOverlay: {
     flex: 1,
@@ -92,26 +82,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalContent: {
-    backgroundColor: '#FFF5E6', // 웜톤 배경색
+    backgroundColor: '#FFF5E6',
     padding: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     borderColor: 'rgba(0, 0, 0, 0.1)',
-    height: '40%', // 모달 크기 증가
+    height: '40%',
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#8B4513', // 웜톤 제목 색상
+    color: '#8B4513',
   },
   modalText: {
     fontSize: 18,
     marginBottom: 30,
     textAlign: 'center',
-    color: '#A0522D', // 웜톤 텍스트 색상
+    color: '#A0522D',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -122,17 +112,17 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#D2691E', // 웜톤 버튼 테두리 색상
+    borderColor: '#D2691E',
     width: '48%',
   },
   buttonText: {
-    color: '#D2691E', // 웜톤 버튼 텍스트 색상
+    color: '#D2691E',
     textAlign: 'center',
     fontSize: 18,
     fontWeight: 'bold',
   },
   primaryButton: {
-    backgroundColor: '#D2691E', // 웜톤 주 버튼 배경색
+    backgroundColor: '#D2691E',
   },
   primaryButtonText: {
     color: 'white',
