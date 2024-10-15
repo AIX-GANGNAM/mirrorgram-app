@@ -1,18 +1,37 @@
-import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, Text, Image, ToastAndroid, } from 'react-native';
+import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, Text, Image, ToastAndroid, Modal } from 'react-native';
 import { Divider } from 'react-native-elements';
-import { HeartIcon as FillHeartIcon, BookmarkIcon as FilledBookmarkIcon, EllipsisVerticalIcon, CheckBadgeIcon } from 'react-native-heroicons/solid';
+import { HeartIcon as FillHeartIcon, BookmarkIcon as FilledBookmarkIcon, EllipsisVerticalIcon, CheckBadgeIcon, XMarkIcon } from 'react-native-heroicons/solid';
 import { HeartIcon, BookmarkIcon, ChatBubbleOvalLeftIcon, PaperAirplaneIcon, } from 'react-native-heroicons/outline';
-import React, {useState, } from 'react';
+import React, {useState, useEffect } from 'react';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import {getFirestore, doc, updateDoc} from 'firebase/firestore';
+import {getFirestore, doc, updateDoc ,collection, query, where, getDocs, orderBy, getDoc } from 'firebase/firestore';
+import {  PencilIcon, TrashIcon } from 'react-native-heroicons/outline';
+import { useSelector } from 'react-redux';
+
+
 
 
 const Post = ({post}) => {
    const [comment, setComment] = useState(false);
    const [like, setLike] = useState(false);
+   const [comments, setComments] = useState(post.comments || []);
+   const [newComment, setNewComment] = useState('');
+   const [showFullCaption, setShowFullCaption] = useState(false);
+   const [showCommentModal, setShowCommentModal] = useState(false);
+
+   const addComment = () => {
+     if (newComment.trim() !== '') {
+       const updatedComments = [...comments, { user: 'CurrentUser', comment: newComment, likes: 0 }];
+       setComments(updatedComments);
+       setNewComment('');
+
+       // 여기에 Firebase에 댓글을 저장하는 로직을 추가할 수 있습니다.
+       
+     }
+   };
 
    const today = new Date();
-   const postDate = new Date(post.createdAt.seconds * 1000 + post.createdAt.nanoseconds / 1000000);
+   const postDate = new Date(post.createdAt);
    const diffTime = Math.abs(today.getTime() - postDate.getTime());
    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -30,6 +49,9 @@ const Post = ({post}) => {
      timeAgo = `${diffDays}일 전`;
    }
 
+
+   
+
    return(
      <View style={styles.container}>
 	<Divider width={1} orientation='vertical'/>
@@ -37,12 +59,17 @@ const Post = ({post}) => {
 	<ScrollView>
 	  <PostImage post={post} />
 	</ScrollView>
-	<PostFooter like={like} setLike={setLike} comment={comment} setComment={setComment} post={post} />
+	<PostFooter like={like} setLike={setLike} comment={comment} setComment={setComment} post={post} setShowCommentModal={setShowCommentModal} />
 	<Likes like={like}  post={post} />
-	<Caption post={post} />
-	<Comments post={post.comments} />
+	<Caption post={post} showFullCaption={showFullCaption} setShowFullCaption={setShowFullCaption} />
+	<CommentsPreview comments={comments} setShowCommentModal={setShowCommentModal} />
+	<CommentModal visible={showCommentModal} setVisible={setShowCommentModal} comments={comments} setComments={setComments} newComment={newComment} setNewComment={setNewComment} addComment={addComment} post={post} />
 	{ comment &&
- 	<PostComment  />
+ 	<PostComment
+  newComment={newComment}
+  setNewComment={setNewComment}
+  addComment={addComment}
+/>
 	}
 	<Text style={[styles.Texts, {fontWeight:'bold',color:'gray', padding:4}]} > {timeAgo} </Text>
      </View>
@@ -50,34 +77,81 @@ const Post = ({post}) => {
 }
 
 
-const PostHeader = ({post}) => {
+const PostHeader = ({post, onEdit, onDelete}) => {
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [profileImg, setProfileImg] = useState(null);
 
-   return(
-   
-     <View style={styles.header}>
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = post.userId;
+      const db = getFirestore();
+      const postDoc = doc(db, 'users', user);
+      try {
+        const docSnap = await getDoc(postDoc);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setProfileImg(userData.profileImg);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [post.userId]);
+
+  const handleEdit = () => {
+    setShowOptionsModal(false);
+    onEdit(post);
+  };
+
+  const handleDelete = () => {
+    setShowOptionsModal(false);
+    onDelete(post);
+  };
+  
+  return(
+    <View style={styles.header}>
       <View style={{flexDirection:'row',marginTop:3,}}>
-       <TouchableOpacity>
-	  <Image
-	    style={styles.image}
-	    source={post.profileImg ? {uri: post.profileImg} : require('../../assets/no-profile.png')} />
-       	</TouchableOpacity>
-	<View style={{marginLeft: 1,}}>
- 	 <View style={{flexDirection:'row', alignItems: 'center'}}>
-	  <Text style={styles.user} > {post.nick } </Text>
-	      {post.followers >= 700 ?
-	       	<Text style={{paddingBottom: -8}}>
-	          <CheckBadgeIcon color='blue' size={20} />
-		</Text>
-	       : null}
-	  </View>
-	  <Text style={{color:'gray', fontSize:13, fontWeight:'bold'}} > Followers {post.followers} </Text>
-	</View>
+        <TouchableOpacity>
+          <Image
+            style={styles.image}
+            source={profileImg ? {uri: profileImg} : require('../../assets/no-profile.png')} />
+        </TouchableOpacity>
+
+        <View style={{flexDirection:'row', alignItems: 'center' }}>
+          <Text style={styles.user}> {post.nick} </Text>
+        </View>
       </View>
-       <TouchableOpacity>
-	 <EllipsisVerticalIcon color='black' size={30} />
-       </TouchableOpacity>
-     </View>
-   );
+      <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
+        <EllipsisVerticalIcon color='black' size={30} />
+      </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showOptionsModal}
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalOption} onPress={handleEdit}>
+              <PencilIcon color='#0095F6' size={24} />
+              <Text style={[styles.modalOptionText, {color: '#0095F6'}]}>피드 수정</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption} onPress={handleDelete}>
+              <TrashIcon color='red' size={24} />
+              <Text style={[styles.modalOptionText, {color: 'red'}]}>피드 삭제</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption} onPress={() => setShowOptionsModal(false)}>
+              <XMarkIcon color='black' size={24} />
+              <Text style={styles.modalOptionText}>뒤로가기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 }
 
 
@@ -95,7 +169,7 @@ const PostImage = ({post}) => {
 
 
 
-const PostFooter = ({post, like, setLike, comment, setComment}) => {
+const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentModal}) => {
   const [bookmark, setBookmark] = useState(false);
   const db = getFirestore();
 
@@ -112,53 +186,45 @@ const PostFooter = ({post, like, setLike, comment, setComment}) => {
   }
 
   const likepress = async () => {
-    const postDoc = doc(db, 'feeds', post.id);
+    const postDoc = doc(db, 'feeds', post.folderId);
 
     try{
       if(like){
         setLike(false);
         post.likes = post.likes - 1;
+        await updateDoc(postDoc, { likes: post.likes });
       }else{
         setLike(true);
         post.likes = post.likes + 1;
+        await updateDoc(postDoc, { likes: post.likes });
       }
     }catch(error){
       console.log(error);
     }
   }
+
   return(
-   <View style={styles.postFooter}>
-   <View style={styles.postIcon}>
-    <TouchableOpacity
-	onPress={() => likepress()}
-	style={styles.icon} >
-     {!like?
-      <HeartIcon color='black' size={35} />
-      :
-       <FillHeartIcon color='red' size={35} />
-      }
-    </TouchableOpacity>
-    <TouchableOpacity
-	onPress={() => setComment(!comment)}
-        style={styles.icon} >
-      <ChatBubbleOvalLeftIcon color='black' size={35} />
-    </TouchableOpacity>
-    <TouchableOpacity style={styles.icon} >
-      <PaperAirplaneIcon
-	color='black'
-	size={35}
-	style={{transform: [{rotate: '-45deg'}],marginTop:-10}} />
-    </TouchableOpacity>
-   </View>
-   <TouchableOpacity
-	onPress={bookmarkBtn}
-	
-	style={{marginRight: 20, padding: 5,}}>
-     {bookmark === true? <FilledBookmarkIcon color='lightblue' size={35} />
-                       : <BookmarkIcon color='black' size={35} />
-      }
-    </TouchableOpacity>
-   </View>
+    <View>
+      <View style={styles.postFooter}>
+        <View style={styles.postIcon}>
+          <TouchableOpacity onPress={likepress} style={styles.icon}>
+            {like ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowCommentModal(true)} style={styles.icon}>
+            <ChatBubbleOvalLeftIcon color='black' size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.icon}>
+            <PaperAirplaneIcon color='black' size={28} style={{transform: [{rotate: '-45deg'}], marginTop: -5}} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => setBookmark(!bookmark)} style={{marginRight: 10}}>
+          <BookmarkIcon color={bookmark ? 'black' : 'black'} size={28} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.likeSection}>
+        <Text style={styles.likeText}>좋아요 {post.likes}개</Text>
+      </View>
+    </View>
   );
 }
 
@@ -172,89 +238,100 @@ const Likes = ({post ,like}) => {
    );
 }
 
-const Caption = ({post}) => {
+const Caption = ({post, showFullCaption, setShowFullCaption}) => {
+   const maxLength = 100;
+   const isLongCaption = post.caption.length > maxLength;
 
    return(
-    <View style={{marginLeft: 12}}>
-      <Text style={{color:'black'}} >
-        <Text style={{fontWeight:'600'}} > {post.nick}  </Text>
-        <Text > {post.caption} </Text>
+    <View style={{marginLeft: 12, marginBottom: 5}}>
+      <Text style={{color:'black'}}>
+        <Text style={{fontWeight:'800' , fontSize: 16}}>{post.nick} </Text>
+        <Text>
+          {showFullCaption ? post.caption : post.caption.slice(0, maxLength)}
+          {isLongCaption && !showFullCaption && '... '}
+        </Text>
       </Text>
+      {isLongCaption && (
+        <TouchableOpacity onPress={() => setShowFullCaption(!showFullCaption)}>
+          <Text style={{color: 'gray', marginTop: 2}}>
+            {showFullCaption ? '접기' : '더 보기'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
    );
 }
 
-const Comments = ({post}) => {
-  const [comLikes, setComLikes] = useState(post.map(() =>false));
-
-  const handleLike = (index) => {
-    const newLikes = [...comLikes];
-    newLikes[index] = !newLikes[index];
-    setComLikes(newLikes);
-  };
-
-   return(
-   <>
-   {post.length >= 1 ?
-   <Text style={{color:'gray', padding:4,marginLeft:12}}>
-        View {post.length > 1? 'all' : '' } { post.length } { post.length > 1? 'comments' : 'comment'}
-    </Text>
-    : null
-   }
-   {post.map((comment, index) => (
-    <View key={index} style={styles.comHeader}>
-     <View style={{flexDirection:'row', alignItems: 'center', width: '90%'}}>
-       <Text style={[styles.Texts, {color: 'gray',fontWeight:'600', fontSize:16,}]} >{comment.user} </Text>
-       <Text style={[styles.Texts,{width: '88%'}]} >{comment.comment} </Text>
-     </View>
-     <TouchableOpacity style={{padding:5}} onPress={() => handleLike(index)}>
-     {comLikes[index]?
-      <>
-       <FillHeartIcon color='red' size={26} />
-        <Text style={{
-        		position: 'absolute',
-        		color: '#fff',
-        		bottom: -5,
-        		left: comment.likes >=10? 10 : 13,
-        		fontSize: 12,
-        		fontWeight: '900'
-        		}}>{comment.likes + 1}</Text>
-        </>
-  	  : <>
-        <HeartIcon color='white' size={25} />
-         <Text style={{
-        		position: 'absolute',
-        		color: '#fff',
-        		bottom: -5,
-        		left: comment.likes >=10? 10 : 13,
-        		fontSize: 12,
-        		fontWeight: '900',
-        		}}>{comment.likes}</Text>
-        </>
-      }
-     </TouchableOpacity>
+const CommentsPreview = ({comments, setShowCommentModal}) => {
+  return (
+    <View style={styles.commentsPreview}>
+      {comments.length > 0 && (
+        <TouchableOpacity onPress={() => setShowCommentModal(true)}>
+          <Text style={styles.viewAllComments}>
+            {comments.length === 1 ? '1개의 댓글 보기' : `${comments.length}개의 댓글 모두 보기`}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
-    ))}
-    </>
-   );
+  );
 }
 
-const PostComment = () => {
+const CommentModal = ({visible, setVisible, comments, setComments, newComment, setNewComment, addComment, post}) => {
+  const user = useSelector(state => state.user.user);
 
-   return(
-   <>
-   <TouchableOpacity style={styles.comInput}>
-      <Image
-          source={{uri: userImg}}
-          style={[styles.image, {marginRight:3, width: 25,height: 25,}]}/>
-        <TextInput
-        	placeholder='Add a comments...'
-        	placeholderTextColor='gray'
-        	style={{flexDirection:'row', width: '88%', color:'#fff', }} />
-     </TouchableOpacity>
-   </>
-   );
+  
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      onRequestClose={() => setVisible(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={() => setVisible(false)}>
+            <XMarkIcon color='black' size={24} />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>댓글</Text>
+          <View style={{width: 24}} />
+        </View>
+        <ScrollView style={styles.commentsList}>
+          {comments.map((comment, index) => (
+            <View key={index} style={styles.commentItem}>
+              <Image
+                style={styles.commentAvatar}
+                source={user.profileImg ? {uri: user.profileImg} : require('../../assets/no-profile.png')}
+              />
+              <View style={styles.commentContent}>
+                <Text style={styles.commentUser}>{comment.user}</Text>
+                <Text style={styles.commentText}>{comment.comment}</Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+        <View style={styles.commentInputContainer}>
+          <Image
+            style={styles.commentAvatar}
+            source={user.profileImg ? {uri: user.profileImg} : require('../../assets/no-profile.png')}
+          />
+          <TextInput
+            style={styles.commentInput}
+            placeholder="댓글 추가..."
+            value={newComment}
+            onChangeText={setNewComment}
+            onSubmitEditing={addComment}
+          />
+          <TouchableOpacity onPress={addComment}>
+            <Text style={styles.postButton}>게시</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -273,11 +350,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 2,
     marginLeft: 8,
-    borderWidth: 2,
-    borderColor:'#FF8501',
   },
   user:{
-   color: 'white',
+   color: 'black',
    fontWeight:'bold',
    fontSize: 16,
   },
@@ -288,18 +363,26 @@ const styles = StyleSheet.create({
    borderRadius: 10,
   },
   postFooter: {
-   flexDirection: 'row',
-   justifyContent: 'space-between',
-   paddingTop: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   postIcon: {
-   flexDirection: 'row',
-   justifyContent:'center',
-   alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  icon:{
-   marginLeft: 10,
-   padding: 5,
+  icon: {
+    marginRight: 15,
+  },
+  likeSection: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
+  },
+  likeText: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: 'black',
   },
   likes: {
    padding:3,
@@ -328,7 +411,103 @@ const styles = StyleSheet.create({
     backgroundColor:'rgba(52,52,52,0.6)',
     marginHorizontal: 5,
   },
+  loadMoreButton: {
+    alignItems: 'center',
+    padding: 10,
+  },
+  loadMoreText: {
+    color: 'gray',
+    fontWeight: '600',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  commentsList: {
+    flex: 1,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentUser: {
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  commentText: {
+    color: '#262626',
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF',
+  },
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+  },
+  postButton: {
+    color: '#0095F6',
+    fontWeight: 'bold',
+  },
+  commentsPreview: {
+    padding: 10,
+  },
+  viewAllComments: {
+    color: 'gray',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  modalOptionText: {
+    marginLeft: 15,
+    fontSize: 16,
+  },
 });
-
 
 export default Post;

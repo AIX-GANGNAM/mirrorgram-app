@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert ,FlatList,RefreshControl} from 'react-native';
+import { SafeAreaView, StyleSheet, ScrollView, View, KeyboardAvoidingView, ActivityIndicator, Alert ,FlatList,RefreshControl, Platform} from 'react-native';
 import { useSelector } from 'react-redux';
 import {useFocusEffect} from '@react-navigation/native';
 
@@ -60,7 +59,10 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header/>
-      <Stories/>
+      {/* <Stories/> */}
+      <View style={styles.highlightsContainer}>
+        <ProfileHighlights/>
+      </View>
       <FlatList
         data={posts}
         renderItem={({ item }) => <Post post={item} />}
@@ -78,8 +80,11 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
+    paddingTop: Platform.OS==='ios'? 0 : 25,
     backgroundColor: '#fff',
+  },
+  highlightsContainer: {
+    marginBottom: 0, // ProfileHighlights 아래에 여백 추가
   },
   modalOverlay: {
     flex: 1,
