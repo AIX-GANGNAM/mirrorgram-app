@@ -95,7 +95,7 @@ const  App = () => {
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
             } else if (route.name === 'Reels') {
-              iconName = focused ? 'videocam' : 'videocam-outline';
+              iconName = focused ? 'color-wand' : 'color-wand-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
             }
@@ -106,6 +106,7 @@ const  App = () => {
           headerShown: false, // 헤더 숨김
         })}
       >
+
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Search" component={SearchScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
@@ -114,6 +115,7 @@ const  App = () => {
       </Tab.Navigator>
     );
   };
+
 
 	return(
 		<Provider store={store}>

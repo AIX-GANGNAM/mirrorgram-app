@@ -127,7 +127,7 @@ export default function ReelsScreen() {
         <ActivityIndicator size="large" color="#0095F6" />
       ) : (
         <TouchableOpacity style={styles.button} onPress={handleButtonPress}>
-          <Text style={styles.buttonText}>친구 꾸며주기</Text>
+          <Text style={styles.buttonText}>새로운 친구 만들기</Text>
         </TouchableOpacity>
       )}
 
