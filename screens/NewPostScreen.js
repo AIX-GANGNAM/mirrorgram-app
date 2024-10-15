@@ -91,11 +91,12 @@ const NewPostScreen = ({ navigation }) => {
             id: uuid,
             image: downloadURL,
             caption: caption,
-            likes: 0,
+            likes: [],
             comments: [],
             createdAt: new Date().toISOString(),
             userId: user.uid,
             nick: user.userId,
+            subCommentId: [],
           };
 
           const db = getFirestore();
