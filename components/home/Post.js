@@ -155,10 +155,6 @@ const Post = ({post, refreshPosts}) => {
 	  <PostImage post={post} />
 	</ScrollView>
 	<PostFooter 
-	  like={like} 
-	  setLike={setLike} 
-	  comment={comment} 
-	  setComment={setComment} 
 	  post={post} 
 	  setShowCommentModal={setShowCommentModal} 
 	  commentCount={comments.length}
@@ -274,9 +270,43 @@ const PostImage = ({post}) => {
 
 
 
-const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentModal, commentCount}) => {
+const PostFooter = ({post, setShowCommentModal, commentCount}) => {
   const [bookmark, setBookmark] = useState(false);
+  const user = useSelector(state => state.user.user);
   const db = getFirestore();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
+  useEffect(() => {
+    if (Array.isArray(post.likes)) {
+      setIsLiked(post.likes.includes(user.uid));
+      setLikeCount(post.likes.length);
+    } else {
+      setIsLiked(false);
+      setLikeCount(0);
+    }
+  }, [post.likes, user.uid]);
+
+  const handleLike = async () => {
+    try {
+      const postRef = doc(db, 'feeds', post.folderId);
+      let updatedLikes = Array.isArray(post.likes) ? [...post.likes] : [];
+
+      if (isLiked) {
+        updatedLikes = updatedLikes.filter(id => id !== user.uid);
+      } else {
+        updatedLikes.push(user.uid);
+      }
+
+      await updateDoc(postRef, { likes: updatedLikes });
+
+      // 로컬 상태 업데이트
+      setIsLiked(!isLiked);
+      setLikeCount(updatedLikes.length);
+    } catch (error) {
+      console.error('좋아요 처리 중 류 발생:', error);
+    }
+  };
 
   const bookmarkBtn = () => {
   		const message = bookmark ? 'Bookmark removed' : 'Bookmark added succesfully';
@@ -290,32 +320,12 @@ const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentMod
   	   );
   }
 
-  const likepress = async () => {
-    const postRef = doc(db, 'feeds', post.folderId);
-
-    try {
-      let updatedLikes = Array.isArray(post.likes) ? [...post.likes] : [];
-      
-      if (like) {
-        updatedLikes = updatedLikes.filter(id => id !== user.uid);
-      } else {
-        updatedLikes.push(user.uid);
-      }
-
-      await updateDoc(postRef, { likes: updatedLikes });
-      setLike(!like);
-      // post 객체를 직접 수정하지 말고, 부모 컴포넌트에서 상태를 업데이트하도록 변경해야 합니다.
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   return(
     <View>
       <View style={styles.postFooter}>
         <View style={styles.postIcon}>
-          <TouchableOpacity onPress={likepress} style={styles.icon}>
-            {like ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
+          <TouchableOpacity onPress={handleLike} style={styles.icon}>
+            {isLiked ? <FillHeartIcon color='red' size={28} /> : <HeartIcon color='black' size={28} />}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowCommentModal(true)} style={styles.icon}>
             <ChatBubbleOvalLeftIcon color='black' size={28} />
@@ -329,8 +339,9 @@ const PostFooter = ({post, like, setLike, comment, setComment, setShowCommentMod
         </TouchableOpacity>
       </View>
       <View style={styles.likeSection}>
-        <Text style={styles.likeText}>좋아요 {post.likes ? post.likes.length : 0}개</Text>
+        <Text style={styles.likeText}>좋아요 {likeCount}개</Text>
       </View>
+      
     </View>
   );
 }
