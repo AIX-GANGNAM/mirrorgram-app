@@ -278,6 +278,9 @@ const CommentsPreview = ({comments, setShowCommentModal}) => {
 
 const CommentModal = ({visible, setVisible, comments, setComments, newComment, setNewComment, addComment, post}) => {
   const user = useSelector(state => state.user.user);
+
+  
+
   return (
     <Modal
       animationType="slide"
