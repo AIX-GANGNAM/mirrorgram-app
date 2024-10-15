@@ -433,7 +433,7 @@ const CommentModal = ({ visible, setVisible, post }) => {
       userId: user.uid,
       nick: user.userId,
       content: newComment,
-      profileImg: user.profileImg,
+      profileImg: user.profileImg || null, // profileImg가 없을 경우 null로 설정
       createdAt: new Date().toISOString(),
       likes: [],
       replies: [],
@@ -448,12 +448,25 @@ const CommentModal = ({ visible, setVisible, post }) => {
         updatedComments = addReplyToComment(comments, replyTo, commentData);
       } else {
         // 새 댓글 추가
-        updatedComments = [...comments, commentData];
+        updatedComments = [...(post.comments || []), commentData];
       }
 
-      await updateDoc(postRef, { comments: updatedComments });
+      // undefined 값을 필터링
+      const filteredComments = updatedComments.map(comment => {
+        const filteredComment = Object.fromEntries(
+          Object.entries(comment).filter(([_, v]) => v !== undefined)
+        );
+        if (filteredComment.replies) {
+          filteredComment.replies = filteredComment.replies.map(reply => 
+            Object.fromEntries(Object.entries(reply).filter(([_, v]) => v !== undefined))
+          );
+        }
+        return filteredComment;
+      });
 
-      setComments(updatedComments);
+      await updateDoc(postRef, { comments: filteredComments });
+
+      setComments(filteredComments);
       setNewComment('');
       setReplyTo(null);
       setReplyToUser('');
