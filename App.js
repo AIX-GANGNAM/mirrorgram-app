@@ -7,7 +7,8 @@ import 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
+import { TextInput } from 'react-native';
 
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
@@ -18,20 +19,26 @@ import LoginScreen from './screens/LoginScreen';
 import ActivityScreen from './screens/ActivityScreen';
 import FriendProfileScreen from './screens/FriendProfileScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
+import ChatScreen from './screens/ChatScreen';
+import ChatListScreen from './screens/ChatListScreen';
+import ChatUserScreen from './screens/ChatUserScreen';
+import Post from './components/home/Post';
 
 import { userImg } from './components/home/Post';
 import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
-
+import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
+import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
+import UserVerificationStep3 from './components/auth/UserVerificationStep3.js';
+import UserVerificationStep4 from './components/auth/UserVerificationStep4.js';
+import UserVerificationSummary from './components/auth/UserVerificationSummary.js';
 
 import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
 import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
 import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
-
-import ChatScreen from './screens/ChatScreen';
 
 import { Provider } from 'react-redux';
 import store from './store';
@@ -44,11 +51,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
 const  App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
-  // const Stack = createStackNavigator();
   const [ isAuthenticated, setIsAuthenticated ] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState(false);
@@ -79,39 +84,29 @@ const  App = () => {
 
   const BottomTabScreen = () => {
 
-  	return(
-  		<Tab.Navigator
-  			screenOptions={({route}) => ({
-  				tabBarShowLabel: false,
-				 headerShown: false,  				
-  				tabBarHideOnKeyboard: true,
-  				tabBarStyle: {
-  			  height: 80,
-          backgroundColor: 'white'
-  				},
-  				
-  				tabBarIcon: ({style, focused, size, color}) => {
-  					let iconName;
-  					if(route.name === 'Home'){
-  						iconName= focused? "home-sharp" : "home-outline";
-  						size= focused? size + 4 : size + 2;
-  					}else if(route.name === "Search"){
-  						iconName= focused? "search" : "search-outline";
-  						size= focused? size + 4  : size+2  ;
-  					}else if(route.name === "NewPost"){
-  						iconName= focused? "add-circle-outline" : "add-circle-outline";
-  						size= focused? size+4  : size + 2  ;
-  					}else if(route.name === "Reels"){
-  						iconName= focused? "film" : "film-outline";
-  						size= focused? size +4 : size+2 ;
-  					}else if(route.name === "Profile"){
-  						iconName= focused? "person-circle" : "person-circle-outline";
-  						size= focused? size + 4 : size + 2;
-  					}
-
-  					return <Ionicons style={focused? styles.active : null} name={iconName} size={size} color={color} />;
-  				}
-  			})}>
+    return (
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Search') {
+              iconName = focused ? 'search' : 'search-outline';
+            } else if (route.name === 'NewPost') {
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            } else if (route.name === 'Reels') {
+              iconName = focused ? 'videocam' : 'videocam-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: 'tomato',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: false,
+        })}
+      >
   			<Tab.Screen name="Home" component={HomeScreen} />
   			<Tab.Screen name="Search" component={SearchScreen} />
   			<Tab.Screen
@@ -122,13 +117,8 @@ const  App = () => {
   				 	   return (
   				   	     <TouchableOpacity
   				 	          {...rest}
-  				 	           style={{
-  				 	           		alignItems: 'center',
-  				 		       		borderBottomWidth: rest.focused ? 5 : 0,
-  				 		       		borderColor: 'skyblue',
-  				 		      		 borderRadius: 50,
-  				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='black' marginTop={15}/>
+  				 	           style={{ marginBottom: 10, alignItems: 'center', justifyContent: 'center' }} >
+  				 		   <Ionicons name="add-circle-outline" size={50} color="gray" />
   				 	     </TouchableOpacity>
   				 	     );
   				 	   },
@@ -168,7 +158,15 @@ const  App = () => {
 						<>
 							<Stack.Screen name="BottomTab" component={BottomTabScreen} />
 							<Stack.Screen name="Activity" component={ActivityScreen} />
-							<Stack.Screen name="FriendProfile" component={FriendProfileScreen} />
+              <Stack.Screen name="Home" component={HomeScreen} />
+							<Stack.Screen 
+								name="FriendProfile" 
+								component={FriendProfileScreen}
+								options={({ route }) => ({ 
+									title: route.params.name,
+									headerShown: true 
+								})}
+							/>
 							<Stack.Screen name="Status" component={Status} />
 							<Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="Chat" component={ChatScreen} />
@@ -176,11 +174,34 @@ const  App = () => {
               <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
               <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
               <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
+              <Stack.Screen 
+                name="ChatList" 
+                component={ChatListScreen} 
+                options={{
+                  headerShown: true,
+                }}
+              />
+              <Stack.Screen 
+                name="ChatUser" 
+                component={ChatUserScreen}
+                options={({ route }) => ({ 
+                  title: route.params.name,
+                  headerShown: true 
+                })}
+              />
+              <Stack.Screen name="Post" component={Post} />
 						</>
 					)}
 					<Stack.Screen name="Signup" component={SignupForm} />
 					<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
 					<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
+					<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationSummary">
+                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
 				</Stack.Navigator>
 			</NavigationContainer>
 		</Provider>

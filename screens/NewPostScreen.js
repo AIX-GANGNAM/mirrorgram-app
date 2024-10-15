@@ -104,13 +104,13 @@ const NewPostScreen = ({ navigation }) => {
           // Firestore에 데이터 추가
           await addDoc(collection(db, 'feeds'), post);
 
-          // /feed 엔드포인트로 Axios 요청
-          try {
-            await axios.post('https://localhost:3000/feed', post);
-            console.log('API 요청 성공');
-          } catch (error) {
-            console.error('API 요청 실패:', error);
-          }
+            // /feed 엔드포인트로 Axios 요청을 비동기적으로 실행
+          axios.post('http://127.0.0.1:8000/feed', post)
+                .then(() => console.log('API 요청 성공'))
+                .catch((error) => console.error('API 요청 실패:', error));
+
+
+    
 
           console.log('포스트 업로드 완료');
           setCaption('');
