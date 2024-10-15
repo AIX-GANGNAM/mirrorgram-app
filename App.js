@@ -96,7 +96,7 @@ const  App = () => {
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
             } else if (route.name === 'Reels') {
-              iconName = focused ? 'videocam' : 'videocam-outline';
+              iconName = focused ? 'color-wand' : 'color-wand-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
             }
@@ -123,7 +123,7 @@ const  App = () => {
   				 	     );
   				 	   },
   				 }}/>
-  			<Tab.Screen name="Reels" component={ReelsScreen} />
+  			<Tab.Screen name="Generate" component={ReelsScreen} />
   			<Tab.Screen
   				name="Profile"
   				component={ProfileScreen}
