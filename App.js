@@ -84,39 +84,29 @@ const  App = () => {
 
   const BottomTabScreen = () => {
 
-  	return(
-  		<Tab.Navigator
-  			screenOptions={({route}) => ({
-  				tabBarShowLabel: false,
-				 headerShown: false,  				
-  				tabBarHideOnKeyboard: true,
-  				tabBarStyle: {
-  			  height: 80,
-          backgroundColor: 'white'
-  				},
-  				
-  				tabBarIcon: ({style, focused, size, color}) => {
-  					let iconName;
-  					if(route.name === 'Home'){
-  						iconName= focused? "home-sharp" : "home-outline";
-  						size= focused? size + 4 : size + 2;
-  					}else if(route.name === "Search"){
-  						iconName= focused? "search" : "search-outline";
-  						size= focused? size + 4  : size+2  ;
-  					}else if(route.name === "NewPost"){
-  						iconName= focused? "add-circle-outline" : "add-circle-outline";
-  						size= focused? size+4  : size + 2  ;
-  					}else if(route.name === "Reels"){
-  						iconName= focused? "film" : "film-outline";
-  						size= focused? size +4 : size+2 ;
-  					}else if(route.name === "Profile"){
-  						iconName= focused? "person-circle" : "person-circle-outline";
-  						size= focused? size + 4 : size + 2;
-  					}
-
-  					return <Ionicons style={focused? styles.active : null} name={iconName} size={size} color={color} />;
-  				}
-  			})}>
+    return (
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Search') {
+              iconName = focused ? 'search' : 'search-outline';
+            } else if (route.name === 'NewPost') {
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            } else if (route.name === 'Reels') {
+              iconName = focused ? 'videocam' : 'videocam-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: 'tomato',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: false,
+        })}
+      >
   			<Tab.Screen name="Home" component={HomeScreen} />
   			<Tab.Screen name="Search" component={SearchScreen} />
   			<Tab.Screen
@@ -127,13 +117,8 @@ const  App = () => {
   				 	   return (
   				   	     <TouchableOpacity
   				 	          {...rest}
-  				 	           style={{
-  				 	           		alignItems: 'center',
-  				 		       		borderBottomWidth: rest.focused ? 5 : 0,
-  				 		       		borderColor: 'skyblue',
-  				 		      		 borderRadius: 50,
-  				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='black' marginTop={15}/>
+  				 	           style={{ marginBottom: 10, alignItems: 'center', justifyContent: 'center' }} >
+  				 		   <Ionicons name="add-circle-outline" size={50} color="gray" />
   				 	     </TouchableOpacity>
   				 	     );
   				 	   },
