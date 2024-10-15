@@ -8,15 +8,17 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
 import axios from 'axios'; // Axios import 추가
 
+
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
 
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.user.user);
 
-  console.log('user', user);
 
+  console.log('user', user)
 
   const takePicture = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -75,6 +77,7 @@ const NewPostScreen = ({ navigation }) => {
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
           console.log('Upload is ' + progress + '% done');
         },
         (error) => {
@@ -92,7 +95,7 @@ const NewPostScreen = ({ navigation }) => {
             comments: [],
             createdAt: new Date().toISOString(),
             userId: user.uid,
-            nick: user.userId
+            nick: user.userId,
           };
 
           const db = getFirestore();
@@ -122,38 +125,60 @@ const NewPostScreen = ({ navigation }) => {
     }
   };
 
+  const Loading = () => {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  };
+
+  const LoadingOverlay = () => (
+    <View style={styles.overlay}>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>업로드 중... {uploadProgress.toFixed(0)}%</Text>
+        <View style={styles.progressBar}>
+          <View style={[styles.progress, { width: `${uploadProgress}%` }]} />
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close-outline" size={30} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>새 게시물</Text>
-        <TouchableOpacity onPress={handlePost}>
-          <Text style={styles.shareText}>공유</Text>
-        </TouchableOpacity>
+    <View style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="close-outline" size={30} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>새 게시물</Text>
+          <TouchableOpacity onPress={handlePost}>
+            <Text style={styles.shareText}>공유</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.imageContainer}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <TouchableOpacity style={styles.button} onPress={takePicture}>
+                <Text style={styles.buttonText}>사진 찍기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={pickImage}>
+                <Text style={styles.buttonText}>갤러리에서 선택</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="문구 입력..."
+          value={caption}
+          onChangeText={setCaption}
+          multiline
+        />
       </View>
-      <View style={styles.imageContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <TouchableOpacity style={styles.button} onPress={takePicture}>
-              <Text style={styles.buttonText}>사진 찍기</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={pickImage}>
-              <Text style={styles.buttonText}>갤러리에서 선택</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="문구 입력..."
-        value={caption}
-        onChangeText={setCaption}
-        multiline
-      />
+      {isLoading && <LoadingOverlay />}
     </View>
   );
 };
@@ -208,6 +233,33 @@ const styles = StyleSheet.create({
   input: {
     padding: 15,
     fontSize: 16,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  progressBar: {
+    width: 200,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  progress: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
   },
 });
 

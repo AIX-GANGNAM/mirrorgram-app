@@ -128,7 +128,7 @@ const  App = () => {
   				 		       		borderColor: 'skyblue',
   				 		      		 borderRadius: 50,
   				 		  		}} >
-  				 		    <Ionicons name="add-circle-outline" size={50} color='black' />
+  				 		    <Ionicons name="add-circle-outline" size={50} color='black' marginTop={15}/>
   				 	     </TouchableOpacity>
   				 	     );
   				 	   },
