@@ -1,4 +1,4 @@
-import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, Text, Image, ToastAndroid, Modal } from 'react-native';
+import { ScrollView, Pressable, TextInput, StyleSheet, TouchableOpacity, View, Text, Image, ToastAndroid, Modal, Platform } from 'react-native';
 import { Divider } from 'react-native-elements';
 import { HeartIcon as FillHeartIcon, BookmarkIcon as FilledBookmarkIcon, EllipsisVerticalIcon, CheckBadgeIcon, XMarkIcon } from 'react-native-heroicons/solid';
 import { HeartIcon, BookmarkIcon, ChatBubbleOvalLeftIcon, PaperAirplaneIcon, } from 'react-native-heroicons/outline';
@@ -279,7 +279,7 @@ const CommentsPreview = ({comments, setShowCommentModal}) => {
 const CommentModal = ({visible, setVisible, comments, setComments, newComment, setNewComment, addComment, post}) => {
   const user = useSelector(state => state.user.user);
 
-  
+
 
   return (
     <Modal
@@ -336,6 +336,7 @@ const CommentModal = ({visible, setVisible, comments, setComments, newComment, s
 const styles = StyleSheet.create({
   container: {
     padding:3,
+    paddingTop: Platform.OS==='ios'? 40 : 0,
     marginBottom: 18,
   },
   header: {
@@ -421,6 +422,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
+    paddingTop: Platform.OS==='ios'? 50 : 0,
     backgroundColor: 'white',
   },
   modalHeader: {
