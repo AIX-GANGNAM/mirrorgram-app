@@ -18,11 +18,8 @@ export const POSTS = async (currentUserUid) => {
 
     const posts = [];
     querySnapshot.forEach((doc) => {
-      console.log('doc', doc.id);
       posts.push({ folderId : doc.id, ...doc.data() });
     });
-
-    console.log('필터링된 게시물:', posts);
 
     return posts;
   } catch (error) {
