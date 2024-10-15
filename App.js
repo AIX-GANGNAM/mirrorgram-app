@@ -25,6 +25,11 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
+import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
+import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
+import UserVerificationStep3 from './components/auth/UserVerificationStep3.js';
+import UserVerificationStep4 from './components/auth/UserVerificationStep4.js';
+import UserVerificationSummary from './components/auth/UserVerificationSummary.js';
 
 import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
 import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
@@ -138,6 +143,11 @@ const  App = () => {
 					<Stack.Screen name="Signup" component={SignupForm} />
 					<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
 					<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
+          <Stack.Screen name="UserVerificationSummary" component={UserVerificationSummary} options={{ headerShown: false }} />
 				</Stack.Navigator>
 			</NavigationContainer>
 		</Provider>
