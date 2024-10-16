@@ -117,7 +117,7 @@ const App = () => {
             }
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: 'tomato',
+          tabBarActiveTintColor: '#5271ff',
           tabBarInactiveTintColor: 'gray',
           headerShown: false,
         })}

@@ -4473,7 +4473,7 @@ expo-random@~14.0.1:
   dependencies:
     base64-js "^1.3.0"
 
-expo-splash-screen@~0.27.6:
+expo-splash-screen@^0.27.6:
   version "0.27.6"
   resolved "https://registry.npmjs.org/expo-splash-screen/-/expo-splash-screen-0.27.6.tgz"
   integrity sha512-joUwZQS48k3VMnucQ0Y8Dle1t1FyIvluQA4kjuPx2x7l2dRrfctbo34ahTnC0p1o2go5oN2iEnSTOElY4wRQHw==
@@ -5956,6 +5956,11 @@ loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
+lottie-react-native@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.npmjs.org/lottie-react-native/-/lottie-react-native-7.0.0.tgz"
+  integrity sha512-RnwacxdB1MKDS/WSX8XFyXw5nxEKF+aLYRzbkQBQY0pZTRF2XYg8zd25D1su1M0TEP0sgWutwN5rweSeCsf8qQ==
+
 lowercase-keys@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/lowercase-keys/-/lowercase-keys-2.0.0.tgz"
@@ -7249,7 +7254,7 @@ react-native-webview@13.8.6:
     escape-string-regexp "2.0.0"
     invariant "2.2.4"
 
-react-native@*, react-native@>=0.50.1, react-native@>=0.57, react-native@>=0.59.0, react-native@0.74.5:
+react-native@*, react-native@>=0.46, react-native@>=0.50.1, react-native@>=0.57, react-native@>=0.59.0, react-native@0.74.5:
   version "0.74.5"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.74.5.tgz"
   integrity sha512-Bgg2WvxaGODukJMTZFTZBNMKVaROHLwSb8VAGEdrlvKwfb1hHg/3aXTUICYk7dwgAnb+INbGMwnF8yeAgIUmqw==
