@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증
-import { useNavigation } from '@react-navigation/native'; // 네비게이션 훅 추가
+import { getAuth, signOut } from 'firebase/auth'; 
+import { useNavigation } from '@react-navigation/native'; 
 
-const ProfileHeader = ({ username, setIsAuthenticated, user }) => { // setIsAuthenticated 추가
-  const navigation = useNavigation(); // 네비게이션 훅 가져오기
+// Importing the logo image
+import logo from '../../assets/logo/mirrorgram-logo.png';
+
+const ProfileHeader = ({ setIsAuthenticated, user }) => { 
+  const navigation = useNavigation(); 
   const auth = getAuth();
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
@@ -13,8 +16,8 @@ const ProfileHeader = ({ username, setIsAuthenticated, user }) => { // setIsAuth
     signOut(auth)
       .then(() => {
         Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
-        setIsAuthenticated(false); // 인증 상태 변경
-        navigation.navigate('Login'); // 로그인 화면으로 이동
+        setIsAuthenticated(false); 
+        navigation.navigate('Login'); 
       })
       .catch((error) => {
         console.error('로그아웃 에러:', error);
@@ -31,7 +34,7 @@ const ProfileHeader = ({ username, setIsAuthenticated, user }) => { // setIsAuth
       mbti: user?.profile?.mbti,
       personality: user?.profile?.personality,
     });
-    setDropdownVisible(false); // Close the dropdown menu
+    setDropdownVisible(false); 
   };
 
   const handleHamburgerPress = () => {
@@ -40,7 +43,8 @@ const ProfileHeader = ({ username, setIsAuthenticated, user }) => { // setIsAuth
 
   return (
     <View style={styles.headerContainer}>
-      <Text style={styles.username}>{username}</Text>
+      {/* Replacing username with the mirrorgram logo */}
+      <Image source={logo} style={styles.logo} />
       <TouchableOpacity onPress={handleHamburgerPress}>
         <Ionicons name="menu" size={24} color="black" />
       </TouchableOpacity>
@@ -66,9 +70,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'white',
   },
-  username: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  logo: {
+    width: 120,  // Adjust the width of the logo as needed
+    height: 40,  // Adjust the height of the logo as needed
   },
   dropdownMenu: {
     position: 'absolute',
