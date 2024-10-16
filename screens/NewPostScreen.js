@@ -3,21 +3,22 @@ import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform } 
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useSelector } from 'react-redux';
-import { getStorage, ref , uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
+import axios from 'axios'; // Axios import 추가
 
 
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
 
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.user.user);
 
-  console.log('user', user);
 
+  console.log('user', user)
 
   const takePicture = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -69,13 +70,14 @@ const NewPostScreen = ({ navigation }) => {
 
       const uuid = generateUUID();
       const storage = getStorage();
-      const storageRef = ref(storage, `feeds/${user.uid}/${uuid}`);
+      const storageRef = ref(storage, `${user.uid}/feeds/${uuid}`);
 
       const uploadTask = uploadBytesResumable(storageRef, blob);
 
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
           console.log('Upload is ' + progress + '% done');
         },
         (error) => {
@@ -89,14 +91,26 @@ const NewPostScreen = ({ navigation }) => {
             id: uuid,
             image: downloadURL,
             caption: caption,
-            likes: 0,
+            likes: [],
             comments: [],
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
             userId: user.uid,
+            nick: user.userId,
+            subCommentId: [],
           };
 
           const db = getFirestore();
+          
+          // Firestore에 데이터 추가
           await addDoc(collection(db, 'feeds'), post);
+
+            // /feed 엔드포인트로 Axios 요청을 비동기적으로 실행
+          axios.post('http://127.0.0.1:8000/feed', post)
+                .then(() => console.log('API 요청 성공'))
+                .catch((error) => console.error('API 요청 실패:', error));
+
+
+    
 
           console.log('포스트 업로드 완료');
           setCaption('');
@@ -112,38 +126,60 @@ const NewPostScreen = ({ navigation }) => {
     }
   };
 
+  const Loading = () => {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  };
+
+  const LoadingOverlay = () => (
+    <View style={styles.overlay}>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>업로드 중... {uploadProgress.toFixed(0)}%</Text>
+        <View style={styles.progressBar}>
+          <View style={[styles.progress, { width: `${uploadProgress}%` }]} />
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close-outline" size={30} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>새 게시물</Text>
-        <TouchableOpacity onPress={handlePost}>
-          <Text style={styles.shareText}>공유</Text>
-        </TouchableOpacity>
+    <View style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="close-outline" size={30} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>새 게시물</Text>
+          <TouchableOpacity onPress={handlePost}>
+            <Text style={styles.shareText}>공유</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.imageContainer}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <TouchableOpacity style={styles.button} onPress={takePicture}>
+                <Text style={styles.buttonText}>사진 찍기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={pickImage}>
+                <Text style={styles.buttonText}>갤러리에서 선택</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="문구 입력..."
+          value={caption}
+          onChangeText={setCaption}
+          multiline
+        />
       </View>
-      <View style={styles.imageContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <TouchableOpacity style={styles.button} onPress={takePicture}>
-              <Text style={styles.buttonText}>사진 찍기</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={pickImage}>
-              <Text style={styles.buttonText}>갤러리에서 선택</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="문구 입력..."
-        value={caption}
-        onChangeText={setCaption}
-        multiline
-      />
+      {isLoading && <LoadingOverlay />}
     </View>
   );
 };
@@ -198,6 +234,33 @@ const styles = StyleSheet.create({
   input: {
     padding: 15,
     fontSize: 16,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  progressBar: {
+    width: 200,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  progress: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
   },
 });
 

@@ -32,7 +32,7 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
         await setDoc(userRef, profileData, { merge: true });
         dispatch(setUser({ uid: user.uid, ...profileData }));
         setIsAuthenticated(true); // 여기서 인증 상태를 true로 설정
-        // navigation.navigate('BottomTab', { screen: 'Home' }); // 이 줄은 제거 또는 주석 처리
+        navigation.navigate('BottomTab', { screen: 'Home' }); // 이 줄은 제거 또는 주석 처리
       }
     } catch (error) {
       console.error('프로필 저장 중 오류 발생:', error);
