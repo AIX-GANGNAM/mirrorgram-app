@@ -7,13 +7,14 @@ import ProfileActions from '../components/profile/ProfileActions';
 import ProfileHighlights from '../components/profile/ProfileHighlights';
 import ProfileGallery from '../components/profile/ProfileGallery';
 
-const ProfileScreen = () => {
+// ProfileScreen.js
+const ProfileScreen = ({ setIsAuthenticated }) => {
   const user = useSelector((state) => state.user.user);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <ProfileHeader username={user?.userId} />
+        <ProfileHeader username={user?.userId} setIsAuthenticated={setIsAuthenticated} />
         <ProfileInfo user={user} />
         <ProfileActions user={user} />
         <ProfileHighlights />
@@ -22,6 +23,7 @@ const ProfileScreen = () => {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

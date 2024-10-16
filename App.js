@@ -9,6 +9,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
+import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
 
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
@@ -51,10 +52,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const  App = () => {
+const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
-  const [ isAuthenticated, setIsAuthenticated ] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
@@ -83,6 +84,21 @@ const  App = () => {
   
 
   const BottomTabScreen = () => {
+    const auth = getAuth(); // Firebase 인증 객체 생성
+
+    // 로그아웃 처리 함수
+    const handleLogout = () => {
+      signOut(auth)
+        .then(() => {
+          Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
+          setIsAuthenticated(false); // 로그인 상태 업데이트
+        })
+        .catch((error) => {
+          console.error('로그아웃 에러:', error);
+          Alert.alert('로그아웃 실패', '다시 시도해 주세요.');
+        });
+    };
+
     return (
       <Tab.Navigator
         screenOptions={({ route }) => ({
@@ -101,9 +117,9 @@ const  App = () => {
             }
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: 'tomato', // 활성화된 탭 색상
-          tabBarInactiveTintColor: 'gray', // 비활성화된 탭 색상
-          headerShown: false, // 헤더 숨김
+          tabBarActiveTintColor: 'tomato',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: false,
         })}
       >
 
@@ -111,7 +127,9 @@ const  App = () => {
         <Tab.Screen name="Search" component={SearchScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
         <Tab.Screen name="Generate" component={ReelsScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen name="Profile">
+          {props => <ProfileScreen {...props} setIsAuthenticated={setIsAuthenticated} handleLogout={handleLogout} />}
+        </Tab.Screen>
       </Tab.Navigator>
     );
   };
@@ -121,67 +139,67 @@ const  App = () => {
 		<Provider store={store}>
 			<NavigationContainer>
         <Text>Expo Push Token: {expoPushToken}</Text>
-				<Stack.Navigator
-					screenOptions={{
-						headerShown: false,
-					}}
-				>
-					{!isAuthenticated ? (
-						<Stack.Screen name="Login">
-							{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+					<Stack.Navigator
+						screenOptions={{
+							headerShown: false,
+						}}
+					>
+						{!isAuthenticated ? (
+							<Stack.Screen name="Login">
+								{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+							</Stack.Screen>
+						) : (
+							<>
+								<Stack.Screen name="BottomTab" component={BottomTabScreen} />
+								<Stack.Screen name="Activity" component={ActivityScreen} />
+								<Stack.Screen name="Home" component={HomeScreen} />
+								<Stack.Screen 
+									name="FriendProfile" 
+									component={FriendProfileScreen}
+									options={({ route }) => ({ 
+										title: route.params.name,
+										headerShown: true 
+									})}
+								/>
+								<Stack.Screen name="Status" component={Status} />
+								<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+								<Stack.Screen name="Chat" component={ChatScreen} />
+								<Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+								<Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+								<Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+								<Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
+								<Stack.Screen 
+									name="ChatList" 
+									component={ChatListScreen} 
+									options={{
+										headerShown: true,
+									}}
+								/>
+								<Stack.Screen 
+									name="ChatUser" 
+									component={ChatUserScreen}
+									options={({ route }) => ({ 
+										title: route.params.name,
+										headerShown: true 
+									})}
+								/>
+								<Stack.Screen name="Post" component={Post} />
+							</>
+						)}
+						<Stack.Screen name="Signup" component={SignupForm} />
+						<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
+						<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
+						<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
+						<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
+						<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
+						<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
+						<Stack.Screen name="UserVerificationSummary">
+							{props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
 						</Stack.Screen>
-					) : (
-						<>
-							<Stack.Screen name="BottomTab" component={BottomTabScreen} />
-							<Stack.Screen name="Activity" component={ActivityScreen} />
-              <Stack.Screen name="Home" component={HomeScreen} />
-							<Stack.Screen 
-								name="FriendProfile" 
-								component={FriendProfileScreen}
-								options={({ route }) => ({ 
-									title: route.params.name,
-									headerShown: true 
-								})}
-							/>
-							<Stack.Screen name="Status" component={Status} />
-							<Stack.Screen name="EditProfile" component={EditProfileScreen} />
-              <Stack.Screen name="Chat" component={ChatScreen} />
-              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
-              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
-              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
-              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
-              <Stack.Screen 
-                name="ChatList" 
-                component={ChatListScreen} 
-                options={{
-                  headerShown: true,
-                }}
-              />
-              <Stack.Screen 
-                name="ChatUser" 
-                component={ChatUserScreen}
-                options={({ route }) => ({ 
-                  title: route.params.name,
-                  headerShown: true 
-                })}
-              />
-              <Stack.Screen name="Post" component={Post} />
-						</>
-					)}
-					<Stack.Screen name="Signup" component={SignupForm} />
-					<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
-					<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
-					<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
-					<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
-					<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
-					<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
-          <Stack.Screen name="UserVerificationSummary">
-                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
-              </Stack.Screen>
-				</Stack.Navigator>
-			</NavigationContainer>
-		</Provider>
-	);
+					</Stack.Navigator>
+				</NavigationContainer>
+			</Provider>
+		);
 }
 
 async function registerForPushNotificationsAsync() {
