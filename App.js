@@ -110,7 +110,7 @@ const App = () => {
               iconName = focused ? 'search' : 'search-outline';
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
-            } else if (route.name === 'Reels') {
+            } else if (route.name === 'Generate') {
               iconName = focused ? 'color-wand' : 'color-wand-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
@@ -126,7 +126,7 @@ const App = () => {
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Search" component={SearchScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
-        <Tab.Screen name="Reels" component={ReelsScreen} />
+        <Tab.Screen name="Generate" component={ReelsScreen} />
         <Tab.Screen name="Profile">
           {props => <ProfileScreen {...props} setIsAuthenticated={setIsAuthenticated} handleLogout={handleLogout} />}
         </Tab.Screen>
