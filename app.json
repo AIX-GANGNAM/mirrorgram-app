@@ -22,7 +22,7 @@
     "slug": "mirrorgram",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo/Mirrorgram-icon.png",
+    "icon": "./assets/logo/mirrorgram-logo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/open-mirrorgram.png",
@@ -43,7 +43,7 @@
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo/Mirrorgram-icon.png",
+        "foregroundImage": "./assets/logo/mirrorgram-logo.png",
         "backgroundColor": "#000"
       },
       "package": "com.himedia.mirrorgram"
