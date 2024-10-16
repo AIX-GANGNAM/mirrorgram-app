@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, signOut } from 'firebase/auth'; 
 import { useNavigation } from '@react-navigation/native'; 
 
-// Importing the logo image
-import logo from '../../assets/logo/mirrorgram-logo.png';
-
-const ProfileHeader = ({ setIsAuthenticated, user }) => { 
+const ProfileHeader = ({ username, setIsAuthenticated, user }) => { 
   const navigation = useNavigation(); 
   const auth = getAuth();
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -43,8 +40,7 @@ const ProfileHeader = ({ setIsAuthenticated, user }) => {
 
   return (
     <View style={styles.headerContainer}>
-      {/* Replacing username with the mirrorgram logo */}
-      <Image source={logo} style={styles.logo} />
+      <Text style={styles.username}>{username}</Text>
       <TouchableOpacity onPress={handleHamburgerPress}>
         <Ionicons name="menu" size={24} color="black" />
       </TouchableOpacity>
@@ -70,9 +66,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'white',
   },
-  logo: {
-    width: 120,  // Adjust the width of the logo as needed
-    height: 40,  // Adjust the height of the logo as needed
+  username: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   dropdownMenu: {
     position: 'absolute',

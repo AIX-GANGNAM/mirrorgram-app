@@ -7,7 +7,7 @@ import ProfileActions from '../components/profile/ProfileActions';
 import ProfileHighlights from '../components/profile/ProfileHighlights';
 import ProfileGallery from '../components/profile/ProfileGallery';
 
-
+// ProfileScreen.js
 const ProfileScreen = ({ setIsAuthenticated }) => {
   const user = useSelector((state) => state.user.user);
 
