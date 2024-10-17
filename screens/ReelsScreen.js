@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
+import {getFirestore, collection, doc, updateDoc} from 'firebase/firestore';
 
 export default function ReelsScreen() {
   const [image, setImage] = useState(null);
@@ -9,7 +11,9 @@ export default function ReelsScreen() {
   const [dotImages, setDotImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const panY = useRef(new Animated.Value(0)).current;
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const resetPositionAnim = Animated.timing(panY, {
     toValue: 0,
@@ -63,23 +67,42 @@ export default function ReelsScreen() {
     }
   };
 
-  const handleButtonPress = () => {
+  const handleButtonPress = async () => {
     setLoading(true);
-    setTimeout(() => {
+    const userId = user.uid;
+
+    const formData = new FormData();
+    formData.append('image', {
+      uri: image,
+      type: 'image/jpeg',
+      name: 'image.jpg'
+    });
+
+    try {
+      const response = await axios.post(`http://221.148.97.237:1818/generate-persona-image/${userId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log("response", response.data);
+      
+      if (response.data.status === 'complete') {
+        const images = response.data.images;
+        const imageUrls = Object.values(images).map(item => item.image_url);
+        setDotImages(imageUrls);
+      }
+    } catch (error) {
+      console.log("error", error.response ? error.response.data : error.message);
+      // 여기에 에러 처리 로직 추가
+    } finally {
       setLoading(false);
-      setDotImages([
-        'https://example.com/image1.jpg',
-        'https://example.com/image2.jpg',
-        'https://example.com/image3.jpg',
-        'https://example.com/image4.jpg',
-        'https://example.com/image5.jpg',
-      ]);
-    }, 3000);
+    }
   };
 
-  const handleDotPress = (image) => {
+  const handleDotPress = (image, index) => {
     setSelectedImage(image);
     setModalVisible(true);
+    setSelectedImageIndex(index);
     resetPositionAnim.start();
   };
 
@@ -87,6 +110,74 @@ export default function ReelsScreen() {
     inputRange: [-1, 0, 1],
     outputRange: [0, 0, 1],
   });
+
+  const handleEditImage = async () => {
+    setIsGenerating(true);
+    let persona = null;
+    switch(selectedImageIndex) {
+      case 0: persona = "joy"; break;
+      case 1: persona = "sadness"; break;
+      case 2: persona = "anger"; break;
+      case 3: persona = "disgust"; break;
+      case 4: persona = "serious"; break; 
+    }
+
+    const formData = new FormData();
+    formData.append('image', {
+      uri: image,
+      type: 'image/jpeg',
+      name: 'image.jpg'
+    });
+
+    try {
+      const response = await axios.post(`http://221.148.97.237:1818/regenerate-image/${persona}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log("response", response.data);
+
+      setSelectedImage(response.data.image_url);
+      dotImages[selectedImageIndex] = response.data.image_url;
+      setDotImages([...dotImages]);
+    } catch (error) {
+      console.log("error", error.response ? error.response.data : error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleConfirmImage = async () => {
+    setModalVisible(false);
+    if(!selectedImage || !user.uid) {
+      console.log("이미지 또는 유저 아이디가 없습니다.");
+      return;
+    }
+
+    const db = getFirestore();
+    const userDoc = doc(db, 'users', user.uid);
+
+    let emotionKey;
+    switch(selectedImageIndex) {
+      case 0: emotionKey = "joy"; break;
+      case 1: emotionKey = "sadness"; break;
+      case 2: emotionKey = "anger"; break;
+      case 3: emotionKey = "disgust"; break;
+      case 4: emotionKey = "serious"; break;
+      default:
+        console.log("잘못된 이미지 인덱스");
+        return;
+    }
+
+    try {
+      await updateDoc(userDoc, {
+        [`persona.${emotionKey}`]: selectedImage
+      });
+      console.log(`${emotionKey} 이미지가 성공적으로 업데이트되었습니다.`);
+    } catch (error) {
+      console.error("이미지 업데이트 중 오류 발생:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -105,7 +196,7 @@ export default function ReelsScreen() {
       <View style={styles.dotsContainer}>
         <View style={styles.dotsRow}>
           {[...Array(3)].map((_, i) => (
-            <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i])}>
+            <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i], i)}>
               <View style={dotImages[i] ? styles.dotImage : styles.skeleton}>
                 {dotImages[i] && <Image source={{ uri: dotImages[i] }} style={styles.dotImage} />}
               </View>
@@ -114,7 +205,7 @@ export default function ReelsScreen() {
         </View>
         <View style={styles.dotsRow}>
           {[...Array(2)].map((_, i) => (
-            <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3])}>
+            <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3], i+3)}>
               <View style={dotImages[i + 3] ? styles.dotImage : styles.skeleton}>
                 {dotImages[i + 3] && <Image source={{ uri: dotImages[i + 3] }} style={styles.dotImage} />}
               </View>
@@ -146,8 +237,27 @@ export default function ReelsScreen() {
               <View style={styles.modalIndicator} />
             </View>
             <View style={styles.modalContent}>
-              <Image source={{ uri: selectedImage }} style={styles.modalImage} />
-              {/* 여기에 추가 모달 내용을 넣을 수 있습니다 */}
+              {isGenerating ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#0095F6" />
+                  <Text style={styles.loadingText}>이미지 생성 중...</Text>
+                </View>
+              ) : (
+                <>
+                  <Image source={{ uri: selectedImage }} style={styles.modalImage} />
+                  <View style={styles.modalTextContainer}>
+                    <Text style={styles.modalText}>안녕?</Text>
+                  </View>
+                </>
+              )}
+            </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={[styles.button, { backgroundColor: '#EFEFEF' }]} onPress={handleEditImage}>
+                <Text style={[styles.buttonText, { color: '#262626' }]}>이미지 수정</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={handleConfirmImage}>
+                <Text style={styles.buttonText}>이미지 확정</Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
@@ -245,7 +355,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   button: {
-    backgroundColor: '#0095F6',
+    backgroundColor: '#5271ff',
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 8,
@@ -284,9 +394,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     marginBottom: 20,
   },
   modalHeader: {
@@ -298,5 +408,33 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: '#DDDDDD',
     borderRadius: 2,
+  },
+  modalText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+  },
+  modalTextContainer: {
+    width: '80%',
+    height: '30%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#262626',
   },
 });
