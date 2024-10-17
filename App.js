@@ -57,7 +57,6 @@ const App = () => {
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
   
@@ -138,7 +137,6 @@ const App = () => {
 	return(
 		<Provider store={store}>
 			<NavigationContainer>
-        <Text>Expo Push Token: {expoPushToken}</Text>
 					<Stack.Navigator
 						screenOptions={{
 							headerShown: false,
@@ -204,7 +202,6 @@ const App = () => {
 
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
-  let token;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -249,11 +246,7 @@ async function registerForPushNotificationsAsync() {
   } else {
     // alert('Must use physical device for Push Notifications');
   }
-
-  return token;
-
 }
-
 const styles = StyleSheet.create({
   debugContainer: {
     top: 1,
