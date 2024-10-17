@@ -106,7 +106,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo/Instagram-logo.png')}
+        source={require('../../assets/logo/mirrorgram-logo.png')}
         style={styles.logo}
       />
       <TextInput
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 44,
-    backgroundColor: '#3797EF',
+    backgroundColor: '#5271ff',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
