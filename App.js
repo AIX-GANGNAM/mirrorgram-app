@@ -10,6 +10,9 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
+import GetPushToken from './components/notification/GetPushToken';
+import {saveNotification} from './components/notification/SaveNotification';
+
 
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
@@ -57,28 +60,43 @@ const App = () => {
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
   
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => {
-      if (token) setExpoPushToken(token);
-      console.log("토큰 값 : ", token);
-    });
+    
+    registerForPushNotificationsAsync();
+  
 
+
+    // 사용자의 푸시 토큰을 보기 위한 함수
+    const fetchPushToken = async () => {
+      try {
+        const token = await GetPushToken();
+        setExpoPushToken(token);
+        console.log("App.js > useEffect > 푸시 토큰 : ", token);
+      } catch (error) {
+        console.error("푸시 토큰 가져오기 실패:", error);
+      }
+    };
+
+    fetchPushToken();
+
+    // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-      console.log("알림정보 : ", notification);
+      console.log("알림 수신 : ", notification);
+      // saveNotification(notification); 
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log(response);
+    // 알림 클릭 시 실행되는 함수
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      console.log("알림 터치됨:", response);
     });
 
     return () => {
       Notifications.removeNotificationSubscription(notificationListener.current);
       Notifications.removeNotificationSubscription(responseListener.current);
+      // Notifications.unregisterTaskAsync(BACKGROUND_NOTIFICATION_TASK);
     };
   }, []);
   
@@ -138,7 +156,6 @@ const App = () => {
 	return(
 		<Provider store={store}>
 			<NavigationContainer>
-        <Text>Expo Push Token: {expoPushToken}</Text>
 					<Stack.Navigator
 						screenOptions={{
 							headerShown: false,
@@ -204,7 +221,6 @@ const App = () => {
 
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
-  let token;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -216,44 +232,31 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (Device.isDevice) {
-    console.log("Device.isDevice : ", Device.isDevice);
+    console.log("App.js > registerForPushNotificationsAsync > 디바이스 확인");
+    console.log("실제 디바이스 인가?? : ",Device.isDevice);
+    console.log("디바이스 이름 : ",Constants.deviceName);
+    
+    // 기존 푸시 알림 권한 상태를 확인
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
+
+    // 기존 권한이 허용되지 않았을 경우, 권한 요청
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      finalStatus = status; // 사용자가 선택한 권한 상태로 업데이트
     }
+
+    // 권한이 여전히 허용되지 않았다면 알림을 띄우고 함수 종료
     if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return;
-    }
-    // Learn more about projectId:
-    // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
-    // EAS projectId is used here.
-    try {
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-        console.log("프로젝트ID : ", projectId);
-      if (!projectId) {
-        throw new Error('Project ID not found');
-      }
-      console.log("토큰 값 출력 시작");
-      token = (
-        await Notifications.getExpoPushTokenAsync({
-          projectId,
-        })
-      ).data;
-    } catch (e) {
-      token = `${e}`;
+      alert('Failed to get push token for push notification!'); // 사용자에게 권한 허용이 안됐음을 알림
+      return; // 함수 종료
     }
   } else {
-    // alert('Must use physical device for Push Notifications');
+    // 물리 디바이스가 아닌 경우, 사용자에게 알림
+    alert('실제 단말기를 사용해주세요');
+
   }
-
-  return token;
-
 }
-
 const styles = StyleSheet.create({
   debugContainer: {
     top: 1,
