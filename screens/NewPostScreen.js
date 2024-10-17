@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    backgroundColor: '#3897f0',
+    backgroundColor: '#5271ff',
     padding: 10,
     borderRadius: 5,
     marginVertical: 10,
