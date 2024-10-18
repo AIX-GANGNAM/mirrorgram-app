@@ -197,16 +197,18 @@ export default function ReelsScreen() {
         <View style={styles.dotsRow}>
           {[...Array(3)].map((_, i) => (
             <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i], i)}>
-              <View style={dotImages[i] ? styles.dotImage : styles.skeleton}>
-                {dotImages[i] && <Image source={{ uri: dotImages[i] }} style={styles.dotImage} />}
+              <View style={dotImages[i] || styles.skeleton}>
+              {dotImages[i] && <Image source={{ uri: dotImages[i] }} style={styles.dotImage} />}
               </View>
+                
+
             </TouchableOpacity>
           ))}
         </View>
         <View style={styles.dotsRow}>
           {[...Array(2)].map((_, i) => (
             <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3], i+3)}>
-              <View style={dotImages[i + 3] ? styles.dotImage : styles.skeleton}>
+              <View style={dotImages[i + 3] || styles.skeleton}>
                 {dotImages[i + 3] && <Image source={{ uri: dotImages[i + 3] }} style={styles.dotImage} />}
               </View>
             </TouchableOpacity>
