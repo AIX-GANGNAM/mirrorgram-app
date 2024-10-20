@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import {getFirestore, collection, doc, updateDoc} from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ReelsScreen() {
   const [image, setImage] = useState(null);
@@ -14,6 +16,16 @@ export default function ReelsScreen() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const panY = useRef(new Animated.Value(0)).current;
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedType, setSelectedType] = useState('스타일');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      // 화면에 포커스가 올 때마다 실행
+      setSelectedType('스타일');
+      setIsDropdownOpen(false);
+    }, [])
+  );
 
   const resetPositionAnim = Animated.timing(panY, {
     toValue: 0,
@@ -68,6 +80,16 @@ export default function ReelsScreen() {
   };
 
   const handleButtonPress = async () => {
+    if (!image) {
+      Alert.alert("경고", "이미지를 선택해주세요.");
+      return;
+    }
+    
+    if (selectedType === '스타일') {
+      Alert.alert("경고", "스타일을 선택해주세요.");
+      return;
+    }
+
     setLoading(true);
     const userId = user.uid;
 
@@ -93,7 +115,7 @@ export default function ReelsScreen() {
       }
     } catch (error) {
       console.log("error", error.response ? error.response.data : error.message);
-      // 여기에 에러 처리 로직 추가
+      Alert.alert("오류", "이미지 생성 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -179,15 +201,64 @@ export default function ReelsScreen() {
     }
   };
 
+  const handleTypeSelect = (type) => {
+    setSelectedType(type);
+    setIsDropdownOpen(false);
+  };
+
+  const renderDotImage = (index) => {
+    if (loading) {
+      return (
+        <View style={styles.dotImageContainer}>
+          <ActivityIndicator size="large" color="#5271ff" style={styles.dotImageLoader} />
+        </View>
+      );
+    }
+    return dotImages[index] ? (
+      <Image source={{ uri: dotImages[index] }} style={styles.dotImage} />
+    ) : (
+      <View style={styles.skeleton} />
+    );
+  };
+
   return (
     <View style={styles.container}>
+      <View style={styles.dropdownContainer}>
+        <TouchableOpacity 
+          style={styles.dropdownButton} 
+          onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          <Text style={styles.dropdownButtonText}>{selectedType}</Text>
+          <Ionicons 
+            name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
+            size={24} 
+            color="#262626" 
+          />
+        </TouchableOpacity>
+        {isDropdownOpen && (
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity 
+              style={styles.dropdownItem} 
+              onPress={() => handleTypeSelect('사람')}
+            >
+              <Text style={styles.dropdownItemText}>사람</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.dropdownItem} 
+              onPress={() => handleTypeSelect('동물')}
+            >
+              <Text style={styles.dropdownItemText}>동물</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
         {image ? (
           <Image source={{ uri: image }} style={styles.image} />
         ) : (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>+</Text>
-            <Text style={styles.placeholderSubText}>사진 추가</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -197,30 +268,28 @@ export default function ReelsScreen() {
         <View style={styles.dotsRow}>
           {[...Array(3)].map((_, i) => (
             <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i], i)}>
-              <View style={dotImages[i] ? styles.dotImage : styles.skeleton}>
-                {dotImages[i] && <Image source={{ uri: dotImages[i] }} style={styles.dotImage} />}
-              </View>
+              {renderDotImage(i)}
             </TouchableOpacity>
           ))}
         </View>
         <View style={styles.dotsRow}>
           {[...Array(2)].map((_, i) => (
             <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3], i+3)}>
-              <View style={dotImages[i + 3] ? styles.dotImage : styles.skeleton}>
-                {dotImages[i + 3] && <Image source={{ uri: dotImages[i + 3] }} style={styles.dotImage} />}
-              </View>
+              {renderDotImage(i + 3)}
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#0095F6" />
-      ) : (
-        <TouchableOpacity style={styles.button} onPress={handleButtonPress}>
-          <Text style={styles.buttonText}>새로운 친구 만들기</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity 
+        style={[styles.button, (loading || !image || selectedType === '스타일') && styles.disabledButton]} 
+        onPress={handleButtonPress}
+        disabled={loading || !image || selectedType === '스타일'}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? '생성중...' : '새로운 친구 만들기'}
+        </Text>
+      </TouchableOpacity>
 
       <Modal
         animationType="slide"
@@ -436,5 +505,57 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#262626',
+  },
+  dropdownContainer: {
+    width: '80%',
+    marginBottom: 20,
+    zIndex: 1000,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 5,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: '#262626',
+
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: '100%', // 버튼 바로 아래에 위치
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#DBDBDB',
+    marginTop: 5,
+  },
+  dropdownItem: {
+    padding: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#262626',
+  },
+  dotImageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DBDBDB',
+    marginHorizontal: 10,
+  },
+  dotImageLoader: {
+    position: 'absolute',
+  },
+  disabledButton: {
+    backgroundColor: '#A0A0A0',
   },
 });
