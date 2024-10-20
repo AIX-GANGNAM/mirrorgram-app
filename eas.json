@@ -9,13 +9,18 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug"
+        
       },
       "ios": {
         "buildConfiguration": "Debug"
+
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      }
     },
     "production": {
       "autoIncrement": true
