@@ -1,4 +1,3 @@
-
 import { StyleSheet, TouchableOpacity, View, Text, Image } from 'react-native';
 import { SparklesIcon } from "react-native-heroicons/solid";
 import { HeartIcon,
@@ -20,7 +19,7 @@ const Header = () => {
    <View style={styles.container}>
     <TouchableOpacity style={{alignItems:'center',flexDirection:'row'}}>
     <Image style={styles.logo} 
-	source={require('../../assets/logo/Instagram-logo.png')}
+	source={require('../../assets/logo/mirrorgram-logo.png')}
     />
     <TouchableOpacity style={{padding:5}}>
       <ChevronDownIcon color='white' size={28} />
@@ -36,11 +35,19 @@ const Header = () => {
     	style={styles.icon}>
        <HeartIcon color='white' size={30} />
      </TouchableOpacity>
-     <TouchableOpacity style={styles.icon}>
+
+    {/* 채팅 시작 */}
+    <TouchableOpacity 
+      style={styles.icon}
+      onPress={() => navigation.navigate('ChatList')}
+     >
        <View style={styles.unreadBadge}>
-         <Text style={styles.unreadBadgeText}> 92 </Text>
+         <Text style={styles.unreadBadgeText}>92</Text>
        </View>
-       <ChatBubbleOvalLeftIcon color='white' size={30} />
+       <Image 
+         source={require('../../assets/chat/chaticon.png')} 
+         style={{width: 30, height: 30, tintColor: 'black', marginRight: 20}}
+       />
      </TouchableOpacity>
    </View>
   </View>
@@ -77,8 +84,8 @@ const styles = StyleSheet.create({
    position: 'absolute',
    backgroundColor: '#FF3250',
    borderRadius: 100,
-   left: 15,
-   bottom: 15,
+   left: 30,
+   bottom: 25,
    height: 22,
    width: 22,
    alignItems: 'center',

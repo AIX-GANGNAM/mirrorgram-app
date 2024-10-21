@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave }) => {
+const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave, onImagePick }) => {
   const [formData, setFormData] = useState({
     name: name || '',
     userId: userId || '',
@@ -65,11 +65,18 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
     });
   };
 
+  const handleImagePick = async () => {
+    const newImageUri = await onImagePick();
+    if (newImageUri) {
+      handleChange('profileImg', newImageUri);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileImageContainer}>
-        <Image source={{ uri: profileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
-        <TouchableOpacity style={styles.changePhotoButton}>
+        <Image source={{ uri: formData.profileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
+        <TouchableOpacity style={styles.changePhotoButton} onPress={handleImagePick}>
           <Text style={styles.changePhotoText}>프로필 사진 변경</Text>
         </TouchableOpacity>
       </View>

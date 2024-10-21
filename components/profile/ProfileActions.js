@@ -1,28 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, StyleSheet } from 'react-native';
 
-const ProfileActions = ({ user }) => {
-  const navigation = useNavigation();
-
-  const handleEditProfile = () => {
-    
-    navigation.navigate('EditProfile', {
-      name: user?.profile?.userName,
-      userId: user?.userId,
-      profileImg: user?.profileImg,
-      birthdate: user?.profile?.birthdate,
-      phone: user?.userPhone,
-      mbti: user?.profile?.mbti,
-      personality: user?.profile?.personality,
-    });
-  };
-
+const ProfileActions = () => {
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-        <Text style={styles.buttonText}>프로필 편집</Text>
-      </TouchableOpacity>
+      {/* 구분선 추가 */}
+      <View style={styles.separator} />
     </View>
   );
 }
@@ -31,17 +14,10 @@ const styles = StyleSheet.create({
   container: {
     padding: 15,
   },
-  button: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 5,
-    paddingVertical: 7,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#000',
-    fontWeight: '600',
+  separator: {
+    height: 1,
+    backgroundColor: '#dbdbdb', // 구분선 색상
+    marginVertical: 10, // 구분선 위아래 여백
   },
 });
 

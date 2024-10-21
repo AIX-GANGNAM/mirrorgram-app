@@ -12,6 +12,7 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
+  console.log("ChatScreen 실행");
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -66,6 +67,7 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const sendMessage = async () => {
+    console.log("sendMessage 실행");
     if (inputText.trim().length > 0) {
       const userMessage = {
         id: generateUniqueId(),
@@ -78,7 +80,7 @@ const ChatScreen = ({ route, navigation }) => {
       setIsTyping(true);
 
       try {
-        const response = await axios.post('http://127.0.0.1:8000/chat', {
+        const response = await axios.post('http://192.168.0.229:8000/chat', {
           persona_name: persona,
           user_input: inputText,
           user: user
