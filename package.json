@@ -14,9 +14,9 @@
     "@react-native-community/datetimepicker": "8.0.1",
     "@react-native-firebase/app": "^21.0.0",
     "@react-native-firebase/auth": "^21.0.0",
+    "@react-native-firebase/crashlytics": "^21.0.0",
     "@react-native-firebase/database": "^21.0.0",
     "@react-native-firebase/firestore": "^21.0.0",
-    "@react-native-firebase/messaging": "^21.0.0",
     "@react-native-firebase/storage": "^21.0.0",
     "@react-native-picker/picker": "^2.8.1",
     "@react-navigation/bottom-tabs": "^6.5.7",
@@ -30,16 +30,14 @@
     "expo-application": "~5.9.1",
     "expo-auth-session": "~5.5.2",
     "expo-av": "~14.0.7",
+    "expo-background-fetch": "~12.0.1",
     "expo-camera": "~15.0.16",
     "expo-constants": "~16.0.2",
     "expo-dev-client": "~4.0.28",
     "expo-device": "~6.0.2",
     "expo-image-picker": "~15.0.7",
     "expo-linear-gradient": "~13.0.2",
-    "expo-modules-autolinking": "^1.11.3",
-    "expo-modules-core": "~1.12.25",
     "expo-notifications": "~0.28.18",
-    "expo-permissions": "^14.4.0",
     "expo-random": "~14.0.1",
     "expo-server-sdk": "^3.11.0",
     "expo-splash-screen": "~0.27.6",
@@ -51,7 +49,7 @@
     "firebase": "^10.14.1",
     "formik": "^2.2.9",
     "global": "^4.4.0",
-    "lottie-react-native": "^7.0.0",
+    "lottie-react-native": "6.7.0",
     "react": "18.2.0",
     "react-native": "0.74.5",
     "react-native-dotenv": "^3.4.11",
@@ -74,7 +72,8 @@
     "yup": "^1.1.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0"
+    "@babel/core": "^7.24.0",
+    "typescript": "^4.9.5"
   },
   "private": true
 }

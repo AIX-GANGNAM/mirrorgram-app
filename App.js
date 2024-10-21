@@ -12,6 +12,8 @@ import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
 import GetPushToken from './components/notification/GetPushToken';
 import {saveNotification} from './components/notification/SaveNotification';
+import { setupBackgroundTask } from './components/notification/BackgroundTask';
+
 
 
 import HomeScreen from './screens/HomeScreen';
@@ -66,6 +68,7 @@ const App = () => {
   useEffect(() => {
     
     registerForPushNotificationsAsync();
+    setupBackgroundTask();
   
 
 
@@ -81,6 +84,8 @@ const App = () => {
     };
 
     fetchPushToken();
+
+
 
     // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {

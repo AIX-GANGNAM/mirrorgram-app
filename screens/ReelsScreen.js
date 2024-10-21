@@ -1,3 +1,6 @@
+import { useState, useRef, useCallback } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useRef ,useCallback } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -599,7 +602,7 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     position: 'absolute',
-    top: '150%', // 버튼 바로 아래에 위치
+    top: '100%', // 버튼 바로 아래에 위치
     left: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
@@ -614,6 +617,19 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
     color: '#262626',
+  },
+  dotImageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DBDBDB',
+    marginHorizontal: 10,
+  },
+  dotImageLoader: {
+    position: 'absolute',
   },
   disabledButton: {
     backgroundColor: '#A0A0A0',

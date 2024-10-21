@@ -26,7 +26,7 @@
     "splash": {
       "image": "./assets/open-mirrorgram.png",
       "resizeMode": "contain",
-      "backgroundColor": "black"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -40,20 +40,21 @@
       }
     },
     "android": {
-      "notification": {
-        "icon": "./assets/logo/mirrorgram-logo.png",
-        "color": "#ffffff",
-        "sounds": []
-      },
+      "permissions": [
+        "WAKE_LOCK",
+        "NOTIFICATIONS",
+        "BACKGROUND_FETCH",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo/mirrorgram-logo.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#000000"
       },
       "package": "com.himedia.mirrorgram"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo/mirrorgram-logo.png"
     },
     "owner": "cstangga"
   }
