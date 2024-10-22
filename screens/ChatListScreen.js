@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
-import { getFirestore, collection, query, where, onSnapshot, doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useSelector } from 'react-redux'; // Redux에서 상태를 가져오기 위해 추가
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const ChatListScreen = ({ navigation }) => {
@@ -10,64 +11,68 @@ const ChatListScreen = ({ navigation }) => {
   const auth = getAuth();
   const db = getFirestore();
 
+  // Redux에서 사용자 정보 가져오기
+  const user = useSelector(state => state.user.user);
+  const highlights = [
+    { id: 1, displayName: '기쁨이', persona: 'Joy',  image: user.persona.joy },
+    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.anger },
+    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.disgust },
+    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.sadness },
+    { id: 5, displayName: '선비',   persona: 'Fear', image: user.persona.serious },
+  ];
+
   useEffect(() => {
     const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    if (!currentUser || !user || !user.persona) return;
 
-    const chatsRef = collection(db, 'chats');
-    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+    const fetchChats = async () => {
+      const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear']; // 페르소나 목록
 
-    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const chatList = await Promise.all(
-        querySnapshot.docs.map(async (chatDocument) => {
-          const chatData = chatDocument.data();
+        personas.map(async (personaName) => {
+          const messagesRef = collection(db, 'chat', currentUser.uid, personaName);
+          const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
+          const querySnapshot = await getDocs(q);
 
-          if (!chatData || !chatData.participants) {
-            return null;
+          // 해당 페르소나의 이미지와 표시 이름 가져오기
+          const personaData = highlights.find(item => item.persona === personaName);
+          const personaImage = personaData?.image;
+          const displayName = personaData?.displayName || personaName;
+
+          if (!querySnapshot.empty) {
+            const lastMessageDoc = querySnapshot.docs[0];
+            const lastMessageData = lastMessageDoc.data();
+
+            return {
+              id: personaName,
+              name: displayName, // 표시 이름 사용
+              lastResponse: lastMessageData.response || '',
+              lastUserInput: lastMessageData.user_input || '',
+              lastMessageTime: lastMessageData.timestamp ? lastMessageData.timestamp.toDate() : null,
+              profileImage: personaImage,
+            };
+          } else {
+            // 메시지가 없을 경우에도 페르소나를 표시하려면 아래 코드 사용
+            return {
+              id: personaName,
+              name: displayName, // 표시 이름 사용
+              lastResponse: '',
+              lastUserInput: '',
+              lastMessageTime: null,
+              profileImage: personaImage,
+            };
           }
-
-          // 상대방의 UID를 participants 배열에서 찾음
-          const otherParticipantUid = chatData.participants[1] === currentUser.uid ? chatData.participants[0] : chatData.participants[1];
-
-          let profileImage = 'https://via.placeholder.com/50';
-          let chatName = 'Unknown User';
-          let userId = otherParticipantUid;
-
-          if (otherParticipantUid) {
-            try {
-              const userDoc = await getDoc(firestoreDoc(db, 'users', otherParticipantUid));
-              if (userDoc.exists()) {
-                const userData = userDoc.data();
-                chatName = userData?.username || chatName;
-                profileImage = userData?.profileimg || profileImage;
-              } else {
-                chatName = chatData.participants.find(participant => participant !== currentUser.uid) || chatName;
-                profileImage = chatData?.profileImages?.[otherParticipantUid] || profileImage;
-              }
-            } catch (error) {
-              console.error("Error fetching user data: ", error);
-            }
-          }
-
-          return {
-            id: chatDocument.id,
-            userId: userId, // 상대방 UID 추가
-            name: chatName,
-            lastMessage: chatData.lastMessage ? chatData.lastMessage : '',
-            lastMessageTime: chatData.lastMessageTime ? chatData.lastMessageTime : 0, // 메시지 시간 정보 추가
-            profileImage: profileImage,
-          };
         })
       );
 
-      // 최신 메시지 순으로 정렬
-      chatList.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+      // 마지막 메시지 시간으로 정렬
+      chatList.sort((a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0));
 
-      setChats(chatList.filter(chat => chat !== null));
-    });
+      setChats(chatList);
+    };
 
-    return () => unsubscribe();
-  }, []);
+    fetchChats();
+  }, [user]);
 
   const filteredChats = search
     ? chats.filter(chat => chat.name?.toLowerCase().includes(search.toLowerCase()))
@@ -76,19 +81,40 @@ const ChatListScreen = ({ navigation }) => {
   const renderChatItem = ({ item }) => (
     <TouchableOpacity
       style={styles.chatItem}
-      onPress={() => navigation.navigate('ChatUser', { chatId: item.id, recipientId: item.userId, recipientName: item.name })}
+      onPress={() => navigation.navigate('Chat', { highlightTitle : item.name , highlightImage : item.profileImage, persona : item.id })}
     >
       <Image source={{ uri: item.profileImage }} style={styles.profileImage} />
       <View style={styles.chatInfo}>
-        <Text style={styles.chatName}>{item.name}</Text>
-        <Text style={styles.lastMessage}>{item.lastMessage}</Text>
+        <View style={styles.chatHeader}>
+          <Text style={styles.chatName}>{item.name}</Text>
+          {item.lastMessageTime && (
+            <Text style={styles.timestamp}>
+              {formatTimestamp(item.lastMessageTime)}
+            </Text>
+          )}
+        </View>
+        <Text style={styles.lastMessage}>{item.lastResponse}</Text>
       </View>
       <Icon name="chevron-forward" size={20} color="#8e8e8e" />
     </TouchableOpacity>
   );
 
+  // 타임스탬프 포맷팅 함수
+  const formatTimestamp = (date) => {
+    const now = new Date();
+    const isToday = now.toDateString() === date.toDateString();
+    if (isToday) {
+      // 오늘이면 시간만 표시
+      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      // 오늘이 아니면 날짜만 표시
+      return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+    }
+  };
+
   return (
     <View style={styles.container}>
+      {/* 헤더 및 검색 바 */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>채팅</Text>
         <TouchableOpacity onPress={() => navigation.navigate('NewChat')}>
@@ -105,6 +131,7 @@ const ChatListScreen = ({ navigation }) => {
           onChangeText={setSearch}
         />
       </View>
+      {/* 채팅 목록 */}
       {filteredChats.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyMessage}>현재 대화가 없습니다.</Text>
@@ -122,6 +149,7 @@ const ChatListScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // 스타일 정의는 기존 코드와 동일합니다.
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -188,6 +216,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  chatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   chatName: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -197,6 +229,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8e8e8e',
     marginTop: 4,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#8e8e8e',
   },
 });
 
