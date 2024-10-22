@@ -12,7 +12,12 @@ web-build/
 .env
 .package-lock.json
 .yarn.lock
+./yarn.lock
+yarn.lock
+package-lock.json
+./package-lock.json
 
+mirrorgram-20713-firebase-adminsdk-u9pdx-c3e12134b4.json
 # macOS
 .DS_Store
 
