@@ -109,7 +109,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.himedia.mirrorgram"
+    namespace 'com.himedia.mirrorgram'
     defaultConfig {
         applicationId 'com.himedia.mirrorgram'
         minSdkVersion rootProject.ext.minSdkVersion
@@ -183,7 +183,6 @@ dependencies {
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
-    classpath 'com.google.gms:google-services:4.3.15'  // 버전은 최신 버전으로 업데이트하세요
 
     if (isGifEnabled) {
         // For animated gif support
