@@ -30,7 +30,6 @@
     "expo-application": "~5.9.1",
     "expo-auth-session": "~5.5.2",
     "expo-av": "~14.0.7",
-    "expo-background-fetch": "~12.0.1",
     "expo-camera": "~15.0.16",
     "expo-constants": "~16.0.2",
     "expo-dev-client": "~4.0.28",
@@ -68,6 +67,7 @@
     "react-native-webview": "13.8.6",
     "react-redux": "^9.1.2",
     "react-scripts": "^5.0.1",
+    "uuid": "^10.0.0",
     "typescript": "~5.3.3",
     "yup": "^1.1.1"
   },

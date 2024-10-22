@@ -83,12 +83,12 @@ const ChatScreen = ({ route, navigation }) => {
       setIsTyping(true);
 
       try {
-        const response = await axios.post('http://192.168.0.229:8000/chat', {
+        const response = await axios.post('http://localhost:8000/chat', {
           persona_name: persona,
           user_input: inputText,
           user: user
         });
-        
+
         if (response.data && response.data.response) {
           const botResponse = {
             id: generateUniqueId(),
@@ -129,7 +129,7 @@ const ChatScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
@@ -138,8 +138,23 @@ const ChatScreen = ({ route, navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Image source={{ uri: highlightImage }} style={styles.profileImage} />
-          <Text style={styles.headerTitle}>{highlightTitle}</Text>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('PersonaProfile', {
+                persona: {
+                title: highlightTitle,
+                  image: highlightImage,
+                  interests: [],
+                },
+                userId: user.uid
+              })
+            }
+            style={styles.profileContainer}
+          >
+
+            <Image source={{ uri: highlightImage }} style={styles.profileImage} />
+            <Text style={styles.headerTitle}>{highlightTitle}</Text>
+          </TouchableOpacity>
         </View>
         <FlatList
           ref={flatListRef}
@@ -187,15 +202,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    paddingHorizontal: 15,
   },
   backButton: {
     marginRight: 10,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   profileImage: {
     width: 40,
