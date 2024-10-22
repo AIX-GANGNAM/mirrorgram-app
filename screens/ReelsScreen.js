@@ -1,11 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useState, useRef ,useCallback } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import {getFirestore, collection, doc, updateDoc} from 'firebase/firestore';
-import { useFocusEffect } from '@react-navigation/native';
+import Village from './Village';
+import {useFocusEffect} from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ReelsScreen() {
   const [image, setImage] = useState(null);
@@ -16,6 +17,7 @@ export default function ReelsScreen() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const panY = useRef(new Animated.Value(0)).current;
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState('imageGeneration');
   const [selectedType, setSelectedType] = useState('스타일');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -26,7 +28,6 @@ export default function ReelsScreen() {
       setIsDropdownOpen(false);
     }, [])
   );
-
   const resetPositionAnim = Animated.timing(panY, {
     toValue: 0,
     duration: 300,
@@ -79,7 +80,10 @@ export default function ReelsScreen() {
     }
   };
 
+  
+
   const handleButtonPress = async () => {
+
     if (!image) {
       Alert.alert("경고", "이미지를 선택해주세요.");
       return;
@@ -221,76 +225,115 @@ export default function ReelsScreen() {
     );
   };
 
+  const renderContent = () => {
+    if (activeTab === 'imageGeneration') {
+      return (
+        // 기존의 이미지 생성 관련 컴포넌트들
+        <View style={styles.contentContainer}>
+          
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <Text style={styles.dropdownButtonText}>{selectedType}</Text>
+                <Ionicons 
+                  name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
+                  size={24} 
+                  color="#262626" 
+                />
+                {isDropdownOpen && (
+                  <View style={styles.dropdownMenu}>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem} 
+                      onPress={() => handleTypeSelect('사람')}
+                    >
+                      <Text style={styles.dropdownItemText}>사람</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem} 
+                      onPress={() => handleTypeSelect('동물')}
+                    >
+                      <Text style={styles.dropdownItemText}>동물</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+            
+          
+          <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.image} />
+            ) : (
+              <View style={styles.placeholder}>
+                <Text style={styles.placeholderText}>+</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.text}>당신의 사진을 넣어주세요</Text>
+          
+          <View style={styles.dotsContainer}>
+            <View style={styles.dotsRow}>
+              {[...Array(3)].map((_, i) => (
+                <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i], i)}>
+                  <View style={dotImages[i] || styles.skeleton}>
+                  {dotImages[i] && <Image source={{ uri: dotImages[i] }} style={styles.dotImage} />}
+                  </View>
+                    
+
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.dotsRow}>
+              {[...Array(2)].map((_, i) => (
+                <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3], i+3)}>
+                  <View style={dotImages[i + 3] || styles.skeleton}>
+                    {dotImages[i + 3] && <Image source={{ uri: dotImages[i + 3] }} style={styles.dotImage} />}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.button, (loading || !image || selectedType === '스타일') && styles.disabledButton]} 
+            onPress={handleButtonPress}
+            disabled={loading || !image || selectedType === '스타일'}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? '생성중...' : '새로운 친구 만들기'}
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.villageContainer}>
+          <Village />
+        </View>
+      );
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.dropdownContainer}>
-        <TouchableOpacity 
-          style={styles.dropdownButton} 
-          onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'imageGeneration' && styles.activeTabButton]}
+          onPress={() => setActiveTab('imageGeneration')}
         >
-          <Text style={styles.dropdownButtonText}>{selectedType}</Text>
-          <Ionicons 
-            name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
-            size={24} 
-            color="#262626" 
-          />
+          <Text style={[styles.tabButtonText, activeTab === 'imageGeneration' && styles.activeTabButtonText]}>Generate AI</Text>
         </TouchableOpacity>
-        {isDropdownOpen && (
-          <View style={styles.dropdownMenu}>
-            <TouchableOpacity 
-              style={styles.dropdownItem} 
-              onPress={() => handleTypeSelect('사람')}
-            >
-              <Text style={styles.dropdownItemText}>사람</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.dropdownItem} 
-              onPress={() => handleTypeSelect('동물')}
-            >
-              <Text style={styles.dropdownItemText}>동물</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'village' && styles.activeTabButton]}
+          onPress={() => setActiveTab('village')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'village' && styles.activeTabButtonText]}>Village</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>+</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-      <Text style={styles.text}>당신의 사진을 넣어주세요</Text>
-      
-      <View style={styles.dotsContainer}>
-        <View style={styles.dotsRow}>
-          {[...Array(3)].map((_, i) => (
-            <TouchableOpacity key={i} onPress={() => dotImages[i] && handleDotPress(dotImages[i], i)}>
-              {renderDotImage(i)}
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.dotsRow}>
-          {[...Array(2)].map((_, i) => (
-            <TouchableOpacity key={i + 3} onPress={() => dotImages[i + 3] && handleDotPress(dotImages[i + 3], i+3)}>
-              {renderDotImage(i + 3)}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.button, (loading || !image || selectedType === '스타일') && styles.disabledButton]} 
-        onPress={handleButtonPress}
-        disabled={loading || !image || selectedType === '스타일'}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? '생성중...' : '새로운 친구 만들기'}
-        </Text>
-      </TouchableOpacity>
-
+      {renderContent()}
       <Modal
         animationType="slide"
         transparent={true}
@@ -338,14 +381,44 @@ export default function ReelsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+  contentContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FAFAFA',
     padding: 20,
   },
-  topSection: {
+  tabContainer: {
+    flexDirection: 'row',
+    marginTop: 40,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
     alignItems: 'center',
-    marginTop: 50, // 이 값을 조절하여 원의 위치를 위로 옮깁니다.
+    borderBottomWidth: 2,
+    borderBottomColor: '#DBDBDB',
+  },
+  activeTabButton: {
+    borderBottomColor: '#5271ff',
+  },
+  tabButtonText: {
+    fontSize: 16,
+    color: '#262626',
+  },
+  activeTabButtonText: {
+    color: '#5271ff',
+    fontWeight: 'bold',
+  },
+
+  villageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   imageContainer: {
     width: 200,
@@ -526,7 +599,7 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     position: 'absolute',
-    top: '100%', // 버튼 바로 아래에 위치
+    top: '150%', // 버튼 바로 아래에 위치
     left: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
@@ -541,19 +614,6 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
     color: '#262626',
-  },
-  dotImageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DBDBDB',
-    marginHorizontal: 10,
-  },
-  dotImageLoader: {
-    position: 'absolute',
   },
   disabledButton: {
     backgroundColor: '#A0A0A0',
