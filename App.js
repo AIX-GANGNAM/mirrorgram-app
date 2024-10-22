@@ -13,7 +13,7 @@ import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오�
 import GetPushToken from './components/notification/GetPushToken';
 import {saveNotification} from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
-
+import PersonaChat from './components/chat/PersonaChat';
 
 
 import HomeScreen from './screens/HomeScreen';
@@ -47,7 +47,6 @@ import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
 
 import PersonaProfile from './components/persona/PersonaProfile';
-
 import { Provider } from 'react-redux';
 import store from './store';
 
@@ -208,6 +207,7 @@ const App = () => {
 									})}
 								/>
 								<Stack.Screen name="Post" component={Post} />
+                <Stack.Screen name="PersonaChat" component={PersonaChat} />
 							</>
 						)}
 						<Stack.Screen name="Signup" component={SignupForm} />
