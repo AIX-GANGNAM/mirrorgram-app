@@ -6,9 +6,7 @@ import { View, Text, TouchableOpacity, Image, } from 'react-native';
 
 // Now 컴포넌트 정의. navigation과 FriendsProfileData를 props로 받음
 const Now = ({ navigation, FriendsProfileData,FollowUserData,HeartUserData,ReplyUserData }) => {
-	console.log(FollowUserData);
-	console.log(HeartUserData);
-	console.log(ReplyUserData);	
+	
 	return(
 	<>	
 	   {/* "Now" 텍스트 표시 */}

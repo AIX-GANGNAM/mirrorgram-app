@@ -20,6 +20,9 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
 
   const user = useSelector(state => state.user.user);
+  console.log("ChatScreen > highlightTitle : ", highlightTitle);
+  console.log("ChatScreen > highlightImage : ", highlightImage);
+  console.log("ChatScreen > persona : ", persona);  
 
   useEffect(() => {
     loadChatHistory(user.uid, persona);
