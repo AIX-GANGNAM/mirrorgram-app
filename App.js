@@ -20,7 +20,7 @@ import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ReelsScreen from './screens/ReelsScreen';
-import SearchScreen from './screens/SearchScreen';
+import CalenderScreen from './screens/CalenderScreen';
 import LoginScreen from './screens/LoginScreen';
 import ActivityScreen from './screens/ActivityScreen';
 import FriendProfileScreen from './screens/FriendProfileScreen';
@@ -130,8 +130,8 @@ const App = () => {
             let iconName;
             if (route.name === 'Home') {
               iconName = focused ? 'home' : 'home-outline';
-            } else if (route.name === 'Search') {
-              iconName = focused ? 'search' : 'search-outline';
+            } else if (route.name === 'Calender') {
+              iconName = focused ? 'calendar' : 'calendar-outline';
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
             } else if (route.name === 'PlayGround') {
@@ -148,7 +148,7 @@ const App = () => {
       >
 
         <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Search" component={SearchScreen} />
+        <Tab.Screen name="Calender" component={CalenderScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
         <Tab.Screen name="PlayGround" component={ReelsScreen} />
         <Tab.Screen name="Profile">
