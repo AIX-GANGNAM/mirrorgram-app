@@ -27,7 +27,7 @@ import {
 import { getAuth } from 'firebase/auth';
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { createPersonaPairName } from '../../utils/utils'; // 유틸리티 함수 import
+import { createPersonaPairName, PERSONA_ORDER } from '../../utils/utils'; // 유틸리티 함수 import
 import axios from 'axios';
 
 const PersonaChat = ({ route, navigation }) => {
@@ -46,24 +46,33 @@ const PersonaChat = ({ route, navigation }) => {
   const [newTopic, setNewTopic] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false); // 요청 진행 상태
 
-  // 페르소나 쌍 이름을 일관되게 생성
+  // 페르소나 쌍 이름을 일관되게 생성 (정렬된 순서)
   const pairName = createPersonaPairName(personas[0].persona, personas[1].persona);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    
+
+    if (!currentUser) {
+      console.log('No current user.');
+      setLoading(false);
+      setError(new Error('사용자가 인증되지 않았습니다.'));
+      return;
+    }
 
     const messagesRef = collection(db, 'personachat', currentUser.uid, pairName);
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      console.log('onSnapshot callback triggered.');
+
       try {
         const msgs = [];
-        const batch = writeBatch(db); // Firestore 배치 업데이트를 위해 사용
+        const batch = writeBatch(db);
 
         snapshot.forEach((docSnapshot) => {
           const data = docSnapshot.data();
-          console.log('Fetched message data:', data); // 디버깅 로그
+          console.log('Fetched message data:', data);
 
           let timestamp;
 
@@ -101,6 +110,7 @@ const PersonaChat = ({ route, navigation }) => {
         }
 
         setMessages(msgs);
+        console.log('Messages set:', msgs);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching messages:', err);
@@ -201,7 +211,8 @@ const PersonaChat = ({ route, navigation }) => {
       const response = await axios.post('http://localhost:8000/v3/persona-chat', requestData);
 
       if (response.status === 200) {
-        // Alert.alert('성공', '새로운 주제가 성공적으로 전송되었습니다.');
+        // 성공 메시지 추가
+        Alert.alert('성공', '새로운 주제가 성공적으로 전송되었습니다.');
         setNewTopic('');
       } else {
         Alert.alert('오류', '주제 전송에 실패했습니다.');
@@ -363,6 +374,9 @@ const PersonaChat = ({ route, navigation }) => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>새로운 주제 입력</Text>
+              <Text style={styles.modalSubtitle}>
+                {personas[0].name} & {personas[1].name} 가 {user.profile.userName} 님이 입력하신 주제에 대해 이야기 할거에요
+              </Text>
               <TextInput
                 style={styles.modalInput}
                 placeholder="주제를 입력하세요..."
@@ -559,11 +573,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: 'center',
     color: '#333',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#666',
   },
   modalInput: {
     height: 50, // 입력 필드 높이 증가
