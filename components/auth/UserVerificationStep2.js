@@ -20,7 +20,7 @@ const UserVerificationStep2 = () => {
 
   return (
     <View style={styles.container}>
-      <ProgressBar step={2} totalSteps={4} />
+      <ProgressBar step={3} totalSteps={5} />
       <Text style={styles.title}>이름 입력</Text>
       <TextInput
         style={styles.input}

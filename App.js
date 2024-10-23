@@ -35,6 +35,7 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
+import UserVerificationStep0 from './components/auth/UserVerificationStep0.js';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
 import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
 import UserVerificationStep3 from './components/auth/UserVerificationStep3.js';
@@ -46,8 +47,13 @@ import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
 import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
 
+
 import { Provider } from 'react-redux';
 import store from './store';
+
+
+import { WebSocketProvider } from './components/Toast/WebSocketContext';
+import { ToastProvider } from './components/Toast/ToastContext';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -160,68 +166,73 @@ const App = () => {
 
 	return(
 		<Provider store={store}>
-			<NavigationContainer>
-					<Stack.Navigator
-						screenOptions={{
-							headerShown: false,
-						}}
-					>
-						{!isAuthenticated ? (
-							<Stack.Screen name="Login">
-								{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+			<WebSocketProvider>
+				<ToastProvider>
+					<NavigationContainer>
+						<Stack.Navigator
+							screenOptions={{
+								headerShown: false,
+							}}
+						>
+							{!isAuthenticated ? (
+								<Stack.Screen name="Login">
+									{props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+								</Stack.Screen>
+							) : (
+								<>
+									<Stack.Screen name="BottomTab" component={BottomTabScreen} />
+									<Stack.Screen name="Activity" component={ActivityScreen} />
+									<Stack.Screen name="Home" component={HomeScreen} />
+									<Stack.Screen 
+										name="FriendProfile" 
+										component={FriendProfileScreen}
+										options={({ route }) => ({ 
+											title: route.params.name,
+											headerShown: true 
+										})}
+									/>
+									<Stack.Screen name="Status" component={Status} />
+									<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+									<Stack.Screen name="Chat" component={ChatScreen} />
+									<Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+									<Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+									<Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+									<Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
+									<Stack.Screen 
+										name="ChatList" 
+										component={ChatListScreen} 
+										options={{
+											headerShown: true,
+										}}
+									/>
+									<Stack.Screen 
+										name="ChatUser" 
+										component={ChatUserScreen}
+										options={({ route }) => ({ 
+											title: route.params.name,
+											headerShown: true 
+										})}
+									/>
+									<Stack.Screen name="Post" component={Post} />
+								</>
+							)}
+							<Stack.Screen name="Signup" component={SignupForm} />
+							<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
+							<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationStep0" component={UserVerificationStep0} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
+							<Stack.Screen name="UserVerificationSummary">
+								{props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
 							</Stack.Screen>
-						) : (
-							<>
-								<Stack.Screen name="BottomTab" component={BottomTabScreen} />
-								<Stack.Screen name="Activity" component={ActivityScreen} />
-								<Stack.Screen name="Home" component={HomeScreen} />
-								<Stack.Screen 
-									name="FriendProfile" 
-									component={FriendProfileScreen}
-									options={({ route }) => ({ 
-										title: route.params.name,
-										headerShown: true 
-									})}
-								/>
-								<Stack.Screen name="Status" component={Status} />
-								<Stack.Screen name="EditProfile" component={EditProfileScreen} />
-								<Stack.Screen name="Chat" component={ChatScreen} />
-								<Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
-								<Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
-								<Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
-								<Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
-								<Stack.Screen 
-									name="ChatList" 
-									component={ChatListScreen} 
-									options={{
-										headerShown: true,
-									}}
-								/>
-								<Stack.Screen 
-									name="ChatUser" 
-									component={ChatUserScreen}
-									options={({ route }) => ({ 
-										title: route.params.name,
-										headerShown: true 
-									})}
-								/>
-								<Stack.Screen name="Post" component={Post} />
-							</>
-						)}
-						<Stack.Screen name="Signup" component={SignupForm} />
-						<Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
-						<Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
-						<Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
-						<Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
-						<Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
-						<Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
-						<Stack.Screen name="UserVerificationSummary">
-							{props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
-						</Stack.Screen>
-					</Stack.Navigator>
-				</NavigationContainer>
-			</Provider>
-		);
+						</Stack.Navigator>
+					</NavigationContainer>
+				</ToastProvider>
+			</WebSocketProvider>
+		</Provider>
+	);
 }
 
 async function registerForPushNotificationsAsync() {

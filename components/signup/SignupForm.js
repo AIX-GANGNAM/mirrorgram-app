@@ -89,7 +89,7 @@ const SignupForm = () => {
       console.log("푸시 알림 토큰 : ", pushToken);
       alert('회원가입이 완료되었습니다.');
       // 여기서 UserVerificationStep1으로 네비게이션을 변경합니다.
-      navigation.navigate('UserVerificationStep1');
+      navigation.navigate('UserVerificationStep0');
     } catch (error) {
       console.error(error);
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
@@ -107,7 +107,7 @@ const SignupForm = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo/Instagram-logo.png')}
+        source={require('../../assets/logo/mybot-log-color.png')}
         style={styles.logo}
       />
       <Text style={styles.subtitle}>친구들의 사진과 동영상을 보려면 가입하세요.</Text>
@@ -167,8 +167,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   logo: {
-    width: 200,
-    height: 70,
+    width: 300,
+    height: 300,
     resizeMode: 'contain',
     marginBottom: 20,
   },

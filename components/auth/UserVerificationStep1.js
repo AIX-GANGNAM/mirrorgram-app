@@ -8,6 +8,8 @@ const UserVerificationStep1 = () => {
   const [username, setUsername] = useState('');
   const navigation = useNavigation();
 
+  
+
   const handleNext = () => {
     if (username) {
       navigation.navigate('UserVerificationStep2', { username });
@@ -18,11 +20,11 @@ const UserVerificationStep1 = () => {
 
   return (
     <View style={styles.container}>
-      <ProgressBar step={1} totalSteps={4} />
       <Image
-        source={require('../../assets/logo/Instagram-logo.png')}
-        style={styles.logo}
+        source={require('../../assets/logo/mybot-log-color.png')}
+        style={{width: 300, height: 300}}
       />
+      <ProgressBar step={2} totalSteps={5} />
       <Text style={styles.title}>사용자 ID 입력</Text>
       <View style={styles.inputContainer}>
         <Text style={styles.atSymbol}>@</Text>
