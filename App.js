@@ -47,20 +47,16 @@ import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
 
 import PersonaProfile from './components/persona/PersonaProfile';
-
 import { Provider } from 'react-redux';
 import store from './store';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true, // 알림 표시 여부  
-    shouldPlaySound: true, // 소리 재생 여부
-    shouldSetBadge: true , // 배지 표시 여부
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true ,
   }),
 });
-
-// NavigationContainer에 대한 ref 생성
-const navigationRef = createNavigationContainerRef();
 
 const App = () => {
   const Tab = createBottomTabNavigator();
@@ -165,7 +161,7 @@ const App = () => {
 
   return(
       <Provider store={store}>
-        <NavigationContainer ref={navigationRef}>
+        <NavigationContainer>
           <Stack.Navigator
               screenOptions={{
                 headerShown: false,
@@ -178,13 +174,7 @@ const App = () => {
             ) : (
                 <>
                   <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-                  <Stack.Screen
-                      name="Activity"
-                      component={ActivityScreen}
-                      options={{
-                        headerShown: false,
-                      }}
-                  />
+                  <Stack.Screen name="Activity" component={ActivityScreen} />
                   <Stack.Screen name="Home" component={HomeScreen} />
                   <Stack.Screen
                       name="FriendProfile"
@@ -217,6 +207,7 @@ const App = () => {
                       })}
                   />
                   <Stack.Screen name="Post" component={Post} />
+                  <Stack.Screen name="PersonaChat" component={PersonaChat} />
                 </>
             )}
             <Stack.Screen name="Signup" component={SignupForm} />
@@ -229,16 +220,11 @@ const App = () => {
             <Stack.Screen name="UserVerificationSummary">
               {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
             </Stack.Screen>
+            <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
           </Stack.Navigator>
         </NavigationContainer>
       </Provider>
   );
-
-  <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
-</Stack.Navigator>
-</NavigationContainer>
-</Provider>
-);
 }
 
 async function registerForPushNotificationsAsync() {
@@ -279,5 +265,29 @@ async function registerForPushNotificationsAsync() {
 
   }
 }
+const styles = StyleSheet.create({
+  debugContainer: {
+    top: 1,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    padding: 10,
+    zIndex: 1000,
+  },
+  active: {
+    borderBottomWidth: 3,
+    borderColor: '#00ccbb',
+    borderRadius: 10,
+    padding: 5,
+  },
+  userCircle: {
+    height: 30,
+    width: 30,
+    padding: 5,
+    marginTop: 3,
+    borderRadius: 50,
+    borderColor: '#00ccbb',
+  },
+});
 
 export default App;
