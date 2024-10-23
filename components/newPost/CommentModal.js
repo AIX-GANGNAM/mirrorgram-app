@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, Modal, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useSelector } from 'react-redux';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { HeartSolid, HeartOutline, ChevronUpIcon, ChevronDownIcon, XMarkIcon } from 'react-native-heroicons/solid'; 
@@ -170,6 +170,7 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
+        paddingTop: Platform.OS === 'ios' ? 50 : 0,
         backgroundColor: 'white',
       },
       modalHeader: {
