@@ -26,6 +26,9 @@ export default function ReelsScreen() {
       // 화면에 포커스가 올 때마다 실행
       setSelectedType('스타일');
       setIsDropdownOpen(false);
+      setActiveTab('imageGeneration');
+      setSelectedImage(null);
+      setModalVisible(false);
     }, [])
   );
   const resetPositionAnim = Animated.timing(panY, {
@@ -316,6 +319,9 @@ export default function ReelsScreen() {
       );
     }
   };
+
+
+
 
   return (
     <View style={styles.container}>
