@@ -145,7 +145,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo/mirrorgram-logo.png')}
+        source={require('../../assets/logo/mybot-log-color.png')}
         style={styles.logo}
       />
       <TextInput
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 300,
-    height: 100,
+    height: 300,
     resizeMode: 'contain',
     marginBottom: 30,
   },

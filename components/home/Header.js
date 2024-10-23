@@ -19,7 +19,7 @@ const Header = () => {
    <View style={styles.container}>
     <TouchableOpacity style={{alignItems:'center',flexDirection:'row'}}>
     <Image style={styles.logo} 
-	source={require('../../assets/logo/mirrorgram-logo.png')}
+	source={require('../../assets/logo/logo-color.png')}
     />
     <TouchableOpacity style={{padding:5}}>
       <ChevronDownIcon color='white' size={28} />
