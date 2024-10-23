@@ -1,92 +1,92 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, StyleSheet, Alert, Platform, StatusBar, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, TextInput, Modal, StyleSheet, Alert, Platform, StatusBar, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { startOfMonth, endOfMonth, addDays, format, getDay, addMonths } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { Calendar } from 'react-native-calendars';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { db } from '../firebaseConfig';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { useFocusEffect } from '@react-navigation/native'; // react-navigation의 useFocusEffect 추가
 
-const CalenderScreen = () => {
+const CalendarScreen = () => {
   const [schedule, setSchedule] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', time: new Date() });
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const auth = getAuth();
+  const user = auth.currentUser;
 
-  const addEvent = () => {
+  const fetchSchedule = async () => {
+    if (user) {
+      const userRef = doc(db, 'calendar', user.uid);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        setSchedule(userDoc.data().events || []);
+      }
+    }
+  };
+
+  // 화면에 진입할 때마다 스케줄을 불러옴
+  useFocusEffect(
+    useCallback(() => {
+      fetchSchedule();
+    }, [user])
+  );
+
+  const addEvent = async () => {
     if (newEvent.title.trim() === '') {
-      Alert.alert('Error', 'Please enter a valid event title.');
+      Alert.alert('오류', '유효한 일정 제목을 입력하세요.');
       return;
     }
-    setSchedule([...schedule, { ...newEvent, date: format(selectedDate, 'yyyy-MM-dd') }]);
+
+    const event = { ...newEvent, date: selectedDate };
+    setSchedule([...schedule, event]);
     setNewEvent({ title: '', time: new Date() });
     setModalVisible(false);
-  };
 
-  const renderEvent = ({ item }) => (
-    <View style={styles.eventItem}>
-      <Text style={styles.eventText}>{format(new Date(item.date), 'PPP', { locale: ko })} - {item.time.toLocaleTimeString()} - {item.title}</Text>
-    </View>
-  );
-
-  const renderCalendarHeader = () => (
-    <View style={styles.calendarHeader}>
-      <TouchableOpacity onPress={() => changeMonth(-1)}>
-        <Text style={styles.headerButton}>{'<'}</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>{format(selectedDate, 'MMMM yyyy', { locale: ko })}</Text>
-      <TouchableOpacity onPress={() => changeMonth(1)}>
-        <Text style={styles.headerButton}>{'>'}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const changeMonth = (direction) => {
-    setSelectedDate(addMonths(selectedDate, direction));
-  };
-
-  const renderDaysOfWeek = () => {
-    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-    return (
-      <View style={styles.daysOfWeekContainer}>
-        {daysOfWeek.map((day, index) => (
-          <Text key={index} style={styles.dayOfWeekText}>{day}</Text>
-        ))}
-      </View>
-    );
-  };
-
-  const renderCalendarDays = () => {
-    const start = startOfMonth(selectedDate);
-    const startDayOfWeek = getDay(start);
-    const daysArray = Array.from({ length: 42 }, (_, i) => addDays(start, i - startDayOfWeek));
-
-    return (
-      <View style={styles.calendarDaysContainer}>
-        {daysArray.map((day, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.dayButton, day.getMonth() === selectedDate.getMonth() ? styles.currentMonthDay : styles.otherMonthDay, format(selectedDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') && styles.selectedDay]}
-            onPress={() => setSelectedDate(day)}
-          >
-            <Text style={styles.dayText}>{day.getDate()}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
+    if (user) {
+      const userRef = doc(db, 'calendar', user.uid);
+      await updateDoc(userRef, {
+        events: arrayUnion(event),
+      }).catch(async (error) => {
+        if (error.code === 'not-found') {
+          await setDoc(userRef, { events: [event] });
+        }
+      });
+    }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {renderCalendarHeader()}
-      {renderDaysOfWeek()}
-      {renderCalendarDays()}
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-        <Text style={styles.addButtonText}>Add Event</Text>
-      </TouchableOpacity>
-      <FlatList
-        data={schedule.filter(item => item.date === format(selectedDate, 'yyyy-MM-dd'))}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderEvent}
-        style={styles.scheduleList}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>캘린더</Text>
+      </View>
+      <Calendar
+        onDayPress={(day) => setSelectedDate(day.dateString)}
+        markedDates={{
+          [selectedDate]: { selected: true, selectedColor: '#007bff' },
+          ...schedule.reduce((acc, event) => {
+            acc[event.date] = { marked: true, dotColor: '#007bff' };
+            return acc;
+          }, {}),
+        }}
       />
+      <ScrollView style={styles.timelineContainer}>
+        <Text style={styles.timelineTitle}>일정 타임라인</Text>
+        {schedule.filter(event => event.date === selectedDate).sort((a, b) => new Date(a.time.toDate()) - new Date(b.time.toDate())).map((event, index) => (
+          <View key={index} style={styles.timelineItem}>
+            <Text style={styles.timelineEventTitle}>{event.title}</Text>
+            <Text style={styles.timelineEventTime}>
+              {event.time && event.time.toDate
+                ? event.time.toDate().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true })
+                : '시간 미정'}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+        <Icon name="add-circle" size={60} color="#007bff" />
+      </TouchableOpacity>
       <Modal
         animationType="slide"
         transparent={true}
@@ -94,30 +94,34 @@ const CalenderScreen = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Add New Event</Text>
+          <Text style={styles.modalTitle}>새 일정 만들기</Text>
           <TextInput
             style={styles.input}
-            placeholder="Event Title"
+            placeholder="일정 제목"
             value={newEvent.title}
             onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
           />
-          <DateTimePicker
-            value={newEvent.time}
-            mode="time"
-            display="default"
-            onChange={(event, selectedDate) => setNewEvent({ ...newEvent, time: selectedDate || newEvent.time })}
-          />
+          <View style={styles.timePickerContainer}>
+            <Text style={styles.timePickerLabel}>시간 선택:</Text>
+            <DateTimePicker
+              value={newEvent.time}
+              mode="time"
+              display="spinner"
+              textColor="#007bff"
+              onChange={(event, selectedTime) => setNewEvent({ ...newEvent, time: selectedTime || newEvent.time })}
+            />
+          </View>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.modalButton} onPress={addEvent}>
-              <Text style={styles.modalButtonText}>Add</Text>
+            <TouchableOpacity style={styles.addEventButton} onPress={addEvent}>
+              <Text style={styles.addEventButtonText}>일정 추가</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <Text style={styles.modalButtonText}>Cancel</Text>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>취소</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -127,78 +131,99 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 55,
   },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 10,
+  header: {
     backgroundColor: '#007bff',
-  },
-  headerButton: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  daysOfWeekContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: '#e6e6e6',
-  },
-  dayOfWeekText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  calendarDaysContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 10,
-  },
-  dayButton: {
-    width: '13.5%',
-    padding: 15,
+    padding: 20,
     alignItems: 'center',
-    margin: 2,
-    backgroundColor: '#fff',
-    borderRadius: 5,
   },
-  currentMonthDay: {
-    backgroundColor: '#fff',
-  },
-  otherMonthDay: {
-    backgroundColor: '#e6e6e6',
-  },
-  selectedDay: {
-    backgroundColor: '#007bff',
-  },
-  dayText: {
-    color: '#000',
+  headerText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   addButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    elevation: 5,
+  },
+  modalView: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    margin: 20,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    padding: 20,
   },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
   },
-  scheduleList: {
-    marginTop: 10,
+  input: {
+    backgroundColor: '#fff',
+    width: '90%',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  timePickerContainer: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  timePickerLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    width: '90%',
+    justifyContent: 'space-between',
+  },
+  addEventButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 10,
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  addEventButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    backgroundColor: '#ff3b30',
+    padding: 15,
+    borderRadius: 10,
+    flex: 1,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  timelineContainer: {
+    marginTop: 20,
     paddingHorizontal: 20,
   },
-  eventItem: {
-    backgroundColor: '#ffffff',
+  timelineTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  timelineItem: {
+    backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 10,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -206,44 +231,15 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 2,
   },
-  eventText: {
+  timelineEventTitle: {
     fontSize: 16,
-  },
-  modalView: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-    color: '#fff',
   },
-  input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 15,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    flex: 1,
-  },
-  modalButtonText: {
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: 'bold',
+  timelineEventTime: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
   },
 });
 
-export default CalenderScreen;
+export default CalendarScreen;
