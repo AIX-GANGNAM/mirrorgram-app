@@ -24,9 +24,9 @@
     "icon": "./assets/logo/mirrorgram-logo.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/open-mirrorgram.png",
+      "image": "./assets/logo/mybot-log-color.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"

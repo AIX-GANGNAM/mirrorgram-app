@@ -19,7 +19,7 @@ const Logo = () => {
 	<View>
       <TouchableOpacity
       		style={{flexDirection:'row',
-      			justifyContent:'center',alignItems:'center'}}>
+      		justifyContent:'center',alignItems:'center'}}>
        <Text style={styles.lang}>English(US) </Text>
        <ChevronDownIcon size={20} color='#fff' />
 	  </TouchableOpacity>

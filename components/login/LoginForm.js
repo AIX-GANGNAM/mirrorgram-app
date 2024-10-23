@@ -76,7 +76,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         setIsAuthenticated(true);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
-        navigation.navigate('UserVerificationStep1');
+        navigation.navigate('UserVerificationStep0');
       }
     } catch (error) {
       console.error(error);
@@ -195,6 +195,12 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.signupLink}>가입하기</Text>
         </TouchableOpacity>
       </View>
+      {/* <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
+        <Text>첫화면</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Test')}>
+        <Text>테스트</Text>
+      </TouchableOpacity> */}
     </View>
   );
 };

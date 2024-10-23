@@ -27,7 +27,7 @@ const UserVerificationStep4 = () => {
 
   return (
     <View style={styles.container}>
-      <ProgressBar step={4} totalSteps={4} />
+      <ProgressBar step={5} totalSteps={5} />
       <Text style={styles.title}>전화번호 입력 (선택사항)</Text>
       <TextInput
         style={styles.input}

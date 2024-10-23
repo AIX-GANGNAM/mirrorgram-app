@@ -55,7 +55,7 @@ const UserVerificationStep3 = () => {
 
   return (
     <View style={styles.container}>
-      <ProgressBar step={3} totalSteps={4} />
+      <ProgressBar step={4} totalSteps={5} />
       <Text style={styles.title}>생년월일 입력</Text>
       <TextInput
         style={styles.input}
