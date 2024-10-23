@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StyleSheet, SafeAreaView, View, ScrollView, Text, TextInput, TouchableOpacity, Platform, Dimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,7 +96,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 0 : 30,
     padding: 12,
-    backgroundColor: '#000',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // 배경색을 반투명 흰색으로 설정
   },
   searchBox: {
     height: 40,
@@ -125,7 +124,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   userText: {
-    color: '#fff',
+    color: '#000', // 텍스트 색상을 검정색으로 변경
   },
   imageOverlay: {
     position: 'absolute',
