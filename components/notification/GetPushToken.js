@@ -18,7 +18,7 @@ const GetPushToken = async () => {
 
     if (notifications) {
       const parsedNotifications = JSON.parse(notifications);
-      console.log("LoadNotification > parsedNotifications : ", parsedNotifications);
+      // console.log("LoadNotification > parsedNotifications : ", parsedNotifications);
       return parsedNotifications;
     } else {
         console.log("LoadNotification > 알림 정보 없음");

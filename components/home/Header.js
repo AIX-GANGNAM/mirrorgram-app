@@ -33,7 +33,11 @@ const Header = () => {
     <TouchableOpacity
     	onPress={() => navigation.navigate('Activity')}
     	style={styles.icon}>
-       <HeartIcon color='white' size={30} />
+        <View style={styles.unreadBadge}>
+         <Text style={styles.unreadBadgeText}>92</Text>
+       </View>
+       <HeartIcon color='black' size={30} />
+       
      </TouchableOpacity>
 
     {/* 채팅 시작 */}
@@ -84,8 +88,8 @@ const styles = StyleSheet.create({
    position: 'absolute',
    backgroundColor: '#FF3250',
    borderRadius: 100,
-   left: 30,
-   bottom: 25,
+   left: 20,
+   bottom: 22,
    height: 22,
    width: 22,
    alignItems: 'center',

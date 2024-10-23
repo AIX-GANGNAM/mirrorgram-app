@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from 'firebase/auth';
 
-const saveNotification = async (notification) => {
+const saveNotification = async (notification, type) => {
   console.log("SaveNotification.js 실행");
   try {
     const auth = getAuth();
@@ -13,18 +13,20 @@ const saveNotification = async (notification) => {
       return;
     }
 
+    // 키 생성 (이메일_알림유형) ex) bhomika@gmail.com_follow, bhomika@gmail.com_heart, bhomika@gmail.com_reply
+    const storageKey = `${userEmail}_${type}`; 
 
     // 기존 알림 목록 가져오기
-    const existingNotifications = await AsyncStorage.getItem(userEmail); // 현재 로그인 사람의 폴더이름?? 으로 JSON파일 가져온다
-    let notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
-    console.log("기존 알림 목록 : ", notifications);
+    const existingNotifications = await AsyncStorage.getItem(storageKey);
+    let notifications = existingNotifications ? JSON.parse(existingNotifications) : []; // 기존 알림 목록이 있으면 가져오고, 없으면 빈 배열 생성
+    console.log(`기존 ${type} 알림 목록:`, notifications);
 
     // 새 알림 추가
     notifications.push({
-        notification
-      });
-      console.log("새 알림 추가 후 : ", notifications);
-  
+      ...notification,
+      timestamp: new Date().toISOString() // 타임스탬프 추가
+    });
+    console.log(`새 ${type} 알림 추가 후:`, notifications);
 
     // 최대 50개의 알림만 유지 (선택사항)
     if (notifications.length > 50) {
@@ -32,11 +34,11 @@ const saveNotification = async (notification) => {
     }
 
     // 업데이트된 알림 목록 저장
-    await AsyncStorage.setItem(userEmail, JSON.stringify(notifications));
+    await AsyncStorage.setItem(storageKey, JSON.stringify(notifications));
 
-    console.log("알림이 로컬에 저장되었습니다");
+    console.log(`${type} 알림이 로컬에 저장되었습니다`);
   } catch (error) {
-    console.error("알림 로컬 저장 실패:", error);
+    console.error(`${type} 알림 로컬 저장 실패:`, error);
   }
 }
 
