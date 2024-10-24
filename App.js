@@ -14,6 +14,7 @@ import GetPushToken from './components/notification/GetPushToken';
 import {saveNotification} from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
+import { createNavigationContainerRef } from '@react-navigation/native';
 
 
 import HomeScreen from './screens/HomeScreen';
@@ -64,6 +65,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// NavigationContainer에 대한 ref 생성
+const navigationRef = createNavigationContainerRef();
+
 const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
@@ -75,7 +79,7 @@ const App = () => {
   useEffect(() => {
 
     registerForPushNotificationsAsync();
-    setupBackgroundTask();
+    // setupBackgroundTask(); 백그라운드 작업 등록 중단
 
 
 
@@ -92,17 +96,101 @@ const App = () => {
 
     fetchPushToken();
 
+    const personaImages = {
+      "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
+      "Joy": "https://img1.daumcdn.net/thumb/R1280x0/?fname=http://t1.daumcdn.net/brunch/service/user/gI8/image/nl4J4OCc7QyIoC8rBK8Fn1kYVCc.jpg",
+      "Sadness": "https://d3ihz389yobwks.cloudfront.net/1597427709625898634218810800.jpg",
+      "Anger": "https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/201506/28/htm_20150628083828504.jpg",
+      "Fear": "https://img.newspim.com/news/2017/01/31/1701311632536400.jpg",
+      // 다른 persona들에 대한 이미지 URL 추가
+    };
+
 
 
     // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log("알림 수신 : ", notification);
-      // saveNotification(notification); 
+      
+      const { content } = notification.request;
+      console.log("알림수신 : content : ", content);
+      console.log("알림수신 : content.data.pushType : ", content.data.pushType);      
+      console.log("알림수신 : content.body : ", content.body);      
+      console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
+      console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
+      console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
+      saveNotification(content, content.data.pushType);
+
+      
+      // 알림 유형에 따라 saveNotification 호출
+      switch(content.data.pushType) {
+      
+        // case 'like':
+        //   console.log("case : like 실행")
+        //   saveNotification({
+        //     postId: content.data.postId, // 포스트에 대한 주소
+        //     likedBy: content.data.likedBy, // 좋아요 한 사람의 이메일 or 아이디
+        //     // 기타 필요한 정보...
+        //   }, 'like');
+        //   break;
+
+        case 'persona_chat':
+          console.log("case : persona_chat 실행")
+          console.log("알림수신 : persona_chat > content.data  : ", content.data);
+          console.log("알림수신 : persona_chat > content.body : ", content.body);
+          console.log("알림수신 : persona_chat > content.data.whoSendMessage : ", content.data.whoSendMessage);
+          console.log("알림수신 : persona_chat > content.data.highlightImage : ", content.data.highlightImage);
+          saveNotification({
+            persona: content.data.whoSendMessage, // persona 이름
+            message: content.body, // 메시지 내용
+            personaImage: personaImages[content.data.whoSendMessage] || "https://example.com/default-image.jpg", // persona 이미지 URL
+            pushTime: content.data.pushTime, // 알림 수신 시간
+            // 기타 필요한 정보...
+          }, 'persona_chat');
+          break;
+          
+      
+        // case 'reply':
+        //   console.log("case : reply")
+        //   saveNotification({
+        //     postId: content.data.postId, // 포스트에 대한 주소
+        //     replyBy: content.data.replyBy, // 댓글 단 사람의 이메일 or 아이디
+        //     replyContent: content.data.replyContent, // 댓글 내용
+        //     // 기타 필요한 정보...
+        //   }, 'reply');
+        //   break;
+
+        // case 'follow':
+        //   console.log("case : follow 실행")
+        //   saveNotification({
+        //     followedBy: content.data.followedBy, // 팔로우 한 사람의 이메일 or 아이디
+        //     // 기타 필요한 정보...
+        //   }, 'follow');
+        //   break;
+        // default:
+        //   console.log("알 수 없는 알림 유형:", content.data.pushType);
+      }
     });
+
+    const defaultImage = "https://example.com/default-image.jpg";
 
     // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
+
       console.log("알림 터치됨:", response);
+      const persona = response.notification.request.content.title;
+
+      console.log("persona : ", persona);
+
+      const highlightImage = personaImages[persona] || defaultImage;
+
+      // navigationRef가 준비되었고 persona가 존재하는 경우에만 네비게이션 실행
+      if (navigationRef.isReady() && persona) {
+        navigationRef.navigate('Chat', { 
+          persona: persona,
+          highlightTitle: persona, // 또는 다른 적절한 제목
+          highlightImage: highlightImage // persona에 따른 이미지 URL
+        });
+      }
     });
 
     return () => {

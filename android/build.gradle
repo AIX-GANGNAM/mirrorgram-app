@@ -10,12 +10,19 @@ buildscript {
 
         ndkVersion = "26.1.10909125"
     }
+     ext {
+        // 버전을 명시적으로 지정
+        firebaseMessagingVersion = "23.0.0"
+        firebaseCoreVersion = "21.0.0"
+        // ... 기타 버전들
+    }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.gms:google-services:4.3.3'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
+        classpath 'com.google.gms:google-services:4.4.1'
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')

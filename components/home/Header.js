@@ -30,7 +30,7 @@ const Header = () => {
      <TouchableOpacity style={styles.icon}>
        <PlusCircleIcon color='white' size={30} />
      </TouchableOpacity>
-    <TouchableOpacity
+     <TouchableOpacity
     	onPress={() => navigation.navigate('Activity')}
     	style={styles.icon}>
         <View style={styles.unreadBadge}>
@@ -39,7 +39,6 @@ const Header = () => {
        <HeartIcon color='black' size={30} />
        
      </TouchableOpacity>
-
     {/* 채팅 시작 */}
     <TouchableOpacity 
       style={styles.icon}
