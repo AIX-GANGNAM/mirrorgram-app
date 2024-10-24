@@ -37,7 +37,7 @@
     "expo-device": "~6.0.2",
     "expo-image-picker": "~15.0.7",
     "expo-linear-gradient": "~13.0.2",
-    "expo-notifications": "~0.28.18",
+    "expo-notifications": "~0.28.19",
     "expo-random": "~14.0.1",
     "expo-server-sdk": "^3.11.0",
     "expo-splash-screen": "~0.27.6",
@@ -68,8 +68,8 @@
     "react-native-webview": "13.8.6",
     "react-redux": "^9.1.2",
     "react-scripts": "^5.0.1",
-    "uuid": "^10.0.0",
     "typescript": "~5.3.3",
+    "uuid": "^10.0.0",
     "yup": "^1.1.1"
   },
   "devDependencies": {

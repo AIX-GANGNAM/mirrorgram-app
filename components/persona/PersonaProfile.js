@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { app } from '../../firebaseConfig'; // Firebase 설정 파일 import
@@ -6,17 +6,19 @@ import { doc, updateDoc, getFirestore, setDoc, getDoc } from 'firebase/firestore
 
 const PersonaProfile = ({ route, navigation }) => {
     const { persona, userId } = route.params;
-    const personaId = `${userId}_${persona.title.toLowerCase().replace(/\s+/g, '_')}`;
+    const personaId = `${userId}_${persona.persona}`;  // 영어 persona 값을 사용하여 ID 생성
 
-    // 초기 관심사 상태 설정 (빈 배열로 초기화)
+    console.log('Firebase에 저장될 personaId:', personaId); // 로그 추가
+
     const [interests, setInterests] = useState([]);
     const [newInterest, setNewInterest] = useState('');
 
     const db = getFirestore(app);
+    const inputRef = useRef(null);
 
     useEffect(() => {
         navigation.setOptions({
-            headerTitle: '페르소나 프로필',
+            headerTitle: `${persona.title} 프로필`,
             headerTitleAlign: 'center',
         });
 
@@ -27,7 +29,6 @@ const PersonaProfile = ({ route, navigation }) => {
                 const docSnap = await getDoc(personaRef);
 
                 if (docSnap.exists()) {
-                    // Firestore에서 데이터 가져와 상태 설정
                     const data = docSnap.data();
                     if (data && data.interests) {
                         setInterests(data.interests);
@@ -48,14 +49,10 @@ const PersonaProfile = ({ route, navigation }) => {
     const updateInterestsInFirebase = async (updatedInterests) => {
         try {
             const personaRef = doc(db, 'personas', personaId);
-
-            // 문서가 존재하는지 먼저 확인합니다.
             const docSnap = await getDoc(personaRef);
             if (docSnap.exists()) {
-                // 문서가 존재하면 업데이트
                 await updateDoc(personaRef, { interests: updatedInterests });
             } else {
-                // 문서가 존재하지 않으면 새로 생성
                 await setDoc(personaRef, { interests: updatedInterests });
             }
         } catch (error) {
@@ -67,7 +64,6 @@ const PersonaProfile = ({ route, navigation }) => {
     // 새로운 관심사 추가 함수
     const addInterest = () => {
         if (newInterest.trim()) {
-            // 최대 개수를 10개로 제한
             if (interests.length >= 10) {
                 Alert.alert('제한', '관심사는 최대 10개까지만 추가할 수 있습니다.');
                 return;
@@ -77,6 +73,7 @@ const PersonaProfile = ({ route, navigation }) => {
             setInterests(updatedInterests);
             setNewInterest('');
             updateInterestsInFirebase(updatedInterests);
+            inputRef.current?.focus();
         }
     };
 
@@ -89,13 +86,9 @@ const PersonaProfile = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
-            {/* 페르소나 이미지 */}
             <Image source={{ uri: persona.image }} style={styles.image} />
-            {/* 페르소나 이름 */}
             <Text style={styles.name}>{persona.title}</Text>
-            {/* 수평선 추가 */}
             <View style={styles.horizontalLine} />
-            {/* 관심사 목록 */}
             <View style={styles.interestsContainer}>
                 <Text style={styles.interestsTitle}>관심 키워드♥</Text>
                 <Text style={styles.interestsLimitText}>최대 10개까지 추가할 수 있습니다.</Text>
@@ -103,7 +96,6 @@ const PersonaProfile = ({ route, navigation }) => {
                     {interests.map((interest, index) => (
                         <View key={index} style={styles.interestBubble}>
                             <Text style={styles.interestText}>{interest}</Text>
-                            {/* 관심사 제거 버튼 */}
                             <TouchableOpacity
                                 style={styles.removeButton}
                                 onPress={() => removeInterest(index)}
@@ -114,15 +106,17 @@ const PersonaProfile = ({ route, navigation }) => {
                     ))}
                 </View>
             </View>
-
-            {/* <Image source={require('../../assets/persona/brain.jpg')} style={styles.additionalImage} /> */}
-
-            {/* 관심사 추가 입력란 */}
             <View style={styles.addInterestContainer}>
                 <TextInput
+                    ref={inputRef}
                     style={styles.input}
                     value={newInterest}
                     onChangeText={setNewInterest}
+                    onSubmitEditing={addInterest}
+                    blurOnSubmit={false}
+                    multiline={false}
+                    keyboardType="visible-password"
+                    autoCorrect={false}
                     placeholder="새 관심사 추가"
                 />
                 <TouchableOpacity style={styles.addButton} onPress={addInterest}>
@@ -133,7 +127,6 @@ const PersonaProfile = ({ route, navigation }) => {
     );
 };
 
-// 스타일 정의
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -141,12 +134,6 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: '#f8f8f8',
     },
-    additionalImage: {
-        width: 200,
-        height: 100,
-        marginBottom: 15,
-        borderRadius: 10,
-    },    
     image: {
         width: 150,
         height: 150,
@@ -170,10 +157,10 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     horizontalLine: {
-        width: '90%',           // 수평선의 너비를 전체 화면의 90%로 설정
-        height: 1,              // 높이를 1로 설정해 얇은 선을 만듦
-        backgroundColor: '#ccc', // 회색으로 설정해 선을 강조하지 않음
-        marginVertical: 15,     // 수평선 위아래 여백을 15로 설정하여 균형 조정
+        width: '90%',
+        height: 1,
+        backgroundColor: '#ccc',
+        marginVertical: 15,
     },
     interestsContainer: {
         alignItems: 'center',
@@ -188,7 +175,7 @@ const styles = StyleSheet.create({
     },
     interestsLimitText: {
         fontSize: 14,
-        color: '#888',  // 회색으로 눈에 띄지 않지만 강조할 수 있도록 설정
+        color: '#888',
         marginBottom: 10,
     },
     interestsList: {
