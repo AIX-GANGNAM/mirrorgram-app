@@ -1,22 +1,70 @@
-import React from 'react';
-import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+
 
 const ProfileHighlights = () => {
   const navigation = useNavigation();
   const user = useSelector(state => state.user.user);
-  const highlights = [
-    { id: 1, title: '기쁜놈', persona: 'Joy',  image: user.persona?.joy },
-    { id: 2, title: '화남놈', persona: 'Anger', image: user.persona.anger },
-    { id: 3, title: '까칠이', persona: 'Disgust', image: user.persona.disgust },
-    { id: 4, title: '슬픔', persona: 'Sadness', image: user.persona.sadness },
-    { id: 5, title: '선비', persona: 'Fear', image: user.persona.serious },
-  ];
+  const [userData, setUserData] = useState(null);
+  const [highlights, setHighlights] = useState([]);
+
+  const db = getFirestore();
+
+  useEffect(() => {
+    if (user && user.uid) {
+      const unsub = onSnapshot(
+        doc(db, 'users', user.uid),
+        { includeMetadataChanges: true },
+        (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            setUserData(docSnapshot.data());
+          }
+        }
+      );
+
+      return () => unsub();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userData) {
+      const newHighlights = [
+        { id: 1, title: '기쁜놈', persona: 'joy', image: userData.persona?.joy },
+        { id: 2, title: '화남놈', persona: 'anger', image: userData.persona?.anger },
+        { id: 3, title: '까칠이', persona: 'disgust', image: userData.persona?.disgust },
+        { id: 4, title: '슬픔', persona: 'sadness', image: userData.persona?.sadness },
+        { id: 5, title: '선비', persona: 'serious', image: userData.persona?.serious },
+      ];
+      setHighlights(newHighlights);
+    }
+  }, [userData]);
 
   const handleHighlightPress = (highlight) => {
     navigation.navigate('Chat', { highlightTitle: highlight.title, highlightImage: highlight.image, persona: highlight.persona });
+  };
+
+  const renderHighlightContent = (highlight) => {
+    if (highlight.image) {
+      return (
+        <Image 
+          source={{ uri: highlight.image }} 
+          style={styles.highlightImage}
+          onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+        />
+      );
+    } else {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#0000ff" />
+          <Text style={styles.loadingText}>생성중</Text>
+        </View>
+      );
+    }
   };
 
   return (
@@ -34,7 +82,7 @@ const ProfileHighlights = () => {
           onPress={() => handleHighlightPress(highlight)}
         >
           <View style={styles.highlightImageContainer}>
-            <Image source={{ uri: highlight.image || 'assets\\question.png'}} style={styles.highlightImage} />
+            {renderHighlightContent(highlight)}
           </View>
           <Text style={styles.highlightText} numberOfLines={1}>{highlight.title}</Text>
         </TouchableOpacity>
@@ -84,6 +132,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     width: '100%',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 10,
+    color: '#0000ff',
+    marginTop: 5,
   },
 });
 

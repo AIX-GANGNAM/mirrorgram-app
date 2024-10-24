@@ -167,8 +167,6 @@ const App = () => {
 
 	return(
 		<Provider store={store}>
-			<WebSocketProvider>
-				<ToastProvider>
 					<NavigationContainer>
 						<Stack.Navigator
 							screenOptions={{
@@ -230,8 +228,6 @@ const App = () => {
 							</Stack.Screen>
 						</Stack.Navigator>
 					</NavigationContainer>
-				</ToastProvider>
-			</WebSocketProvider>
 		</Provider>
 	);
 

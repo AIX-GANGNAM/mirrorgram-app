@@ -99,11 +99,6 @@ const UserVerificationStep0 = () => {
       if (response.status === 'success') {
         console.log('페르소나 이미지 생성 성공:', response.images);
         
-        dispatch(setUser(prevUser => ({
-            ...prevUser, 
-            ...response.images
-          })));
-
         dispatch(setMessage(response.status));
         // 여기서 생성된 이미지를 처리하거나 표시할 수 있습니다
       } else {
