@@ -7,7 +7,6 @@ import app from '../../firebaseConfig';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import { commonStyles } from './commonStyles';
-import { useSelector } from 'react-redux';
 
 const UserVerificationSummary = ({ setIsAuthenticated }) => {
   const navigation = useNavigation();
@@ -31,12 +30,7 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
           }
         };
         await setDoc(userRef, profileData, { merge: true });
-
-        dispatch(setUser(prevUser => ({
-          ...prevUser,  // 기존 userData 유지
-          uid: user.uid,  // uid 추가 또는 업데이트
-          ...profileData  // profileData 추가 또는 업데이트
-        })));
+        dispatch(setUser({ uid: user.uid, ...profileData }));
         setIsAuthenticated(true); // 여기서 인증 상태를 true로 설정
         navigation.navigate('BottomTab', { screen: 'Home' }); // 이 줄은 제거 또는 주석 처리
       }
