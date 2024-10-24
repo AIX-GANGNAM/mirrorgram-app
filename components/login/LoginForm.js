@@ -7,7 +7,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import app from '../../firebaseConfig';
 import * as Yup from 'yup';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc  , setDoc} from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 
@@ -195,12 +195,12 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.signupLink}>가입하기</Text>
         </TouchableOpacity>
       </View>
-      {/* <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
+      <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
         <Text>첫화면</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Test')}>
         <Text>테스트</Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
     </View>
   );
 };
