@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,17 +8,14 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
 import axios from 'axios'; // Axios import 추가
 
-
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
-
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.user.user);
 
-
-  console.log('user', user)
+  console.log('user', user);
 
   const takePicture = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -29,7 +26,7 @@ const NewPostScreen = ({ navigation }) => {
         aspect: [4, 3],
         quality: 1,
       });
-  
+
       if (!result.canceled) {
         setImage(result.assets[0].uri);
       }
@@ -43,15 +40,16 @@ const NewPostScreen = ({ navigation }) => {
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
   };
 
   function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0,
+        v = c == 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   }
@@ -74,7 +72,8 @@ const NewPostScreen = ({ navigation }) => {
 
       const uploadTask = uploadBytesResumable(storageRef, blob);
 
-      uploadTask.on('state_changed',
+      uploadTask.on(
+        'state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
@@ -86,7 +85,7 @@ const NewPostScreen = ({ navigation }) => {
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
+
           const post = {
             id: uuid,
             image: downloadURL,
@@ -100,17 +99,15 @@ const NewPostScreen = ({ navigation }) => {
           };
 
           const db = getFirestore();
-          
+
           // Firestore에 데이터 추가
           await addDoc(collection(db, 'feeds'), post);
 
-            // /feed 엔드포인트로 Axios 요청을 비동기적으로 실행
-          axios.post('http://127.0.0.1:8000/feed', post)
-                .then(() => console.log('API 요청 성공'))
-                .catch((error) => console.error('API 요청 실패:', error));
-
-
-    
+          // /feed 엔드포인트로 Axios 요청을 비동기적으로 실행
+          axios
+            .post('http://127.0.0.1:8000/feed', post)
+            .then(() => console.log('API 요청 성공'))
+            .catch((error) => console.error('API 요청 실패:', error));
 
           console.log('포스트 업로드 완료');
           setCaption('');
@@ -126,12 +123,27 @@ const NewPostScreen = ({ navigation }) => {
     }
   };
 
-  const Loading = () => {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+  const handlePersonaFeed = async () => {
+    try {
+      // 사용자 ID를 받아서 전달할 준비 (예시로 personaId를 사용자 ID로 사용)
+      const personaId = user.uid; // 페르소나 ID가 특정된 경우 해당 ID를 사용
+      
+      // FastAPI의 /generate_feed 엔드포인트로 POST 요청 보내기
+      const response = await axios.post('http://127.0.0.1:8000/generate_feed', {
+        persona_id: personaId, // 백엔드에 페르소나 ID를 전달
+      });
+      
+      if (response.status === 200) {
+        console.log('페르소나 피드 자동생성이 완료되었습니다.');
+        alert('페르소나 피드 자동생성이 완료되었습니다.');
+      } else {
+        console.error('피드 생성 중 문제가 발생했습니다.');
+        alert('피드 생성 중 문제가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('피드 생성 중 오류 발생:', error);
+      alert('피드 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const LoadingOverlay = () => (
@@ -168,6 +180,11 @@ const NewPostScreen = ({ navigation }) => {
               <TouchableOpacity style={styles.button} onPress={pickImage}>
                 <Text style={styles.buttonText}>갤러리에서 선택</Text>
               </TouchableOpacity>
+
+              {/* 페르소나 피드 자동생성 버튼 추가 */}
+              <TouchableOpacity style={styles.personaButton} onPress={handlePersonaFeed}>
+                <Text style={styles.personaButtonText}>페르소나 피드 자동생성</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -187,7 +204,7 @@ const NewPostScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS==='ios'? 40 : 0,
+    paddingTop: Platform.OS === 'ios' ? 40 : 0,
     backgroundColor: '#fff',
   },
   header: {
@@ -226,8 +243,22 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginVertical: 10,
+    width: 200, // 모든 버튼의 너비를 일정하게 설정
+    alignItems: 'center', // 텍스트를 중앙 정렬
   },
   buttonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  personaButton: {
+    backgroundColor: '#ff7043', // 페르소나 피드 자동생성 버튼의 색상
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 10,
+    width: 200, // 동일한 너비 설정
+    alignItems: 'center', // 텍스트를 중앙 정렬
+  },
+  personaButtonText: {
     color: 'white',
     fontSize: 16,
   },
