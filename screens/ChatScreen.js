@@ -20,9 +20,7 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
 
   const user = useSelector(state => state.user.user);
-  console.log("ChatScreen > highlightTitle : ", highlightTitle);
-  console.log("ChatScreen > highlightImage : ", highlightImage);
-  console.log("ChatScreen > persona : ", persona);  
+
 
   useEffect(() => {
     loadChatHistory(user.uid, persona);
@@ -43,7 +41,7 @@ const ChatScreen = ({ route, navigation }) => {
   const loadChatHistory = (uid, personaName, limitCount = 50) => {
     const chatRef = collection(db, "chat", uid, personaName);
     const q = query(chatRef, orderBy("timestamp", "desc"), limit(limitCount));
-
+  
     onSnapshot(q, (snapshot) => {
       const loadedMessages = [];
       snapshot.forEach((doc) => {
@@ -82,9 +80,13 @@ const ChatScreen = ({ route, navigation }) => {
       setInputText('');
       setIsTyping(true);
 
+      
+
       try {
+
         const response = await axios.post('http://192.168.0.229:8000/chat', 
           {
+
           persona_name: persona,
           user_input: inputText,
           user: user

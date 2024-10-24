@@ -38,7 +38,10 @@ const ProfileHighlights = () => {
         { id: 2, title: '화남놈', persona: 'Anger', image: userData.persona?.anger },
         { id: 3, title: '까칠이', persona: 'Disgust', image: userData.persona?.disgust },
         { id: 4, title: '슬픔', persona: 'Sadness', image: userData.persona?.sadness },
+
         { id: 5, title: '선비', persona: 'Serious', image: userData.persona?.serious },
+
+
       ];
       setHighlights(newHighlights);
     }
