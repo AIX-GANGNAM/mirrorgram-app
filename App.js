@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
 import GetPushToken from './components/notification/GetPushToken';
-import {saveNotification} from './components/notification/SaveNotification';
+import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
 import { createNavigationContainerRef } from '@react-navigation/native';
@@ -73,26 +73,14 @@ const App = () => {
   const responseListener = useRef();
 
   useEffect(() => {
-
     registerForPushNotificationsAsync();
+
+    
+    // fetchPushToken() 대신 GetPushToken 컴포넌트 사용
+
 
     // setupBackgroundTask(); 백그라운드 작업 등록 중단
 
-
-
-
-    // 사용자의 푸시 토큰을 보기 위한 함수
-    const fetchPushToken = async () => {
-      try {
-        const token = await GetPushToken();
-        setExpoPushToken(token);
-        console.log("App.js > useEffect > 푸시 토큰 : ", token);
-      } catch (error) {
-        console.error("푸시 토큰 가져오기 실패:", error);
-      }
-    };
-
-    fetchPushToken();
 
     const personaImages = {
       "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
@@ -106,67 +94,22 @@ const App = () => {
 
 
     // 알림 수신 시 실행되는 함수
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
+      try {
+        await saveNotification(notification);
+        console.log("알림 저장 성공");
+      } catch (error) {
+        console.error("알림 저장 중 오류 발생:", error);
+      }
       console.log("알림 수신 : ", notification);
       
-      const { content } = notification.request;
+      const {content}  = notification.request;
       console.log("알림수신 : content : ", content);
       console.log("알림수신 : content.data.pushType : ", content.data.pushType);      
       console.log("알림수신 : content.body : ", content.body);      
       console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
       console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
       console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
-      saveNotification(content, content.data.pushType);
-
-      
-      // 알림 유형에 따라 saveNotification 호출
-      switch(content.data.pushType) {
-      
-        // case 'like':
-        //   console.log("case : like 실행")
-        //   saveNotification({
-        //     postId: content.data.postId, // 포스트에 대한 주소
-        //     likedBy: content.data.likedBy, // 좋아요 한 사람의 이메일 or 아이디
-        //     // 기타 필요한 정보...
-        //   }, 'like');
-        //   break;
-
-        case 'persona_chat':
-          console.log("case : persona_chat 실행")
-          console.log("알림수신 : persona_chat > content.data  : ", content.data);
-          console.log("알림수신 : persona_chat > content.body : ", content.body);
-          console.log("알림수신 : persona_chat > content.data.whoSendMessage : ", content.data.whoSendMessage);
-          console.log("알림수신 : persona_chat > content.data.highlightImage : ", content.data.highlightImage);
-          saveNotification({
-            persona: content.data.whoSendMessage, // persona 이름
-            message: content.body, // 메시지 내용
-            personaImage: personaImages[content.data.whoSendMessage] || "https://example.com/default-image.jpg", // persona 이미지 URL
-            pushTime: content.data.pushTime, // 알림 수신 시간
-            // 기타 필요한 정보...
-          }, 'persona_chat');
-          break;
-          
-      
-        // case 'reply':
-        //   console.log("case : reply")
-        //   saveNotification({
-        //     postId: content.data.postId, // 포스트에 대한 주소
-        //     replyBy: content.data.replyBy, // 댓글 단 사람의 이메일 or 아이디
-        //     replyContent: content.data.replyContent, // 댓글 내용
-        //     // 기타 필요한 정보...
-        //   }, 'reply');
-        //   break;
-
-        // case 'follow':
-        //   console.log("case : follow 실행")
-        //   saveNotification({
-        //     followedBy: content.data.followedBy, // 팔로우 한 사람의 이메일 or 아이디
-        //     // 기타 필요한 정보...
-        //   }, 'follow');
-        //   break;
-        // default:
-        //   console.log("알 수 없는 알림 유형:", content.data.pushType);
-      }
     });
 
     const defaultImage = "https://example.com/default-image.jpg";

@@ -4,7 +4,7 @@ import ThisWeek from '../components/activity/ThisWeek';
 import Now from '../components/activity/Now';
 import Yesterday from '../components/activity/Yesterday';
 import ThisMonth from '../components/activity/ThisMonth';
-import PreviousActivity from '../components/activity/Previous_activity';
+import PreviousActivity from '../components/activity/Previous';
 import  clearAllNotifications  from '../components/notification/ClearAllNotifications'; 
 
 import { useNavigation } from '@react-navigation/native';
