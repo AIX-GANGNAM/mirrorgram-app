@@ -6,6 +6,7 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     justifyContent: 'center',
+    alignItems: 'center'
   },
   logo: {
     width: 200,
@@ -29,6 +30,8 @@ export const commonStyles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     fontSize: 16,
+    width: '100%',
+    textAlign: 'center'
   },
   button: {
     backgroundColor: '#0095f6',
@@ -36,6 +39,7 @@ export const commonStyles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
     marginTop: 20,
+    width: '100%'
   },
   buttonText: {
     color: '#fff',

@@ -19,7 +19,7 @@ const Header = () => {
    <View style={styles.container}>
     <TouchableOpacity style={{alignItems:'center',flexDirection:'row'}}>
     <Image style={styles.logo} 
-	source={require('../../assets/logo/mirrorgram-logo.png')}
+	source={require('../../assets/logo/logo-color.png')}
     />
     <TouchableOpacity style={{padding:5}}>
       <ChevronDownIcon color='white' size={28} />
@@ -30,7 +30,7 @@ const Header = () => {
      <TouchableOpacity style={styles.icon}>
        <PlusCircleIcon color='white' size={30} />
      </TouchableOpacity>
-    <TouchableOpacity
+     <TouchableOpacity
     	onPress={() => navigation.navigate('Activity')}
     	style={styles.icon}>
         <View style={styles.unreadBadge}>
@@ -39,7 +39,6 @@ const Header = () => {
        <HeartIcon color='black' size={30} />
        
      </TouchableOpacity>
-
     {/* 채팅 시작 */}
     <TouchableOpacity 
       style={styles.icon}

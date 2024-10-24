@@ -7,7 +7,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import app from '../../firebaseConfig';
 import * as Yup from 'yup';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc  , setDoc} from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 
@@ -30,8 +30,9 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const dispatch = useDispatch();
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: 'project-673415729459', // Google 클라이언트 ID를 여기에 입력하세요
-  });
+    clientId: '979781266861-eo6hbft87fqbt615k0a0aj94c287d7dc.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@realyoon77/mirrorgram',
+  }); 
 
   useEffect(() => {
     validateForm();
@@ -75,7 +76,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         setIsAuthenticated(true);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
-        navigation.navigate('UserVerificationStep1');
+        navigation.navigate('UserVerificationStep0');
       }
     } catch (error) {
       console.error(error);
@@ -89,7 +90,24 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       if (result.type === 'success') {
         const { id_token } = result.params;
         const credential = GoogleAuthProvider.credential(id_token);
-        await signInWithCredential(auth, credential);
+        const userCredential = await signInWithCredential(auth, credential);
+        const user = userCredential.user;
+  
+        // Firestore에 사용자 데이터 추가 (가입 여부 확인 후)
+        const userRef = doc(db, 'users', user.uid);
+        const userSnapshot = await getDoc(userRef);
+  
+        if (!userSnapshot.exists()) {
+          // 사용자 문서가 없으면 새로 생성 (즉, 회원가입)
+          await setDoc(userRef, {
+            email: user.email,
+            createdAt: new Date().toISOString(),
+            // 추가적인 사용자 정보가 필요하면 여기에 추가
+          });
+        }
+  
+        // 스토어에 사용자 정보 설정
+        dispatch(setUser({ uid: user.uid, email: user.email }));
         setIsAuthenticated(true);
         navigation.navigate('Home');
       }
@@ -98,7 +116,28 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       alert('Google 로그인에 실패했습니다.');
     }
   };
+  
 
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { id_token } = googleResponse.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then(userCredential => {
+          // 사용자 정보를 이용해 추가적인 로직 처리
+          const user = userCredential.user;
+          setIsAuthenticated(true);
+          // 프로필 데이터 가져오기 및 스토어에 저장
+          fetchUserProfile(user.uid);
+          navigation.navigate('Home');
+        })
+        .catch(error => {
+          console.error('Google 로그인 오류:', error);
+          alert('Google 로그인에 실패했습니다.');
+        });
+    }
+  }, [googleResponse]);
+  
   const handleGithubSignIn = () => {
     alert('기능 개발 예정입니다 ㅠㅠ');
   };
@@ -106,7 +145,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo/mirrorgram-logo.png')}
+        source={require('../../assets/logo/mybot-log-color.png')}
         style={styles.logo}
       />
       <TextInput
@@ -156,6 +195,12 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.signupLink}>가입하기</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
+        <Text>첫화면</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Test')}>
+        <Text>테스트</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -170,7 +215,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 300,
-    height: 100,
+    height: 300,
     resizeMode: 'contain',
     marginBottom: 30,
   },
