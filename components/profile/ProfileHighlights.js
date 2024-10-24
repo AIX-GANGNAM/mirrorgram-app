@@ -8,7 +8,7 @@ const ProfileHighlights = () => {
   const navigation = useNavigation();
   const user = useSelector(state => state.user.user);
   const highlights = [
-    { id: 1, title: '기쁜놈', persona: 'Joy',  image: user.persona.joy },
+    { id: 1, title: '기쁜놈', persona: 'Joy',  image: user.persona?.joy },
     { id: 2, title: '화남놈', persona: 'Anger', image: user.persona.anger },
     { id: 3, title: '까칠이', persona: 'Disgust', image: user.persona.disgust },
     { id: 4, title: '슬픔', persona: 'Sadness', image: user.persona.sadness },
@@ -34,7 +34,7 @@ const ProfileHighlights = () => {
           onPress={() => handleHighlightPress(highlight)}
         >
           <View style={styles.highlightImageContainer}>
-            <Image source={{ uri: highlight.image }} style={styles.highlightImage} />
+            <Image source={{ uri: highlight.image || 'assets\\question.png'}} style={styles.highlightImage} />
           </View>
           <Text style={styles.highlightText} numberOfLines={1}>{highlight.title}</Text>
         </TouchableOpacity>

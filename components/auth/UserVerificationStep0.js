@@ -10,6 +10,12 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { setMessage } from '../../store/slice/userSlice';
+import app from '../../firebaseConfig';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { setUser } from '../../store/slice/userSlice.js';
+
+
 
 
 const UserVerificationStep0 = () => {
@@ -21,6 +27,9 @@ const UserVerificationStep0 = () => {
   const [gender, setGender] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
   
 
   useEffect(() => {
@@ -59,11 +68,17 @@ const UserVerificationStep0 = () => {
   };
 
   const sendImageToServer = async (imageUri, gender) => {
+
+    const user = auth.currentUser
+    if (user){
+        const userRef = doc(db, 'users',user.uid)
+        setDoc(userRef, {persona : {}} , {merge : true})
+    }
     console.log(user)
     print('이미지 전송중')
     const uid = user.uid;
     console.log(uid)
-    const ws = new WebSocket(`ws://221.148.97.237:1818/image-generate-default/${uid}`);
+    const ws = new WebSocket(`ws://221.148.97.237:1818/image-generate-default/${user.uid}`);
 
     ws.onopen = async () => {
       console.log('WebSocket 연결됨');
@@ -83,6 +98,12 @@ const UserVerificationStep0 = () => {
       const response = JSON.parse(event.data);
       if (response.status === 'success') {
         console.log('페르소나 이미지 생성 성공:', response.images);
+        
+        dispatch(setUser(prevUser => ({
+            ...prevUser, 
+            ...response.images
+          })));
+
         dispatch(setMessage(response.status));
         // 여기서 생성된 이미지를 처리하거나 표시할 수 있습니다
       } else {

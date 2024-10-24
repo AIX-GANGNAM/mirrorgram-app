@@ -4,7 +4,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/logo/mirrorgram-logo.png",
+          "icon": "./assets/logo/mybot-log-color.png",
           "color": "#ffffff",
           "sounds": []
         }
@@ -21,7 +21,7 @@
     "slug": "mirrorgram",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo/mirrorgram-logo.png",
+    "icon": "./assets/logo/mybot-log-color.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/logo/mybot-log-color.png",
@@ -48,7 +48,7 @@
       ],
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo/mirrorgram-logo.png",
+        "foregroundImage": "./assets/logo/mybot-log-color.png",
         "backgroundColor": "#000000"
       },
       "package": "com.himedia.mirrorgram"
