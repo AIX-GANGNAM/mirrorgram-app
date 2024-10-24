@@ -83,7 +83,7 @@ const ChatScreen = ({ route, navigation }) => {
       setIsTyping(true);
 
       try {
-        const response = await axios.post('http://localhost:8000/chat', {
+        const response = await axios.post('http://192.168.0.229:8000/chat', {
           persona_name: persona,
           user_input: inputText,
           user: user
