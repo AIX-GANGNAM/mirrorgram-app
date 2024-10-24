@@ -34,11 +34,11 @@ const ProfileHighlights = () => {
   useEffect(() => {
     if (userData) {
       const newHighlights = [
-        { id: 1, title: '기쁜놈', persona: 'joy', image: userData.persona?.joy },
-        { id: 2, title: '화남놈', persona: 'anger', image: userData.persona?.anger },
-        { id: 3, title: '까칠이', persona: 'disgust', image: userData.persona?.disgust },
-        { id: 4, title: '슬픔', persona: 'sadness', image: userData.persona?.sadness },
-        { id: 5, title: '선비', persona: 'serious', image: userData.persona?.serious },
+        { id: 1, title: '기쁜놈', persona: 'Joy', image: userData.persona?.joy },
+        { id: 2, title: '화남놈', persona: 'Anger', image: userData.persona?.anger },
+        { id: 3, title: '까칠이', persona: 'Disgust', image: userData.persona?.disgust },
+        { id: 4, title: '슬픔', persona: 'Sadness', image: userData.persona?.sadness },
+        { id: 5, title: '선비', persona: 'Fear', image: userData.persona?.serious },
       ];
       setHighlights(newHighlights);
     }

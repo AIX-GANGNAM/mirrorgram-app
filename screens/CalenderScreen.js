@@ -4,9 +4,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar } from 'react-native-calendars';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from '../firebaseConfig';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { useFocusEffect } from '@react-navigation/native'; // react-navigation의 useFocusEffect 추가
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios'; // axios 추가
+import { useSelector } from 'react-redux'; // redux useSelector 추가
 
 const CalendarScreen = () => {
   const [schedule, setSchedule] = useState([]);
@@ -15,6 +17,7 @@ const CalendarScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const auth = getAuth();
   const user = auth.currentUser;
+  const reduxUser = useSelector((state) => state.user.user); // redux user 정보 가져오기
 
   const fetchSchedule = async () => {
     if (user) {
@@ -39,7 +42,7 @@ const CalendarScreen = () => {
       return;
     }
 
-    const event = { ...newEvent, date: selectedDate };
+    const event = { ...newEvent, date: selectedDate, starred: false };
     setSchedule([...schedule, event]);
     setNewEvent({ title: '', time: new Date() });
     setModalVisible(false);
@@ -53,6 +56,42 @@ const CalendarScreen = () => {
           await setDoc(userRef, { events: [event] });
         }
       });
+    }
+  };
+
+  const toggleStarEvent = async (event) => {
+    const updatedEvent = { ...event, starred: !event.starred };
+    const updatedSchedule = schedule.map((e) => (e === event ? updatedEvent : e));
+    setSchedule(updatedSchedule);
+
+    if (user) {
+      const userRef = doc(db, 'calendar', user.uid);
+      await updateDoc(userRef, {
+        events: arrayRemove(event),
+      });
+      await updateDoc(userRef, {
+        events: arrayUnion(updatedEvent),
+      });
+    }
+
+    // 별표 상태 변경 시 서버에 통신 (redux에서 userPhone 존재 시에만 요청)
+    if (reduxUser.userPhone && reduxUser.userPhone.trim() !== "") {
+      console.log("reduxUser.userPhone", reduxUser.userPhone);
+      console.log("user.uid", user.uid);
+      console.log("event.title", event.title);
+      console.log("updatedEvent.starred", updatedEvent.starred);
+      console.log("event.time", event.time instanceof Date ? event.time.toISOString() : event.time.toDate().toISOString());
+      try {
+        await axios.post('http://localhost:8000/star-event', {
+          uid: user.uid,
+          eventId: event.title, // 고유한 식별자가 필요하다면 별도의 ID 사용 고려
+          starred: updatedEvent.starred,
+          time: event.time instanceof Date ? event.time.toISOString() : event.time.toDate().toISOString(),
+          userPhone : reduxUser.userPhone,
+        });
+      } catch (error) {
+        console.error('별표 상태 변경 오류:', error);
+      }
     }
   };
 
@@ -73,11 +112,23 @@ const CalendarScreen = () => {
       />
       <ScrollView style={styles.timelineContainer}>
         <Text style={styles.timelineTitle}>일정 타임라인</Text>
-        {schedule.filter(event => event.date === selectedDate).sort((a, b) => new Date(a.time.toDate()) - new Date(b.time.toDate())).map((event, index) => (
+        <Text style={styles.selectedDateText}>{selectedDate}</Text>
+        {schedule.filter(event => event.date === selectedDate).sort((a, b) => new Date(a.time) - new Date(b.time)).map((event, index) => (
           <View key={index} style={styles.timelineItem}>
-            <Text style={styles.timelineEventTitle}>{event.title}</Text>
+            <View style={styles.timelineItemHeader}>
+              <Text style={styles.timelineEventTitle}>{event.title}</Text>
+              <TouchableOpacity onPress={() => toggleStarEvent(event)}>
+                <Icon
+                  name={event.starred ? 'star' : 'star-outline'}
+                  size={24}
+                  color={event.starred ? '#ffd700' : '#555'}
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.timelineEventTime}>
-              {event.time && event.time.toDate
+              {event.time instanceof Date
+                ? event.time.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true })
+                : event.time.toDate
                 ? event.time.toDate().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true })
                 : '시간 미정'}
             </Text>
@@ -220,6 +271,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  selectedDateText: {
+    fontSize: 16,
+    color: '#007bff',
+    marginBottom: 10,
+  },
   timelineItem: {
     backgroundColor: '#fff',
     padding: 15,
@@ -230,6 +286,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
+  },
+  timelineItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   timelineEventTitle: {
     fontSize: 16,
