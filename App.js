@@ -68,19 +68,21 @@ const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [expoPushToken, setExpoPushToken] = useState('');
   const notificationListener = useRef();
   const responseListener = useRef();
 
   useEffect(() => {
-    registerForPushNotificationsAsync();
-
+    const initializeApp = async () => {
+      registerForPushNotificationsAsync();
+      await GetPushToken();
+    };
+    
+    initializeApp();
     
     // fetchPushToken() 대신 GetPushToken 컴포넌트 사용
 
 
     // setupBackgroundTask(); 백그라운드 작업 등록 중단
-
 
     const personaImages = {
       "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
