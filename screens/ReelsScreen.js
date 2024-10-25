@@ -116,6 +116,11 @@ export default function ReelsScreen() {
       console.log("response", response.data);
       
       if (response.data.status === 'complete') {
+
+        response = await axios.post(`http://localhost:8000/complete-image/${userId}`)
+
+        console.log('메시지 전송 성공', response)
+        
         const images = response.data.images;
         const imageUrls = Object.values(images).map(item => item.image_url);
         setDotImages(imageUrls);
