@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { getFirestore, collection, query, orderBy, limit, onSnapshot, addDoc } from "firebase/firestore";
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 
@@ -21,7 +21,6 @@ const ChatScreen = ({ route, navigation }) => {
 
   const user = useSelector(state => state.user.user);
 
-
   useEffect(() => {
     loadChatHistory(user.uid, persona);
   }, [user.uid, persona]);
@@ -39,30 +38,33 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const loadChatHistory = (uid, personaName, limitCount = 50) => {
-    const chatRef = collection(db, "chat", uid, personaName);
-    const q = query(chatRef, orderBy("timestamp", "desc"), limit(limitCount));
-  
+    // Firestore 경로: "chats/{uid}/personas/{personaName}/messages"
+    const chatRef = collection(db, "chats", uid, "personas", personaName, "messages");
+    const q = query(chatRef, orderBy("timestamp", "asc"), limit(limitCount));
+
     onSnapshot(q, (snapshot) => {
       const loadedMessages = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.response) {
-          loadedMessages.push({
-            id: generateUniqueId(),
-            text: data.response,
-            sender: 'other',
-            timestamp: data.timestamp.toDate()
-          });
+        console.log("Loaded data:", data); // 디버깅을 위한 로그
+
+        let timestamp = new Date();
+        if (data.timestamp) {
+          if (typeof data.timestamp.toDate === 'function') {
+            timestamp = data.timestamp.toDate();
+          } else {
+            // 문자열 타임스탬프 처리
+            timestamp = new Date(data.timestamp);
+          }
         }
+
         loadedMessages.push({
-          id: generateUniqueId(),
-          text: data.user_input,
-          sender: 'user',
-          timestamp: data.timestamp.toDate()
+          id: doc.id, // Firestore 문서 ID 사용
+          text: data.text || data.message, // 'text' 또는 'message' 처리
+          sender: data.sender === 'user' ? 'user' : 'other',
+          timestamp: timestamp
         });
       });
-      // 시간 순으로 정렬 (오래된 메시지부터)
-      loadedMessages.reverse();
       setMessages(loadedMessages);
     });
   };
@@ -71,35 +73,34 @@ const ChatScreen = ({ route, navigation }) => {
     console.log("sendMessage 실행");
     if (inputText.trim().length > 0) {
       const userMessage = {
-        id: generateUniqueId(),
         text: inputText,
         sender: 'user',
         timestamp: new Date()
       };
-      setMessages(prevMessages => [...prevMessages, userMessage]);
-      setInputText('');
-      setIsTyping(true);
-
-      
 
       try {
+        // Firestore 경로 수정: "chats/{uid}/personas/{persona}/messages"
+        const chatRef = collection(db, "chats", user.uid, "personas", persona, "messages");
+        await addDoc(chatRef, userMessage);
 
-        const response = await axios.post('http://192.168.0.229:8000/chat', 
-          {
+        setInputText('');
+        setIsTyping(true);
 
+        // 백엔드에 메시지 전송
+        const response = await axios.post('http://localhost:8000/v2/chat', {
           persona_name: persona,
-          user_input: inputText,
-          user: user
+          user_input: inputText, // 백엔드가 'input' 필드를 기대함
+          uid: user.uid // 백엔드가 'uid'를 기대함
         });
 
         if (response.data && response.data.response) {
           const botResponse = {
-            id: generateUniqueId(),
             text: response.data.response,
-            sender: 'other',
+            sender: 'other', // persona_name이 아닌 'other'로 설정
             timestamp: new Date()
           };
-          setMessages(prevMessages => [...prevMessages, botResponse]);
+          // Firestore에 봇 응답 메시지 저장
+          await addDoc(chatRef, botResponse);
         }
       } catch (error) {
         console.error('Error sending message:', error);
@@ -145,7 +146,7 @@ const ChatScreen = ({ route, navigation }) => {
             onPress={() =>
               navigation.navigate('PersonaProfile', {
                 persona: {
-                title: highlightTitle,
+                  title: highlightTitle,
                   image: highlightImage,
                   interests: [],
                 },
@@ -154,7 +155,6 @@ const ChatScreen = ({ route, navigation }) => {
             }
             style={styles.profileContainer}
           >
-
             <Image source={{ uri: highlightImage }} style={styles.profileImage} />
             <Text style={styles.headerTitle}>{highlightTitle}</Text>
           </TouchableOpacity>
