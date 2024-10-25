@@ -195,12 +195,12 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.signupLink}>가입하기</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
+      {/* <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
         <Text>첫화면</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Test')}>
         <Text>테스트</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };

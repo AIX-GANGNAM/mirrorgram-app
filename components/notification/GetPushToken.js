@@ -1,33 +1,25 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAuth } from 'firebase/auth';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 const GetPushToken = async () => {
   console.log("GetPushToken.js 실행");
+  let token;
   try {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    const userEmail = currentUser.email;
-    console.log("userEmail : ", userEmail);
-
-    if (!currentUser) {
-      console.log("로그인된 사용자가 없습니다.");
-      return null;
+    const projectId =
+      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+    if (!projectId) {
+      throw new Error('Project ID not found');
     }
-    const notifications = await AsyncStorage.getItem(userEmail);
-    console.log("알림 정보 가져오기 완료");
-
-    if (notifications) {
-      const parsedNotifications = JSON.parse(notifications);
-      // console.log("LoadNotification > parsedNotifications : ", parsedNotifications);
-      return parsedNotifications;
-    } else {
-        console.log("LoadNotification > 알림 정보 없음");
-      return null;
-    }
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId,
+      })
+    ).data;
+    console.log("GetPushToken > token : ", token);
   } catch (e) {
-    console.log("알림 정보 가져오기 실패:", e);
-    return null;
+    token = `${e}`;
   }
+
 };
 
 export default GetPushToken;
