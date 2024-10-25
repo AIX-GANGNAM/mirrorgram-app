@@ -53,7 +53,8 @@ const PersonalChats = ({ navigation }) => {
 
       const chatList = await Promise.all(
         personas.map(async (personaName) => {
-          const messagesRef = collection(db, 'chat', currentUser.uid, personaName);
+          // 경로 수정: /chats/{uid}/personas/{persona}/messages
+          const messagesRef = collection(db, 'chats', currentUser.uid, 'personas', personaName, 'messages');
           const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
           const querySnapshot = await getDocs(q);
 
@@ -68,19 +69,18 @@ const PersonalChats = ({ navigation }) => {
 
             return {
               id: personaName,
-              name: displayName, // 표시 이름 사용
-              lastResponse: lastMessageData.response || '',
-              lastUserInput: lastMessageData.user_input || '',
+              name: displayName,
+              lastResponse: lastMessageData.message || '', // 'text' 필드로 변경
+              sender: lastMessageData.sender, // sender 필드 추가
               lastMessageTime: lastMessageData.timestamp ? lastMessageData.timestamp.toDate() : null,
               profileImage: personaImage,
             };
           } else {
-            // 메시지가 없을 경우에도 페르소나를 표시하려면 아래 코드 사용
             return {
               id: personaName,
-              name: displayName, // 표시 이름 사용
+              name: displayName,
               lastResponse: '',
-              lastUserInput: '',
+              sender: '',
               lastMessageTime: null,
               profileImage: personaImage,
             };
