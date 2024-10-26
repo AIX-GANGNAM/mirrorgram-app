@@ -46,7 +46,6 @@ const ChatScreen = ({ route, navigation }) => {
       const loadedMessages = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        console.log("Loaded data:", data); // 디버깅을 위한 로그
 
         let timestamp = new Date();
         if (data.timestamp) {
