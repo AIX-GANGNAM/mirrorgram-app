@@ -182,7 +182,7 @@ const PersonalChats = ({ navigation }) => {
 const GroupChats = ({ navigation }) => {
   const [groupChats, setGroupChats] = useState([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true); // 로딩 상태 추가
+  const [loading, setLoading] = useState(true);
   const auth = getAuth();
   const db = getFirestore();
 
@@ -201,113 +201,170 @@ const GroupChats = ({ navigation }) => {
     const currentUser = auth.currentUser;
     if (!currentUser || !user || !user.persona) return;
 
-    const fetchGroupChats = async () => {
-      // 모든 페르소나 조합 생성 (모든 순서 포함)
-      const personaPairs = [];
-      for (let i = 0; i < personas.length; i++) {
-        for (let j = 0; j < personas.length; j++) {
-          if (i !== j) {
-            personaPairs.push({ pairName: `${personas[i]}_${personas[j]}`, personas: [personas[i], personas[j]] });
+    const fetchAllChats = async () => {
+      try {
+        // 1. 페르소나 페어 채팅 데이터 가져오기
+        const personaPairs = [];
+        for (let i = 0; i < personas.length; i++) {
+          for (let j = i + 1; j < personas.length; j++) {
+            const pairName = `${personas[i]}_${personas[j]}`;
+            const messagesRef = collection(db, 'personachat', currentUser.uid, pairName);
+            const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
+            const querySnapshot = await getDocs(q);
+
+            const persona1 = highlights.find(h => h.persona === personas[i]);
+            const persona2 = highlights.find(h => h.persona === personas[j]);
+
+            if (!querySnapshot.empty) {
+              const lastMessage = querySnapshot.docs[0].data();
+              personaPairs.push({
+                id: pairName,
+                type: 'persona_pair',
+                name: `${persona1.displayName} & ${persona2.displayName}`,
+                lastMessage: lastMessage.text || '',
+                lastMessageTime: convertToDate(lastMessage.timestamp),
+                personas: [
+                  { name: persona1.displayName, image: persona1.image },
+                  { name: persona2.displayName, image: persona2.image }
+                ]
+              });
+            }
           }
         }
+
+        // 2. 토론 데이터 가져오기
+        const debatesRef = collection(db, 'personachat', currentUser.uid, 'debates');
+        const debatesQuery = query(debatesRef, orderBy('createdAt', 'desc'));
+        const debatesSnapshot = await getDocs(debatesQuery);
+        
+        const debatesList = [];
+        for (const doc of debatesSnapshot.docs) {
+          const debateData = doc.data();
+          
+          const messagesRef = collection(db, 'personachat', currentUser.uid, 'debates', doc.id, 'messages');
+          const messagesQuery = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
+          const messagesSnapshot = await getDocs(messagesQuery);
+          
+          const lastMessage = messagesSnapshot.docs[0]?.data();
+          
+          const unreadQuery = query(
+            messagesRef,
+            where('isRead', '==', false)
+          );
+          const unreadSnapshot = await getDocs(unreadQuery);
+
+          debatesList.push({
+            id: doc.id,
+            type: 'debate',
+            title: debateData.title,
+            lastMessage: lastMessage?.text || '',
+            lastMessageTime: convertToDate(lastMessage?.timestamp) || convertToDate(debateData.createdAt),
+            status: debateData.status,
+            unreadCount: unreadSnapshot.size
+          });
+        }
+
+        // 3. 모든 채팅 데이터 합치기 및 정렬
+        const allChats = [...personaPairs, ...debatesList];
+        allChats.sort((a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0));
+        
+        setGroupChats(allChats);
+        setLoading(false);
+      } catch (error) {
+        console.error('채팅 목록 불러오기 실패:', error);
+        setLoading(false);
       }
-
-      const groupChatList = [];
-
-      await Promise.all(
-        personaPairs.map(async (pair) => {
-          const messagesRef = collection(db, 'personachat', currentUser.uid, pair.pairName);
-          const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const lastMessageDoc = querySnapshot.docs[0];
-            const lastMessageData = lastMessageDoc.data();
-
-            // 스피커 정보 가져오기
-            const speakerData = highlights.find(item => item.persona === lastMessageData.speaker);
-            const speakerName = speakerData ? speakerData.displayName : lastMessageData.speaker;
-            const speakerImage = speakerData ? speakerData.image : null;
-
-            // 다른 페르소나 정보 가져오기
-            const otherPersona = pair.personas.find(p => p !== lastMessageData.speaker);
-            const otherPersonaData = highlights.find(item => item.persona === otherPersona);
-            const otherPersonaName = otherPersonaData ? otherPersonaData.displayName : otherPersona;
-            const otherPersonaImage = otherPersonaData ? otherPersonaData.image : null;
-
-            // 안 읽은 메시지 개수 가져오기
-            const unreadQuery = query(
-              collection(db, 'personachat', currentUser.uid, pair.pairName),
-              where('isRead', '==', false)
-            );
-            const unreadSnapshot = await getDocs(unreadQuery);
-            const unreadCount = unreadSnapshot.size;
-
-            groupChatList.push({
-              id: pair.pairName,
-              name: `${speakerName} & ${otherPersonaName}`,
-              lastMessage: lastMessageData.text || '',
-              lastMessageTime: lastMessageData.timestamp ? new Date(lastMessageData.timestamp) : null, // 수정된 부분
-              personas: [
-                { name: speakerName, image: speakerImage, persona: lastMessageData.speaker },
-                { name: otherPersonaName, image: otherPersonaImage, persona: otherPersona },
-              ],
-              unreadCount: unreadCount,
-            });
-          }
-        })
-      );
-
-      // 마지막 메시지 시간으로 정렬
-      groupChatList.sort((a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0));
-
-      setGroupChats(groupChatList);
-      setLoading(false); // 로딩 완료
     };
 
-    fetchGroupChats();
+    fetchAllChats();
   }, [user]);
 
   const filteredChats = search
     ? groupChats.filter(chat => chat.name?.toLowerCase().includes(search.toLowerCase()))
     : groupChats;
 
-  const renderGroupChatItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => navigation.navigate('PersonaChat', { pairName: item.id, personas: item.personas })}
-    >
-      <View style={styles.profileImageContainer}>
-        {item.personas.map((persona, index) => (
-          <Image key={index} source={{ uri: persona.image }} style={styles.groupProfileImage} />
-        ))}
-      </View>
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.chatName}>{item.name}</Text>
-          {item.lastMessageTime && (
-            <Text style={styles.timestamp}>
-              {formatTimestamp(item.lastMessageTime)}
-            </Text>
-          )}
-        </View>
-        <Text
-          style={styles.lastMessage}
-          numberOfLines={2}
-          ellipsizeMode="tail"
+  const renderGroupChatItem = ({ item }) => {
+    if (item.type === 'debate') {
+      // 토론 채팅 렌더링
+      return (
+        <TouchableOpacity
+          style={styles.chatItem}
+          onPress={() => navigation.navigate('DebateChat', { debateId: item.id })}
         >
-          {item.lastMessage && item.lastMessage.length > 50
-            ? item.lastMessage.substring(0, 50) + '...'
-            : item.lastMessage}
-        </Text>
-      </View>
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
+          <View style={styles.profileImageContainer}>
+            <Icon name="chatbubbles" size={40} color="#5271ff" />
+          </View>
+          <View style={styles.chatInfo}>
+            <View style={styles.chatHeader}>
+              <Text style={styles.chatName}>{item.title}</Text>
+              {item.lastMessageTime && (
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(item.lastMessageTime)}
+                </Text>
+              )}
+            </View>
+            <Text style={styles.lastMessage} numberOfLines={2} ellipsizeMode="tail">
+              {item.lastMessage}
+            </Text>
+          </View>
+          {item.unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      );
+    }
+    
+    // 페르소나 페어 채팅 렌더링
+    return (
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={() => navigation.navigate('PersonaChat', { 
+          pairName: item.id,  // 예: "Fear_Joy"
+          personas: [
+            {
+              name: item.personas[0].name,
+              image: item.personas[0].image,
+              persona: item.id.split('_')[0]  // 첫 번째 페르소나 타입 (예: "Fear")
+            },
+            {
+              name: item.personas[1].name,
+              image: item.personas[1].image,
+              persona: item.id.split('_')[1]  // 두 번째 페르소나 타입 (예: "Joy")
+            }
+          ]
+        })}
+      >
+        <View style={styles.profileImageContainer}>
+          {item.personas.map((persona, index) => (
+            <Image 
+              key={index} 
+              source={{ uri: persona.image }} 
+              style={[
+                styles.groupProfileImage,
+                index > 0 && { marginLeft: -15 }
+              ]} 
+            />
+          ))}
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        <View style={styles.chatInfo}>
+          <View style={styles.chatHeader}>
+            <Text style={styles.chatName}>{item.name}</Text>
+            {item.lastMessageTime && (
+              <Text style={styles.timestamp}>
+                {formatTimestamp(item.lastMessageTime)}
+              </Text>
+            )}
+          </View>
+          <Text style={styles.lastMessage} numberOfLines={2} ellipsizeMode="tail">
+            {item.lastMessage}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   // 타임스탬프 포맷팅 함수
   const formatTimestamp = (date) => {
     const now = new Date();
@@ -361,6 +418,28 @@ const GroupChats = ({ navigation }) => {
       )}
     </View>
   );
+};
+
+// timestamp를 Date 객체로 변환하는 헬퍼 함수 추가
+const convertToDate = (timestamp) => {
+  if (!timestamp) return null;
+  
+  // Firestore Timestamp인 경우
+  if (timestamp?.toDate) {
+    return timestamp.toDate();
+  }
+  
+  // 문자열인 경우
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  
+  // 이미 Date 객체인 경우
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  
+  return null;
 };
 
 // 스타일 정의
@@ -484,6 +563,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#5271ff',
+  },
+  debateIcon: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginRight: 16,
   },
 });
 
