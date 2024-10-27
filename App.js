@@ -49,6 +49,8 @@ import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
 import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
 
+import DebateChat from './screens/DebateChat';
+
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
@@ -245,6 +247,7 @@ const App = () => {
                   />
                   <Stack.Screen name="Post" component={Post} />
                   <Stack.Screen name="PersonaChat" component={PersonaChat} />
+                  <Stack.Screen name="DebateChat" component={DebateChat} />
                 </>
             )}
             <Stack.Screen name="Signup" component={SignupForm} />
