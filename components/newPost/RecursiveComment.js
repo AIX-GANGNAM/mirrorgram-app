@@ -1,122 +1,184 @@
 import React from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { HeartIcon as HeartSolid } from 'react-native-heroicons/solid';
-import { HeartIcon as HeartOutline, ChevronUpIcon, ChevronDownIcon } from 'react-native-heroicons/outline';
+import { Ionicons } from '@expo/vector-icons';
 
-const RecursiveComment = ({ comment, handleLike, toggleReplies, expandedComments, setReplyTo, setReplyToUser, user }) => (
-  <View style={styles.commentItem}>
-    <View style={styles.commentHeader}>
-      <Image
-        style={styles.commentAvatar}
-        source={comment.profileImg ? { uri: comment.profileImg } : require('../../assets/no-profile.png')}
-      />
-      <View style={styles.commentContent}>
-        <Text style={styles.commentUser}>{comment.nick}</Text>
-        <Text style={styles.commentText}>{comment.content}</Text>
-      </View>
-    </View>
-    <View style={styles.commentActions}>
-      <TouchableOpacity onPress={() => handleLike(comment.id)}>
-        {comment.likes && comment.likes.includes(user.uid) ? (
-          <HeartSolid color="red" size={16} />
-        ) : (
-          <HeartOutline color="black" size={16} />
-        )}
-      </TouchableOpacity>
-      <Text style={styles.likeCount}>{comment.likes ? comment.likes.length : 0}</Text>
-      <TouchableOpacity onPress={() => {
-        setReplyTo(comment.id);
-        setReplyToUser(comment.nick);
-      }}>
-        <Text style={styles.replyButton}>답글 달기</Text>
-      </TouchableOpacity>
-    </View>
-    {comment.replies && comment.replies.length > 0 && (
-      <View style={styles.repliesContainer}>
-        <TouchableOpacity onPress={() => toggleReplies(comment.id)} style={styles.showRepliesButton}>
-          {expandedComments[comment.id] ? (
-            <>
-              <Text style={styles.showRepliesText}>답글 숨기기</Text>
-              <ChevronUpIcon color="gray" size={16} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.showRepliesText}>{`${comment.replies.length}개의 답글 보기`}</Text>
-              <ChevronDownIcon color="gray" size={16} />
-            </>
-          )}
-        </TouchableOpacity>
-        {expandedComments[comment.id] && comment.replies.map(reply => (
-          <RecursiveComment
-            key={reply.id}
-            comment={reply}
-            handleLike={handleLike}
-            toggleReplies={toggleReplies}
-            expandedComments={expandedComments}
-            setReplyTo={setReplyTo}
-            setReplyToUser={setReplyToUser}
-            user={user}
+const RecursiveComment = ({ comment, handleLike, toggleReplies, expandedComments, setReplyTo, setReplyToUser, user }) => {
+  const isLiked = comment.likes && comment.likes.includes(user.uid);
+  const likeCount = comment.likes ? comment.likes.length : 0;
+  const replyCount = comment.replies ? comment.replies.length : 0;
+
+  return (
+    <View style={styles.commentItem}>
+      <View style={styles.commentContainer}>
+        {/* 왼쪽 프로필 컬럼 */}
+        <View style={styles.leftColumn}>
+          <Image
+            style={styles.commentAvatar}
+            source={comment.profileImg ? { uri: comment.profileImg } : require('../../assets/no-profile.png')}
           />
-        ))}
+          {(comment.replies && comment.replies.length > 0) && (
+            <View style={styles.replyLine} />
+          )}
+        </View>
+
+        {/* 오른쪽 컨텐츠 컬럼 */}
+        <View style={styles.rightColumn}>
+          <View style={styles.commentHeader}>
+            <Text style={styles.commentUser}>{comment.nick}</Text>
+            <Text style={styles.commentTime}>· 2시간</Text>
+          </View>
+
+          <Text style={styles.commentText}>{comment.content}</Text>
+
+          {/* 인터랙션 버튼 */}
+          <View style={styles.interactionBar}>
+            <TouchableOpacity 
+              style={styles.interactionButton}
+              onPress={() => handleLike(comment.id)}
+            >
+              <Ionicons 
+                name={isLiked ? "heart" : "heart-outline"} 
+                size={18} 
+                color={isLiked ? "#F91880" : "#536471"} 
+              />
+              {likeCount > 0 && (
+                <Text style={[
+                  styles.interactionCount,
+                  isLiked && styles.likedCount
+                ]}>{likeCount}</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.interactionButton}
+              onPress={() => {
+                setReplyTo(comment.id);
+                setReplyToUser(comment.nick);
+              }}
+            >
+              <Ionicons name="chatbubble-outline" size={18} color="#536471" />
+            </TouchableOpacity>
+          </View>
+
+          {/* 답글 토글 버튼 */}
+          {replyCount > 0 && (
+            <TouchableOpacity 
+              style={styles.showRepliesButton}
+              onPress={() => toggleReplies(comment.id)}
+            >
+              <Text style={styles.showRepliesText}>
+                {expandedComments[comment.id] 
+                  ? '답글 숨기기' 
+                  : `${replyCount}개의 답글`}
+              </Text>
+              <Ionicons 
+                name={expandedComments[comment.id] ? "chevron-up" : "chevron-down"} 
+                size={16} 
+                color="#0095F6"
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* 답글 목록 */}
+          {expandedComments[comment.id] && comment.replies && (
+            <View style={styles.repliesContainer}>
+              {comment.replies.map(reply => (
+                <RecursiveComment
+                  key={reply.id}
+                  comment={reply}
+                  handleLike={handleLike}
+                  toggleReplies={toggleReplies}
+                  expandedComments={expandedComments}
+                  setReplyTo={setReplyTo}
+                  setReplyToUser={setReplyToUser}
+                  user={user}
+                />
+              ))}
+            </View>
+          )}
+        </View>
       </View>
-    )}
-  </View>
-);
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   commentItem: {
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  commentContainer: {
+    flexDirection: 'row',
+  },
+  leftColumn: {
+    marginRight: 12,
+    alignItems: 'center',
+  },
+  replyLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#EFF3F4',
+    marginTop: 4,
+  },
+  commentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  rightColumn: {
+    flex: 1,
   },
   commentHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
-  },
-  commentContent: {
-    flex: 1,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   commentUser: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F1419',
+    marginRight: 4,
+  },
+  commentTime: {
+    fontSize: 15,
+    color: '#536471',
   },
   commentText: {
-    fontSize: 14,
-    color: 'black',
+    fontSize: 15,
+    color: '#0F1419',
+    lineHeight: 20,
+    marginBottom: 8,
   },
-  commentActions: {
+  interactionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
-    marginLeft: 42,
+    marginBottom: 8,
   },
-  likeCount: {
-    marginLeft: 5,
-    marginRight: 10,
-    fontSize: 12,
+  interactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  replyButton: {
-    fontSize: 12,
-    color: 'gray',
+  interactionCount: {
+    marginLeft: 4,
+    fontSize: 13,
+    color: '#536471',
   },
-  repliesContainer: {
-    marginLeft: 42,
-    marginTop: 5,
+  likedCount: {
+    color: '#F91880',
   },
   showRepliesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   showRepliesText: {
-    fontSize: 12,
-    color: 'gray',
-    marginRight: 5,
+    fontSize: 14,
+    color: '#0095F6',
+    marginRight: 4,
+  },
+  repliesContainer: {
+    marginTop: 4,
   },
 });
 

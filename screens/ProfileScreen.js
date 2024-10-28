@@ -1,9 +1,8 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileInfo from '../components/profile/ProfileInfo';
-import ProfileActions from '../components/profile/ProfileActions';
 import ProfileHighlights from '../components/profile/ProfileHighlights';
 import ProfileGallery from '../components/profile/ProfileGallery';
 
@@ -13,22 +12,31 @@ const ProfileScreen = ({ setIsAuthenticated }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <ProfileHeader username={user?.userId} setIsAuthenticated={setIsAuthenticated} />
-        <ProfileInfo user={user} />
-        <ProfileActions user={user} />
-        <ProfileHighlights />
-        <ProfileGallery user={user} />
+      <ProfileHeader username={user?.userId} setIsAuthenticated={setIsAuthenticated} user={user} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <ProfileInfo user={user} />
+          <View style={styles.divider} />
+          <ProfileHighlights />
+          <View style={styles.divider} />
+          <ProfileGallery user={user} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+  },
+  divider: {
+    height: 8,
+    backgroundColor: '#F8F9FA',
   },
 });
 

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -34,11 +42,10 @@ const ProfileHighlights = () => {
   useEffect(() => {
     if (userData) {
       const newHighlights = [
-        { id: 1, title: '기쁜놈', persona: 'Joy', image: userData.persona?.joy },
-        { id: 2, title: '화남놈', persona: 'Anger', image: userData.persona?.anger },
+        { id: 1, title: '기쁜이', persona: 'Joy', image: userData.persona?.joy },
+        { id: 2, title: '화남이', persona: 'Anger', image: userData.persona?.anger },
         { id: 3, title: '까칠이', persona: 'Disgust', image: userData.persona?.disgust },
-        { id: 4, title: '슬픔', persona: 'Sadness', image: userData.persona?.sadness },
-
+        { id: 4, title: '슬픔이', persona: 'Sadness', image: userData.persona?.sadness },
         { id: 5, title: '선비', persona: 'Serious', image: userData.persona?.serious },
 
 
@@ -71,79 +78,167 @@ const ProfileHighlights = () => {
   };
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
-      <TouchableOpacity style={styles.highlightItem}>
-        <View style={styles.addButton}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </View>
-        <Text style={styles.highlightText}>New</Text>
-      </TouchableOpacity>
-      {highlights.map((highlight) => (
-        <TouchableOpacity 
-          key={highlight.id} 
-          style={styles.highlightItem}
-          onPress={() => handleHighlightPress(highlight)}
-        >
-          <View style={styles.highlightImageContainer}>
-            {renderHighlightContent(highlight)}
+    <View style={styles.container}>
+      <Text style={styles.sectionTitle}>나의 페르소나</Text>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+      >
+        <TouchableOpacity style={styles.addCard}>
+          <View style={styles.addButton}>
+            <Ionicons name="add" size={24} color="#fff" />
           </View>
-          <Text style={styles.highlightText} numberOfLines={1}>{highlight.title}</Text>
+          <Text style={styles.addText}>새로운 페르소나</Text>
         </TouchableOpacity>
-      ))}
-    </ScrollView>
+
+        {highlights.map((highlight) => (
+          <TouchableOpacity 
+            key={highlight.id} 
+            style={styles.personaCard}
+            onPress={() => handleHighlightPress(highlight)}
+          >
+            <View style={styles.imageWrapper}>
+              {renderHighlightContent(highlight)}
+              <View style={styles.personaBadge}>
+                <Ionicons 
+                  name={getBadgeIcon(highlight.persona)} 
+                  size={14} 
+                  color="#fff" 
+                />
+              </View>
+            </View>
+            <View style={styles.cardInfo}>
+              <Text style={styles.personaTitle}>{highlight.title}</Text>
+              <Text style={styles.personaType}>{highlight.persona}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
   );
+};
+
+// 페르소나별 아이콘 매핑 함수 추가
+const getBadgeIcon = (persona) => {
+  const iconMap = {
+    Joy: 'happy',
+    Anger: 'flame',
+    Disgust: 'eye',
+    Sadness: 'rainy',
+    Serious: 'book',
+  };
+  return iconMap[persona] || 'person';
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 15,
-    backgroundColor: '#fff', // 배경색을 흰색으로 변경
+    paddingVertical: 20,
+    backgroundColor: '#fff',
   },
-  highlightItem: {
-    alignItems: 'center',
-    marginRight: 15,
-    width: 70,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    color: '#1A1A1A',
   },
-  addButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#f0f0f0', // 배경색을 밝은 회색으로 변경
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+  addCard: {
+    width: 120,
+    height: 160,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#dbdbdb', // 테두리 색상을 연한 회색으로 변경
+    borderColor: '#E9ECEF',
+    borderStyle: 'dashed',
   },
-  highlightImageContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: '#dbdbdb', // 테두리 색상을 연한 회색으로 변경
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#4A90E2',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addText: {
+    color: '#4A90E2',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  personaCard: {
+    width: 120,
+    height: 160,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginRight: 12,
+    padding: 12,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: 96,
+    height: 96,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   highlightImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  highlightText: {
-    color: '#262626', // 텍스트 색상을 어두운 회색으로 변경
-    marginTop: 5,
-    fontSize: 12,
-    textAlign: 'center',
     width: '100%',
+    height: '100%',
+    borderRadius: 16,
   },
-  loadingContainer: {
+  personaBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4A90E2',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  cardInfo: {
+    marginTop: 8,
+  },
+  personaTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  personaType: {
+    fontSize: 12,
+    color: '#6C757D',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
   loadingText: {
-    fontSize: 10,
-    color: '#0000ff',
-    marginTop: 5,
+    fontSize: 11,
+    color: '#4A90E2',
+    marginTop: 4,
   },
 });
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, Modal } from 'react-native';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { EllipsisVerticalIcon, PencilIcon, TrashIcon, XMarkIcon } from 'react-native-heroicons/solid'; 
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 
 const PostHeader = ({post, onEdit, onDelete}) => {
@@ -27,110 +27,126 @@ const PostHeader = ({post, onEdit, onDelete}) => {
       fetchUserData();
     }, [post.userId]);
   
-    const handleEdit = () => {
-      setShowOptionsModal(false);
-      onEdit(post);
-    };
-  
-    const handleDelete = () => {
-      setShowOptionsModal(false);
-      onDelete(post);
-    };
-  
-  
-    
     return(
       <View style={styles.header}>
-        <View style={{flexDirection:'row',marginTop:3,}}>
+        <View style={styles.userInfo}>
           <TouchableOpacity>
-            <Image
-              style={styles.image}
-              source={profileImg ? {uri: profileImg} : require('../../assets/no-profile.png')} />
+            {/* <Image
+              style={styles.profileImage}
+              source={profileImg ? {uri: profileImg} : require('../../assets/no-profile.png')} 
+            /> */}
           </TouchableOpacity>
-  
-          <View style={{flexDirection:'row', alignItems: 'center' }}>
-            <Text style={styles.user}> {post.nick} </Text>
+          <View style={styles.userDetails}>
+            <Text style={styles.userName}>{post.nick}</Text>
+            <Text style={styles.userHandle}>@{post.userId}</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
-          <EllipsisVerticalIcon color='black' size={30} />
+
+        <TouchableOpacity 
+          style={styles.moreButton} 
+          onPress={() => setShowOptionsModal(true)}
+        >
+          <Ionicons name="ellipsis-horizontal" size={20} color="#536471" />
         </TouchableOpacity>
-  
+
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={showOptionsModal}
           onRequestClose={() => setShowOptionsModal(false)}
         >
-          <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowOptionsModal(false)}
+          >
             <View style={styles.modalContent}>
-              <TouchableOpacity style={styles.modalOption} onPress={handleEdit}>
-                <PencilIcon color='#0095F6' size={24} />
-                <Text style={[styles.modalOptionText, {color: '#0095F6'}]}>피드 수정</Text>
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  onEdit?.(post);
+                }}
+              >
+                <Ionicons name="pencil-outline" size={24} color="#0F1419" />
+                <Text style={styles.modalOptionText}>수정하기</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalOption} onPress={handleDelete}>
-                <TrashIcon color='red' size={24} />
-                <Text style={[styles.modalOptionText, {color: 'red'}]}>피드 삭제</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalOption} onPress={() => setShowOptionsModal(false)}>
-                <XMarkIcon color='black' size={24} />
-                <Text style={styles.modalOptionText}>뒤로가기</Text>
+              
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  onDelete?.(post);
+                }}
+              >
+                <Ionicons name="trash-outline" size={24} color="#F4212E" />
+                <Text style={[styles.modalOptionText, styles.deleteText]}>
+                  삭제하기
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
         </Modal>
       </View>
     );
-  }
+}
 
-  const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        margin: 5,
-        alignItems: 'center',
-       },
-       image: {
-        height: 38,
-        width: 38,
-        borderRadius: 50,
-        padding: 2,
-        marginLeft: 8,
-      },
-
-      user:{
-        color: 'black',
-        fontWeight:'bold',
-        fontSize: 16,
-       },
-
-       modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      },
-
-      modalContent: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        padding: 20,
-      },
-
-      modalOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EFEFEF',
-      },
-      modalOptionText: {
-        marginLeft: 15,
-        fontSize: 16,
-      },
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  userDetails: {
+    marginLeft: 8,
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F1419',
+  },
+  userHandle: {
+    fontSize: 13,
+    color: '#536471',
+  },
+  moreButton: {
+    padding: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '80%',
+    padding: 16,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  modalOptionText: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#0F1419',
+  },
+  deleteText: {
+    color: '#F4212E',
+  },
 });
 
-
-
 export default PostHeader;
-

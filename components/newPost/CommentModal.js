@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, Modal, ScrollView, StyleSheet, Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  Image, 
+  TextInput, 
+  TouchableOpacity, 
+  Modal, 
+  ScrollView, 
+  StyleSheet, 
+  Platform 
+} from 'react-native';
 import { useSelector } from 'react-redux';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { HeartSolid, HeartOutline, ChevronUpIcon, ChevronDownIcon, XMarkIcon } from 'react-native-heroicons/solid'; 
+import { Ionicons } from '@expo/vector-icons'; // Ionicons import 추가
 import RecursiveComment from './RecursiveComment';
 
 const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
@@ -125,14 +135,39 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
         onRequestClose={() => setVisible(false)}
       >
         <View style={styles.modalContainer}>
+          {/* 헤더 */}
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setVisible(false)}>
-              <XMarkIcon color='black' size={24} />
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => setVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#0F1419" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>댓글</Text>
-            <View style={{ width: 24 }} />
+            <View style={styles.headerRight} />
           </View>
-          <ScrollView style={styles.commentsList}>
+
+          {/* 원본 포스트 미리보기 */}
+          <View style={styles.originalPost}>
+            <View style={styles.postPreview}>
+              <Image
+                source={post.profileImg ? { uri: post.profileImg } : require('../../assets/no-profile.png')}
+                style={styles.postAvatar}
+              />
+              <View style={styles.postContent}>
+                <Text style={styles.postAuthor}>{post.nick}</Text>
+                <Text style={styles.postText} numberOfLines={2}>
+                  {post.caption}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 댓글 목록 */}
+          <ScrollView 
+            style={styles.commentsList}
+            showsVerticalScrollIndicator={false}
+          >
             {comments.map(comment => (
               <RecursiveComment 
                 key={comment.id} 
@@ -146,74 +181,151 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
               />
             ))}
           </ScrollView>
+
+          {/* 댓글 입력 영역 */}
           <View style={styles.commentInputContainer}>
             <Image
               style={styles.commentAvatar}
               source={user.profileImg ? { uri: user.profileImg } : require('../../assets/no-profile.png')}
             />
-            <TextInput
-              style={styles.commentInput}
-              placeholder={replyTo ? `${replyToUser}에게 답글 작성...` : "댓글 작성..."}
-              value={newComment}
-              onChangeText={setNewComment}
-              onSubmitEditing={handleAddComment}
-            />
-            <TouchableOpacity onPress={handleAddComment}>
-              <Text style={styles.postButton}>게시</Text>
-            </TouchableOpacity>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder={replyTo ? `@${replyToUser}에게 답글 작성...` : "댓글을 입력하세요..."}
+                value={newComment}
+                onChangeText={setNewComment}
+                multiline
+                maxLength={300}
+                placeholderTextColor="#536471"
+              />
+              <TouchableOpacity 
+                style={[
+                  styles.postButton,
+                  !newComment.trim() && styles.postButtonDisabled
+                ]}
+                onPress={handleAddComment}
+                disabled={!newComment.trim()}
+              >
+                <Text style={[
+                  styles.postButtonText,
+                  !newComment.trim() && styles.postButtonTextDisabled
+                ]}>답글</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
     );
-  };
+};
 
 const styles = StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        paddingTop: Platform.OS === 'ios' ? 50 : 0,
-        backgroundColor: 'white',
-      },
-      modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EFEFEF',
-      },
-      modalTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
-      commentsList: {
-        flex: 1,
-      },
-      commentInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        borderTopWidth: 1,
-        borderTopColor: '#EFEFEF',
-      },
-      commentAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        marginRight: 10,
-      },
-      commentInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#EFEFEF',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        marginRight: 10,
-      },
-      postButton: {
-        color: '#0095F6',
-        fontWeight: 'bold',
-      },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFF3F4',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F1419',
+  },
+  headerRight: {
+    width: 40,
+  },
+  originalPost: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFF3F4',
+  },
+  postPreview: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  postAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+  },
+  postContent: {
+    flex: 1,
+  },
+  postAuthor: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F1419',
+    marginBottom: 4,
+  },
+  postText: {
+    fontSize: 15,
+    color: '#536471',
+    lineHeight: 20,
+  },
+  commentsList: {
+    flex: 1,
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#EFF3F4',
+    backgroundColor: 'white',
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: '#F7F9F9',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 16,
+    maxHeight: 100,
+    color: '#0F1419',
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  postButton: {
+    marginLeft: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#0095F6',
+  },
+  postButtonDisabled: {
+    backgroundColor: '#0095F6',
+    opacity: 0.5,
+  },
+  postButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  postButtonTextDisabled: {
+    opacity: 0.5,
+  },
 });
 
 export default CommentModal;
