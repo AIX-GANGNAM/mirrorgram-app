@@ -16,7 +16,7 @@ import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
 import { createNavigationContainerRef } from '@react-navigation/native';
 
-
+import PostDetail from './components/post/PostDetail';
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -248,6 +248,7 @@ const App = () => {
                   <Stack.Screen name="Post" component={Post} />
                   <Stack.Screen name="PersonaChat" component={PersonaChat} />
                   <Stack.Screen name="DebateChat" component={DebateChat} />
+                  <Stack.Screen name="PostDetail" component={PostDetail} />
                 </>
             )}
             <Stack.Screen name="Signup" component={SignupForm} />
