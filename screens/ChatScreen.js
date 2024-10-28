@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, addDoc } from "firebase/firestore";
 import { useSelector } from 'react-redux';
@@ -126,7 +126,18 @@ const ChatScreen = ({ route, navigation }) => {
 
   const renderTypingIndicator = () => (
     <View style={[styles.messageBubble, styles.otherMessage]}>
-      <Text style={styles.typingIndicator}>...</Text>
+      <View style={styles.typingContainer}>
+        <View style={[styles.typingDot, styles.typingDot1]} />
+        <View style={[styles.typingDot, styles.typingDot2]} />
+        <View style={[styles.typingDot, styles.typingDot3]} />
+      </View>
+    </View>
+  );
+
+  const renderLoadingOverlay = () => (
+    <View style={styles.loadingOverlay}>
+      <ActivityIndicator size="small" color="#0095f6" />
+      <Text style={styles.loadingText}>응답을 작성 중입니다...</Text>
     </View>
   );
 
@@ -158,16 +169,21 @@ const ChatScreen = ({ route, navigation }) => {
             <Text style={styles.headerTitle}>{highlightTitle}</Text>
           </TouchableOpacity>
         </View>
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messageList}
-          onContentSizeChange={scrollToBottom}
-          onLayout={scrollToBottom}
-        />
-        {isTyping && renderTypingIndicator()}
+
+        <View style={styles.chatContainer}>
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messageList}
+            onContentSizeChange={scrollToBottom}
+            onLayout={scrollToBottom}
+          />
+          {isTyping && renderTypingIndicator()}
+          {isTyping && renderLoadingOverlay()}
+        </View>
+
         <View style={styles.inputContainer}>
           <TouchableOpacity style={styles.cameraButton}>
             <Ionicons name="camera-outline" size={24} color="#000" />
@@ -178,10 +194,12 @@ const ChatScreen = ({ route, navigation }) => {
             onChangeText={setInputText}
             placeholder="메시지 보내기..."
             placeholderTextColor="#999"
+            multiline
+            maxLength={1000}
           />
           {inputText.length > 0 ? (
             <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-              <Text style={styles.sendButtonText}>보내기</Text>
+              <Ionicons name="send" size={24} color="#0095f6" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.micButton}>
@@ -260,40 +278,103 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginVertical: 10,
   },
+  chatContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   inputContainer: {
     flexDirection: 'row',
-    padding: 10,
+    padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
+    borderTopColor: '#eee',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   cameraButton: {
     marginRight: 10,
+    padding: 5,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    minHeight: 40,
+    maxHeight: 100,
+    backgroundColor: '#f0f2f5',
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
     fontSize: 16,
+    marginHorizontal: 8,
   },
   sendButton: {
-    marginLeft: 10,
-  },
-  sendButtonText: {
-    color: '#0095f6',
-    fontWeight: 'bold',
-    fontSize: 16,
+    padding: 5,
+    marginLeft: 5,
   },
   micButton: {
-    marginLeft: 10,
+    padding: 5,
+    marginLeft: 5,
   },
-  typingIndicator: {
-    fontSize: 20,
-    color: '#999',
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    width: 60,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#666',
+    marginHorizontal: 2,
+    opacity: 0.6,
+  },
+  typingDot1: {
+    animationName: 'bounce',
+    animationDuration: '0.6s',
+    animationDelay: '0s',
+    animationIterationCount: 'infinite',
+  },
+  typingDot2: {
+    animationName: 'bounce',
+    animationDuration: '0.6s',
+    animationDelay: '0.2s',
+    animationIterationCount: 'infinite',
+  },
+  typingDot3: {
+    animationName: 'bounce',
+    animationDuration: '0.6s',
+    animationDelay: '0.4s',
+    animationIterationCount: 'infinite',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
 });
+
+// 애니메이션 키프레임 정의 (React Native Animated API로 구현 필요)
+const bounceKeyframes = {
+  '0%, 100%': {
+    transform: [{ translateY: 0 }],
+  },
+  '50%': {
+    transform: [{ translateY: -5 }],
+  },
+};
 
 export default ChatScreen;

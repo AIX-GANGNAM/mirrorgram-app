@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { getFirestore, addDoc, collection } from 'firebase/firestore';
+import { getFirestore, addDoc, collection, setDoc, doc } from 'firebase/firestore';
 import axios from 'axios'; // Axios import 추가
 
 const NewPostScreen = ({ navigation }) => {
@@ -100,8 +100,8 @@ const NewPostScreen = ({ navigation }) => {
 
           const db = getFirestore();
 
-          // Firestore에 데이터 추가
-          await addDoc(collection(db, 'feeds'), post);
+          // Firestore에 데이터 추가 (올바른 방법)
+          await setDoc(doc(db, 'feeds', uuid), post);
 
           // /feed 엔드포인트로 Axios 요청을 비동기적으로 실행
           axios
