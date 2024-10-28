@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { 
+  StyleSheet, 
+  TextInput, 
+  Image, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  ScrollView 
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave, onImagePick }) => {
   const [formData, setFormData] = useState({
@@ -74,81 +83,104 @@ const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personalit
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.profileImageContainer}>
-        <Image source={{ uri: formData.profileImg || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
-        <TouchableOpacity style={styles.changePhotoButton} onPress={handleImagePick}>
-          <Text style={styles.changePhotoText}>프로필 사진 변경</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.formContainer}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>이름</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.name}
-            onChangeText={(text) => handleChange('name', text)}
-            placeholder="이름"
-            placeholderTextColor="#999"
-          />
+      <View style={styles.section}>
+        <View style={styles.profileImageSection}>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={{ uri: formData.profileImg || 'https://via.placeholder.com/150' }} 
+              style={styles.profileImage} 
+            />
+            <TouchableOpacity 
+              style={styles.imageEditButton}
+              onPress={handleImagePick}
+            >
+              <Ionicons name="camera" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.imageHelperText}>
+            프로필 사진을 변경하려면 탭하세요
+          </Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>사용자 ID</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.userId}
-            onChangeText={(text) => handleChange('userId', text)}
-            placeholder="사용자 ID"
-            placeholderTextColor="#999"
-          />
-        </View>
+        <View style={styles.formSection}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>기본 정보</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="person-outline" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.name}
+                onChangeText={(text) => handleChange('name', text)}
+                placeholder="이름"
+                placeholderTextColor="#999"
+              />
+            </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>생년월일</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.birthdate}
-            onChangeText={handleDateChange}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={10}
-          />
-        </View>
+            <View style={styles.inputContainer}>
+              <Ionicons name="at" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.userId}
+                onChangeText={(text) => handleChange('userId', text)}
+                placeholder="사용자 ID"
+                placeholderTextColor="#999"
+              />
+            </View>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>전화번호</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.phone}
-            onChangeText={handlePhoneChange}
-            placeholder="전화번호"
-            placeholderTextColor="#999"
-            keyboardType="phone-pad"
-          />
-        </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>연락처 정보</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="calendar-outline" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.birthdate}
+                onChangeText={handleDateChange}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>MBTI</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.mbti}
-            onChangeText={(text) => handleChange('mbti', text)}
-            placeholder="MBTI"
-            placeholderTextColor="#999"
-          />
-        </View>
+            <View style={styles.inputContainer}>
+              <Ionicons name="call-outline" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.phone}
+                onChangeText={handlePhoneChange}
+                placeholder="전화번호"
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>성격</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.personality}
-            onChangeText={(text) => handleChange('personality', text)}
-            placeholder="성격"
-            placeholderTextColor="#999"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>성격 정보</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="star-outline" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.mbti}
+                onChangeText={(text) => handleChange('mbti', text)}
+                placeholder="MBTI"
+                placeholderTextColor="#999"
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="heart-outline" size={20} color="#6C757D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.personality}
+                onChangeText={(text) => handleChange('personality', text)}
+                placeholder="성격"
+                placeholderTextColor="#999"
+              />
+            </View>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -160,40 +192,70 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  profileImageContainer: {
+  section: {
+    paddingVertical: 20,
+  },
+  profileImageSection: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginBottom: 32,
+  },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 8,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#4A90E2',
   },
-  changePhotoButton: {
-    marginTop: 10,
+  imageEditButton: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#4A90E2',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
-  changePhotoText: {
-    color: '#3897f0',
-    fontSize: 14,
-    fontWeight: '600',
+  imageHelperText: {
+    fontSize: 13,
+    color: '#6C757D',
+    marginTop: 8,
   },
-  formContainer: {
-    paddingHorizontal: 20,
+  formSection: {
+    paddingHorizontal: 16,
   },
-  inputContainer: {
-    marginBottom: 20,
+  inputGroup: {
+    marginBottom: 24,
   },
   label: {
     fontSize: 14,
-    color: '#8e8e8e',
-    marginBottom: 5,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 12,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#dbdbdb',
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#262626',
+    flex: 1,
+    fontSize: 15,
+    color: '#1A1A1A',
   },
 });
 

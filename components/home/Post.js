@@ -33,6 +33,8 @@ const Post = ({post, refreshPosts}) => {
    const [isLiked, setIsLiked] = useState(false);
    const [likeCount, setLikeCount] = useState(0);
 
+   const [userProfileImg, setUserProfileImg] = useState(null);
+
    useEffect(() => {
      if (Array.isArray(post.likes)) {
        setIsLiked(post.likes.includes(user.uid));
@@ -42,6 +44,26 @@ const Post = ({post, refreshPosts}) => {
        setLikeCount(0);
      }
    }, [post.likes, user.uid]);
+
+   // 사용자 프로필 이미지 가져오기
+   useEffect(() => {
+     const fetchUserProfile = async () => {
+       if (!post.userId) return;
+
+       try {
+         const db = getFirestore();
+         const userDoc = await getDoc(doc(db, 'users', post.userId));
+         
+         if (userDoc.exists()) {
+           setUserProfileImg(userDoc.data().profileImg);
+         }
+       } catch (error) {
+         console.error('프로필 이미지 가져오기 실패:', error);
+       }
+     };
+
+     fetchUserProfile();
+   }, [post.userId]);
 
    const handleLike = async () => {
      try {
@@ -148,10 +170,12 @@ const Post = ({post, refreshPosts}) => {
    return(
      <View style={styles.container}>
       <View style={styles.postContainer}>
-        {/* 왼쪽 프로필 컬럼 */}
         <View style={styles.leftColumn}>
           <Image
-            source={post.profileImg ? {uri: post.profileImg} : require('../../assets/no-profile.png')}
+            source={userProfileImg 
+              ? {uri: userProfileImg} 
+              : require('../../assets/no-profile.png')
+            }
             style={styles.profileImage}
           />
           <View style={styles.verticalLine} />

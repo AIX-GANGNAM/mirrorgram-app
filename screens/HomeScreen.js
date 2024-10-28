@@ -74,21 +74,26 @@ const HomeScreen = () => {
     fetchPosts();
   }, [fetchPosts]);
 
+  const ListHeader = () => (
+    <View style={styles.highlightsContainer}>
+      <ProfileHighlights />
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-      <View style={styles.highlightsContainer}>
-        <ProfileHighlights />
-      </View>
       <FlatList
         data={posts}
         renderItem={({ item }) => (
           <Post post={item} navigation={navigation} />
         )}
+        ListHeaderComponent={ListHeader}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        stickyHeaderIndices={[]}
       />
       
       {/* 모달 컴포넌트 추가 */}
@@ -145,7 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   highlightsContainer: {
-    marginBottom: 0,
+    backgroundColor: '#fff',
   },
   modalOverlay: {
     flex: 1,
