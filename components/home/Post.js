@@ -10,9 +10,7 @@ import Caption from '../newPost/Caption';
 import CommentsPreview from '../newPost/CommentsPreview';
 import CommentModal from '../newPost/CommentModal';
 import PostFooter from '../newPost/PostFooter';
-
-
-
+import { Ionicons } from '@expo/vector-icons'; // Expo용 vector-icons import
 
 const Post = ({post, refreshPosts}) => {
    // post가 undefined인 경우를 처리
@@ -149,39 +147,153 @@ const Post = ({post, refreshPosts}) => {
 
    return(
      <View style={styles.container}>
-	<Divider width={1} orientation='vertical'/>
-	<PostHeader post={post} />
-	<ScrollView>
-	  <PostImage post={post} />
-	</ScrollView>
-	<PostFooter 
-	  post={post} 
-	  setShowCommentModal={setShowCommentModal} 
-	  commentCount={commentCount} 
-	  setCommentCount={setCommentCount}
-	/>
-	<Likes like={like} post={post} />
-	<Caption post={post} showFullCaption={showFullCaption} setShowFullCaption={setShowFullCaption} />
-	<CommentsPreview commentCount={commentCount} setShowCommentModal={setShowCommentModal} />
-	<CommentModal visible={showCommentModal} setVisible={setShowCommentModal} newComment={newComment} setNewComment={setNewComment} addComment={addComment} post={post} setCommentCount={setCommentCount} />
-	<Text style={[styles.Texts, {fontWeight:'bold',color:'gray', padding:4}]} > {timeAgo} </Text>
-     </View>
-   );
+      <View style={styles.postContainer}>
+        {/* 왼쪽 프로필 컬럼 */}
+        <View style={styles.leftColumn}>
+          <Image
+            source={post.profileImg ? {uri: post.profileImg} : require('../../assets/no-profile.png')}
+            style={styles.profileImage}
+          />
+          <View style={styles.verticalLine} />
+        </View>
+
+        {/* 오른쪽 컨텐츠 컬럼 */}
+        <View style={styles.rightColumn}>
+          {/* PostHeader 컴포넌트 */}
+          <PostHeader 
+            post={post} 
+            onEdit={() => console.log('Edit post:', post.id)}
+            onDelete={() => console.log('Delete post:', post.id)}
+          />
+
+          {/* 본문 영역 */}
+          <View style={styles.contentContainer}>
+            <Caption 
+              post={post} 
+              showFullCaption={showFullCaption} 
+              setShowFullCaption={setShowFullCaption} 
+            />
+
+            {/* 이미지가 있을 경우에만 표시 */}
+            {post.image && (
+              <View style={styles.imageWrapper}>
+                <PostImage post={post} />
+              </View>
+            )}
+          </View>
+
+          {/* 인터랙션 영역 */}
+          <View style={styles.interactionBar}>
+            <TouchableOpacity 
+              style={styles.interactionButton}
+              onPress={() => setShowCommentModal(true)}
+            >
+              <Ionicons name="chatbubble-outline" size={20} color="#536471" />
+              <Text style={styles.interactionCount}>{commentCount}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.interactionButton}>
+              <Ionicons name="repeat-outline" size={22} color="#536471" />
+              <Text style={styles.interactionCount}>0</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.interactionButton}
+              onPress={handleLike}
+            >
+              <Ionicons 
+                name={isLiked ? "heart" : "heart-outline"} 
+                size={20} 
+                color={isLiked ? "#F91880" : "#536471"}
+              />
+              <Text style={[
+                styles.interactionCount,
+                isLiked && styles.likedCount
+              ]}>{likeCount}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.interactionButton}>
+              <Ionicons name="bookmark-outline" size={20} color="#536471" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.timeAgo}>{timeAgo}</Text>
+        </View>
+      </View>
+
+      <CommentModal 
+        visible={showCommentModal} 
+        setVisible={setShowCommentModal} 
+        newComment={newComment} 
+        setNewComment={setNewComment} 
+        addComment={addComment} 
+        post={post} 
+        setCommentCount={setCommentCount}
+      />
+    </View>
+  );
 }
+
 const styles = StyleSheet.create({
   container: {
-    padding:3,
-    marginBottom: 18,
-  }, 
-  Texts: {
-    color:'white',
-   fontWeight:'bold',
-   marginLeft: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFF3F4',
+    backgroundColor: '#fff',
   },
-
+  postContainer: {
+    flexDirection: 'row',
+    padding: 12,
+  },
+  leftColumn: {
+    marginRight: 12,
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  verticalLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#EFF3F4',
+    marginVertical: 4,
+  },
+  rightColumn: {
+    flex: 1,
+  },
+  contentContainer: {
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  imageWrapper: {
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  interactionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: 48,
+    marginTop: 4,
+  },
+  interactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  interactionCount: {
+    marginLeft: 4,
+    color: '#536471',
+    fontSize: 13,
+  },
+  likedCount: {
+    color: '#F91880',
+  },
+  timeAgo: {
+    fontSize: 12,
+    color: '#536471',
+    marginTop: 8,
+  },
 });
-
-
-
 
 export default Post;

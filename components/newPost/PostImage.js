@@ -1,24 +1,26 @@
-import { StyleSheet } from 'react-native';
-import { Pressable, Image } from 'react-native';
+import { StyleSheet, View, Pressable, Image } from 'react-native';
 
 const PostImage = ({post}) => {
-    
-      return(
-       <Pressable style={{marginHorizontal: 8, padding:5}}>
-            <Image style={styles.postImg} 
-            source={post.image ? {uri: post.image} : require('../../assets/no-image.png')} />
-        </Pressable>
-      );
-    }
+  if (!post.image) return null;
+
+  return (
+    <Pressable>
+      <Image 
+        source={{uri: post.image}} 
+        style={styles.postImage} 
+      />
+    </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
-    postImg: {
-        resizeMode: 'cover',
-        height: 300,
-        width: '100%',
-        borderRadius: 10,
-       },
+  postImage: {
+    width: '100%',
+    height: undefined,
+    aspectRatio: 16/9,
+    borderRadius: 16,
+    backgroundColor: '#F7F9F9',
+  },
 });
 
 export default PostImage;
-
