@@ -147,20 +147,58 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
             <View style={styles.headerRight} />
           </View>
 
-          {/* 원본 포스트 미리보기 */}
+          {/* 원본 포스트 미리보기 수정 */}
           <View style={styles.originalPost}>
             <View style={styles.postPreview}>
-              <Image
-                source={post.profileImg ? { uri: post.profileImg } : require('../../assets/no-profile.png')}
-                style={styles.postAvatar}
-              />
-              <View style={styles.postContent}>
-                <Text style={styles.postAuthor}>{post.nick}</Text>
-                <Text style={styles.postText} numberOfLines={2}>
-                  {post.caption}
-                </Text>
+              <View style={styles.postAuthorSection}>
+                <Image
+                  source={post.profileImg ? { uri: post.profileImg } : require('../../assets/no-profile.png')}
+                  style={styles.postAvatar}
+                />
+                <View style={styles.postAuthorInfo}>
+                  <Text style={styles.postAuthor}>{post.nick}</Text>
+                  <Text style={styles.postTime}>
+                    {new Date(post.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Text>
+                </View>
+              </View>
+              
+              <Text style={styles.postText} numberOfLines={2}>
+                {post.caption}
+              </Text>
+              
+              {post.image && (
+                <Image 
+                  source={{ uri: post.image }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              )}
+              
+              <View style={styles.postStats}>
+                <View style={styles.statItem}>
+                  <Ionicons name="heart" size={14} color="#536471" />
+                  <Text style={styles.statText}>
+                    {post.likes?.length || 0}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Ionicons name="chatbubble" size={14} color="#536471" />
+                  <Text style={styles.statText}>
+                    {post.comments?.length || 0}
+                  </Text>
+                </View>
               </View>
             </View>
+          </View>
+
+          {/* 구분선 추가 */}
+          <View style={styles.separator}>
+            <Text style={styles.separatorText}>댓글</Text>
           </View>
 
           {/* 댓글 목록 */}
@@ -246,32 +284,83 @@ const styles = StyleSheet.create({
   },
   originalPost: {
     padding: 16,
+    backgroundColor: '#F8F9FA',
     borderBottomWidth: 1,
     borderBottomColor: '#EFF3F4',
   },
   postPreview: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  postAuthorSection: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   postAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 12,
   },
-  postContent: {
+  postAuthorInfo: {
     flex: 1,
   },
   postAuthor: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F1419',
-    marginBottom: 4,
+  },
+  postTime: {
+    fontSize: 13,
+    color: '#536471',
+    marginTop: 2,
   },
   postText: {
     fontSize: 15,
-    color: '#536471',
+    color: '#0F1419',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  postStats: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#EFF3F4',
+    paddingTop: 12,
+    marginTop: 4,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  statText: {
+    fontSize: 13,
+    color: '#536471',
+    marginLeft: 4,
+  },
+  separator: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFF3F4',
+  },
+  separatorText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F1419',
   },
   commentsList: {
     flex: 1,
