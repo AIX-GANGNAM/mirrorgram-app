@@ -284,7 +284,7 @@ const PostDetail = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? Constants.statusBarHeight : 50,
+    paddingTop: Platform.OS === 'ios' ? 0 : 25,
     backgroundColor: '#fff',
   },
   loadingContainer: {
