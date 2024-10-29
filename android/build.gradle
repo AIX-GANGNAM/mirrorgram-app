@@ -10,12 +10,6 @@ buildscript {
 
         ndkVersion = "26.1.10909125"
     }
-     ext {
-        // 버전을 명시적으로 지정
-        firebaseMessagingVersion = "23.0.0"
-        firebaseCoreVersion = "21.0.0"
-        // ... 기타 버전들
-    }
     repositories {
         google()
         mavenCentral()

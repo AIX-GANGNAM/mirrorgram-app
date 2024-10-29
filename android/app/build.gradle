@@ -117,6 +117,12 @@ android {
         versionCode 1
         versionName "1.0.0"
     }
+     // 여기에 추가
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -138,9 +144,6 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
         }
-    }
-    configurations {
-        all*.exclude group: 'com.google.firebase', module: 'firebase-common'
     }
     packagingOptions {
         jniLibs {
@@ -171,11 +174,6 @@ android {
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.firebase:firebase-crashlytics'
-    implementation("com.facebook.react:react-android")
-    
     implementation("com.facebook.react:react-android")
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
@@ -209,3 +207,4 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
 }
 
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'

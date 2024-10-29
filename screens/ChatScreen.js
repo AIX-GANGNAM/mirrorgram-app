@@ -12,7 +12,7 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
-  console.log("ChatScreen 실행");
+  console.log("ChatScreen 실행입니다1");
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -20,6 +20,56 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
 
   const user = useSelector(state => state.user.user);
+
+  
+  const testNetworkConfig = async () => {
+    // 네트워크 통신 설정 확인
+    try {
+      const response = await axios.get('http://httpstat.us/200');
+      if (response.status === 200) {
+        console.log("Network security config 적용됨: HTTP 요청 성공");
+      } else {
+        console.log("HTTP 요청 실패:", response.status);
+      }
+    } catch (error) {
+      console.error("HTTP 요청 실패 - network_security_config 미적용 가능성:", {
+        message: error.message,
+        config: error.config,
+        response: error.response,
+      });
+    }
+    // Platform과 ADB 디버깅 여부에 따른 URL 설정
+    const isRunningInADB = Boolean(global.isRunningInADB); // adb 디버깅 여부 확인
+    const baseURL = Platform.select({
+      ios: 'http://192.168.0.229:8000',
+      android: 'http://192.168.0.229:8000',
+      default: isRunningInADB ? 'http://10.0.2.2:8000' : 'http://localhost:8000'
+    });
+    console.log("testNetworkConfig baseURL", baseURL);
+
+    try {
+      const response = await axios.get(`${baseURL}/v2/networkcheck`);
+      if (response.status === "endpoint 호출 성공") {
+        console.log("endpoint 호출 성공");
+      } else {
+        console.log("endpoint 호출 실패:", response.status);
+      }
+    } catch (error) {
+      console.error("endpoint 호출 실패 - network_security_config 미적용 가능성:", {
+        message: error.message,
+        config: error.config,
+        response: error.response,
+      });
+    }
+  };
+
+
+
+  useEffect(() => {
+    // 네트워크 통신 설정 확인
+    testNetworkConfig();
+  }, []);
+  
 
   useEffect(() => {
     loadChatHistory(user.uid, persona);
@@ -69,7 +119,7 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const sendMessage = async () => {
-    console.log("sendMessage 실행");
+    console.log("sendMessage 실행하고 있어요");
     if (inputText.trim().length > 0) {
       const userMessage = {
         text: inputText,
@@ -85,12 +135,31 @@ const ChatScreen = ({ route, navigation }) => {
         setInputText('');
         setIsTyping(true);
 
+
+         // Platform과 ADB 디버깅 여부에 따른 URL 설정
+       const isRunningInADB = Boolean(global.isRunningInADB); // adb 디버깅 여부 확인
+       const baseURL = Platform.select({
+         ios: 'http://192.168.0.229:8000',
+         android: 'http://192.168.0.229:8000',
+         default: isRunningInADB ? 'http://10.0.2.2:8000' : 'http://localhost:8000'
+       });
+       console.log("sendMessage baseURL", baseURL);
+
+
         // 백엔드에 메시지 전송
-        const response = await axios.post('http://localhost:8000/v2/chat', {
+        const response = await axios.post(`${baseURL}/v2/chat`,  {
+        
           persona_name: persona,
           user_input: inputText, // 백엔드가 'input' 필드를 기대함
           uid: user.uid // 백엔드가 'uid'를 기대함
-        });
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+        },);
 
         if (response.data && response.data.response) {
           const botResponse = {
@@ -102,7 +171,15 @@ const ChatScreen = ({ route, navigation }) => {
           await addDoc(chatRef, botResponse);
         }
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('Error sending message:', {  
+          message: error.message,
+          config: error.config,
+          code: error.code,
+          response: error.response ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          } : null,});
       } finally {
         setIsTyping(false);
       }
