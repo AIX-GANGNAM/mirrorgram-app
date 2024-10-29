@@ -14,14 +14,15 @@ const ProgressBar = ({ step, totalSteps }) => {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 5,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 5,
+    height: 4,
+    backgroundColor: '#F5F8FA',
+    borderRadius: 2,
+    marginBottom: 30,
   },
   progress: {
     height: '100%',
-    backgroundColor: '#3797EF',
-    borderRadius: 5,
+    backgroundColor: '#5271ff',
+    borderRadius: 2,
   },
 });
 

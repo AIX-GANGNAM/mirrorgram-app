@@ -28,12 +28,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     marginHorizontal: 2,
+    borderRadius: 2,
   },
   completedStep: {
-    backgroundColor: '#3897f0',
+    backgroundColor: '#5271ff',
   },
   incompleteStep: {
-    backgroundColor: '#c7c7c7',
+    backgroundColor: '#E1E8ED',
   },
 });
 
