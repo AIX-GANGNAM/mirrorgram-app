@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
@@ -7,6 +7,7 @@ import app from '../../firebaseConfig';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import { commonStyles } from './commonStyles';
+import { Ionicons } from '@expo/vector-icons';
 
 const UserVerificationSummary = ({ setIsAuthenticated }) => {
   const navigation = useNavigation();
@@ -31,8 +32,7 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
         };
         await setDoc(userRef, profileData, { merge: true });
         dispatch(setUser({ uid: user.uid, ...profileData }));
-        setIsAuthenticated(true); // 여기서 인증 상태를 true로 설정
-        navigation.navigate('BottomTab', { screen: 'Home' }); // 이 줄은 제거 또는 주석 처리
+        setIsAuthenticated(true);
       }
     } catch (error) {
       console.error('프로필 저장 중 오류 발생:', error);
@@ -41,28 +41,96 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>정보 확인</Text>
-      <Text style={styles.infoText}>사용자 ID: @{username}</Text>
-      <Text style={styles.infoText}>이름: {name}</Text>
-      <Text style={styles.infoText}>생년월일: {new Date(birthdate).toLocaleDateString('ko-KR')}</Text>
-      <Text style={styles.infoText}>전화번호: {phone || '(입력하지 않음)'}</Text>
-      <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-        <Text style={styles.buttonText}>프로필 저장</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={commonStyles.container}>
+      <View style={commonStyles.innerContainer}>
+        <View style={commonStyles.header}>
+          <Text style={commonStyles.headerTitle}>프로필 확인</Text>
+          <Text style={commonStyles.headerSubtitle}>
+            입력하신 정보를 확인해주세요
+          </Text>
+        </View>
+
+        <View style={styles.summaryContainer}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>사용자 ID</Text>
+            <Text style={styles.summaryValue}>@{username}</Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>이름</Text>
+            <Text style={styles.summaryValue}>{name}</Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>생년월일</Text>
+            <Text style={styles.summaryValue}>
+              {new Date(birthdate).toLocaleDateString('ko-KR')}
+            </Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>전화번호</Text>
+            <Text style={styles.summaryValue}>
+              {phone || '(입력하지 않음)'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.noticeContainer}>
+          <Ionicons name="information-circle-outline" size={20} color="#657786" />
+          <Text style={styles.noticeText}>
+            프로필은 언제든지 설정에서 수정할 수 있습니다
+          </Text>
+        </View>
+
+        <TouchableOpacity 
+          style={commonStyles.button}
+          onPress={handleSaveProfile}
+        >
+          <Text style={commonStyles.buttonText}>프로필 저장하기</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  ...commonStyles,
   summaryContainer: {
-    backgroundColor: '#fafafa',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 5,
-    padding: 15,
+    backgroundColor: '#F5F8FA',
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 20,
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E8ED',
+  },
+  summaryLabel: {
+    fontSize: 16,
+    color: '#657786',
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: '#14171A',
+    fontWeight: '500',
+  },
+  noticeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F8FA',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  noticeText: {
+    fontSize: 14,
+    color: '#657786',
+    marginLeft: 10,
+    flex: 1,
   },
 });
 

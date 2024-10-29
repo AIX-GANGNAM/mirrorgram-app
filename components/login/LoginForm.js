@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { getFirestore, doc, getDoc  , setDoc} from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -33,6 +34,44 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
     clientId: '979781266861-eo6hbft87fqbt615k0a0aj94c287d7dc.apps.googleusercontent.com',
     redirectUri: 'https://auth.expo.io/@realyoon77/mirrorgram',
   }); 
+
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('savedEmail');
+      const savedPassword = await AsyncStorage.getItem('savedPassword');
+      const savedRememberMe = await AsyncStorage.getItem('rememberMe');
+      
+      if (savedRememberMe === 'true' && savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.error('저장된 로그인 정보를 불러오는데 실패했습니다:', error);
+    }
+  };
+
+  const saveCredentials = async () => {
+    try {
+      if (rememberMe) {
+        await AsyncStorage.setItem('savedEmail', email);
+        await AsyncStorage.setItem('savedPassword', password);
+        await AsyncStorage.setItem('rememberMe', 'true');
+      } else {
+        await AsyncStorage.removeItem('savedEmail');
+        await AsyncStorage.removeItem('savedPassword');
+        await AsyncStorage.removeItem('rememberMe');
+      }
+    } catch (error) {
+      console.error('로그인 정보 저장에 실패했습니다:', error);
+    }
+  };
 
   useEffect(() => {
     validateForm();
@@ -69,9 +108,10 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       const userRef = doc(db, 'users', user.uid);
       const userSnapshot = await getDoc(userRef);
       
+      await saveCredentials();
+      
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();
-        console.log(userData);
         dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
         navigation.navigate('BottomTab', { screen: 'Home' });
@@ -144,63 +184,89 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/logo/mybot-log-color.png')}
-        style={styles.logo}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="이메일을 입력해주세요"
-        placeholderTextColor="#999"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      {email !== '' && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호를 입력해주세요"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      {password !== '' && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-      <TouchableOpacity
-        onPress={handleLogin}
-        style={[styles.button, !isFormValid && styles.disabledButton]}
-        disabled={!isFormValid}
-      >
-        <Text style={styles.buttonText}>로그인</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={styles.forgotPasswordText}>비밀번호를 잊으셨나요?</Text>
-      </TouchableOpacity>
-      <View style={styles.orContainer}>
-        <View style={styles.orLine} />
-        <Text style={styles.orText}>또는</Text>
-        <View style={styles.orLine} />
+      <View style={styles.headerContainer}>
+        <Image
+          source={require('../../assets/logo/mybot-log-color.png')}
+          style={styles.logo}
+        />
+        <Text style={styles.welcomeText}>AI와 함께하는 소셜 네트워크</Text>
+        <Text style={styles.subText}>지금 일어나고 있는 일을 AI와 함께 공유하세요</Text>
       </View>
-      <View style={styles.socialLoginContainer}>
-        <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignIn}>
-          <FontAwesome name="google" size={20} color="#DB4437" />
+
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="이메일"
+          placeholderTextColor="#657786"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        {email !== '' && errors.email && 
+          <Text style={styles.errorText}>{errors.email}</Text>
+        }
+        
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호"
+          placeholderTextColor="#657786"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          autoCapitalize="none"
+        />
+        {password !== '' && errors.password && 
+          <Text style={styles.errorText}>{errors.password}</Text>
+        }
+
+        <TouchableOpacity 
+          style={styles.rememberContainer}
+          onPress={() => setRememberMe(!rememberMe)}
+        >
+          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+            {rememberMe && <FontAwesome name="check" size={12} color="#fff" />}
+          </View>
+          <Text style={styles.rememberText}>로그인 정보 기억하기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton} onPress={handleGithubSignIn}>
-          <FontAwesome name="github" size={20} color="#333" />
+
+        <TouchableOpacity
+          onPress={handleLogin}
+          style={[styles.button, !isFormValid && styles.disabledButton]}
+          disabled={!isFormValid}
+        >
+          <Text style={styles.buttonText}>로그인</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>또는</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity 
+          style={styles.socialLoginButton} 
+          onPress={handleGoogleSignIn}
+        >
+          <FontAwesome name="google" size={20} color="#000" />
+          <Text style={styles.socialLoginText}>Google로 계속하기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.socialLoginButton} 
+          onPress={handleGithubSignIn}
+        >
+          <FontAwesome name="github" size={20} color="#000" />
+          <Text style={styles.socialLoginText}>Github로 계속하기</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>계정이 없으신가요?</Text>
+
+      <View style={styles.bottomContainer}>
+        <Text style={styles.bottomText}>계정이 없으신가요?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
           <Text style={styles.signupLink}>가입하기</Text>
         </TouchableOpacity>
       </View>
-      {/* <TouchableOpacity onPress={() => navigation.navigate('UserVerificationStep0')}>
-        <Text>첫화면</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Test')}>
-        <Text>테스트</Text>
-      </TouchableOpacity> */}
     </View>
   );
 };
@@ -208,130 +274,140 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 40,
   },
   logo: {
-    width: 300,
-    height: 300,
+    width: 150,
+    height: 150,
     resizeMode: 'contain',
-    marginBottom: 30,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#14171A',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  subText: {
+    fontSize: 16,
+    color: '#657786',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '100%',
   },
   input: {
     width: '100%',
-    height: 44,
-    backgroundColor: '#fafafa',
+    height: 50,
+    backgroundColor: '#F5F8FA',
     borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 5,
-    paddingHorizontal: 15,
-    marginBottom: 10,
-    fontSize: 14,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    fontSize: 16,
   },
   button: {
     width: '100%',
-    height: 44,
+    height: 50,
     backgroundColor: '#5271ff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 5,
+    borderRadius: 25,
     marginTop: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
-  forgotPassword: {
-    marginTop: 20,
-  },
-  forgotPasswordText: {
-    color: '#3797EF',
-    fontSize: 12,
-  },
-  orContainer: {
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
   },
-  orLine: {
+  dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#dbdbdb',
+    backgroundColor: '#E1E8ED',
   },
-  orText: {
-    marginHorizontal: 10,
-    color: '#999',
-    fontSize: 12,
+  dividerText: {
+    paddingHorizontal: 15,
+    color: '#657786',
   },
-  facebookButton: {
+  socialLoginButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    width: '100%',
+    height: 50,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    marginBottom: 15,
   },
-  facebookButtonText: {
-    color: '#3b5998',
-    fontSize: 14,
-    fontWeight: '600',
+  socialLoginText: {
     marginLeft: 10,
+    fontSize: 16,
+    color: '#14171A',
   },
-  signupContainer: {
+  bottomContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
   },
-  signupText: {
-    color: '#999',
-    fontSize: 12,
+  bottomText: {
+    color: '#657786',
+    fontSize: 14,
   },
   signupLink: {
-    color: '#3797EF',
-    fontSize: 12,
+    color: '#5271ff',
+    fontSize: 14,
     fontWeight: '600',
     marginLeft: 5,
   },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#DB4437',
-    borderRadius: 5,
-    padding: 10,
-  },
-  googleButtonText: {
-    color: '#DB4437',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  socialLoginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
-  socialButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-  },
   errorText: {
-    color: 'red',
+    color: '#E0245E',
     fontSize: 12,
-    marginBottom: 5,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 15,
   },
   disabledButton: {
-    backgroundColor: '#B2DFFC',
+    backgroundColor: '#AAB8C2',
+  },
+  rememberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 15,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#657786',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#5271ff',
+    borderColor: '#5271ff',
+  },
+  rememberText: {
+    fontSize: 14,
+    color: '#657786',
   },
 });
 

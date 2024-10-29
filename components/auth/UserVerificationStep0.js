@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   profileImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     marginBottom: 30,
-
+    backgroundColor: '#F5F8FA',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -315,16 +315,14 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    width: '80%',
   },
   modalTitle: {
     fontSize: 18,
@@ -332,9 +330,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalOption: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E8ED',
+  },
+  modalOptionText: {
     fontSize: 16,
-    padding: 10,
-    marginVertical: 5,
+    color: '#14171A',
   },
   modalButtonContainer: {
     flexDirection: 'row',

@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  ScrollView, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ProgressBar from './ProgressBar.js';
+import ProgressBar from './ProgressBar';
+import { extraCommonStyles } from './commonStyles';
 
 const educationLevels = [
   { label: '고등학교 졸업', value: 'high_school', icon: 'school-outline' },
@@ -25,125 +35,169 @@ const UserInfoStep3 = ({ navigation, route }) => {
         major: major,
       };
       navigation.navigate('UserInfoStep4', { ...route.params, education: educationInfo });
-    } else {
-      alert('학력을 선택해주세요.');
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <LinearGradient colors={['#FF9A8B', '#FF6A88', '#FF99AC']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <SafeAreaView style={extraCommonStyles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={extraCommonStyles.innerContainer}>
           <ProgressBar step={3} totalSteps={4} />
-          <Text style={styles.title}>당신의 최종 학력은 무엇인가요?</Text>
-          {educationLevels.map((level) => (
-            <TouchableOpacity
-              key={level.value}
-              style={[styles.educationButton, education === level.value && styles.selectedEducation]}
-              onPress={() => setEducation(level.value)}
-            >
-              <Ionicons name={level.icon} size={24} color={education === level.value ? "#FF6A88" : "#fff"} />
-              <Text style={[styles.educationText, education === level.value && styles.selectedEducationText]}>
-                {level.label}
+          <Text style={extraCommonStyles.title}>학력을 선택해주세요</Text>
+          <Text style={extraCommonStyles.subtitle}>
+            비슷한 교육 배경을 가진 사람들과 매칭됩니다
+          </Text>
+
+          <View style={styles.optionsContainer}>
+            {educationLevels.map((level) => (
+              <TouchableOpacity
+                key={level.value}
+                style={[
+                  styles.educationOption,
+                  education === level.value && styles.selectedOption
+                ]}
+                onPress={() => setEducation(level.value)}
+              >
+                <Ionicons 
+                  name={level.icon} 
+                  size={24} 
+                  color={education === level.value ? '#fff' : '#657786'} 
+                />
+                <Text style={[
+                  styles.optionText,
+                  education === level.value && styles.selectedText
+                ]}>
+                  {level.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {(education?.includes('university') || education?.includes('graduate')) && (
+            <View style={styles.additionalFields}>
+              <Text style={styles.fieldLabel}>학교 정보를 입력해주세요</Text>
+              
+              <View style={styles.inputContainer}>
+                <Ionicons name="school-outline" size={20} color="#657786" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="학교명"
+                  placeholderTextColor="#657786"
+                  value={university}
+                  onChangeText={setUniversity}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="book-outline" size={20} color="#657786" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="전공"
+                  placeholderTextColor="#657786"
+                  value={major}
+                  onChangeText={setMajor}
+                />
+              </View>
+
+              <Text style={styles.helperText}>
+                * 학교명과 전공은 선택사항입니다
               </Text>
-            </TouchableOpacity>
-          ))}
-          {(education === 'university_enrolled' || education === 'university_graduate' ||
-            education === 'graduate_school_enrolled' || education === 'graduate_school_graduate') && (
-            <View style={styles.additionalInfoContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="학명"
-                value={university}
-                onChangeText={setUniversity}
-                placeholderTextColor="#999"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="학과"
-                value={major}
-                onChangeText={setMajor}
-                placeholderTextColor="#999"
-              />
             </View>
           )}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={[styles.button, !education && styles.disabledButton]} 
+            style={[
+              extraCommonStyles.button,
+              !education && extraCommonStyles.disabledButton
+            ]}
             onPress={handleNext}
             disabled={!education}
           >
-            <Text style={styles.buttonText}>다음</Text>
+            <Text style={extraCommonStyles.buttonText}>다음</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </LinearGradient>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+  optionsContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  educationButton: {
+  educationOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: '#F5F8FA',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
     padding: 20,
-    borderRadius: 15,
     marginBottom: 15,
   },
-  selectedEducation: {
-    backgroundColor: '#fff',
+  selectedOption: {
+    backgroundColor: '#5271ff',
+    borderColor: '#5271ff',
   },
-  educationText: {
-    fontSize: 18,
-    color: '#fff',
+  optionText: {
+    fontSize: 16,
+    color: '#14171A',
     marginLeft: 15,
+    fontWeight: '500',
   },
-  selectedEducationText: {
-    color: '#FF6A88',
-    fontWeight: 'bold',
+  selectedText: {
+    color: '#fff',
   },
-  additionalInfoContainer: {
+  additionalFields: {
+    paddingHorizontal: 20,
     marginTop: 30,
+    backgroundColor: '#F8FAFD',
+    borderRadius: 15,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#14171A',
+    marginBottom: 15,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    height: 50,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 18,
-    color: '#333',
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#14171A',
   },
-  button: {
-    backgroundColor: '#3897f0',
+  helperText: {
+    fontSize: 14,
+    color: '#657786',
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  buttonContainer: {
     padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  disabledButton: {
-    backgroundColor: '#b2dffc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E1E8ED',
   },
 });
 
