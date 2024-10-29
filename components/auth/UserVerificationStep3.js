@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, SafeAreaView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
@@ -54,29 +54,59 @@ const UserVerificationStep3 = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <ProgressBar step={4} totalSteps={5} />
-      <Text style={styles.title}>생년월일 입력</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD"
-        value={birthdate}
-        onChangeText={handleDateChange}
-        keyboardType="numeric"
-        maxLength={10}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
-        <Text style={styles.buttonText}>다음</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={commonStyles.container}>
+      <View style={commonStyles.innerContainer}>
+        <ProgressBar step={4} totalSteps={5} />
+        
+        <View style={commonStyles.header}>
+          <Text style={commonStyles.headerTitle}>생년월일을 입력해주세요</Text>
+          <Text style={commonStyles.headerSubtitle}>
+            이 정보는 프로필에 표시되지 않습니다
+          </Text>
+        </View>
+
+        <View style={commonStyles.content}>
+          <TextInput
+            style={styles.input}
+            placeholder="YYYY-MM-DD"
+            value={birthdate}
+            onChangeText={handleDateChange}
+            keyboardType="numeric"
+            maxLength={10}
+            placeholderTextColor="#657786"
+          />
+          <Text style={styles.hint}>예: 1990-01-01</Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[commonStyles.button, !isValidDate(birthdate) && commonStyles.disabledButton]} 
+          onPress={handleNext}
+          disabled={!isValidDate(birthdate)}
+        >
+          <Text style={commonStyles.buttonText}>다음</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  ...commonStyles,
   input: {
-    ...commonStyles.input,
+    width: '100%',
+    height: 50,
+    backgroundColor: '#F5F8FA',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#14171A',
     textAlign: 'center',
+  },
+  hint: {
+    fontSize: 14,
+    color: '#657786',
+    marginTop: 10,
   },
 });
 

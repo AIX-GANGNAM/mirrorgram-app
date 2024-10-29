@@ -1,114 +1,152 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import ProgressBar from './ProgressBar.js';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator 
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import ProgressBar from './ProgressBar';
+import { extraCommonStyles } from './commonStyles';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig'; // Firebase 설정 파일의 경로를 적절히 수정해주세요
-import { useSelector, useDispatch } from 'react-redux'; // Redux 사용을 가정합니다. 상태 관리 방식에 따라 수정이 필요할 수 있습니다.
-import { setUser } from '../../../store/slice/userSlice'; // userSlice에서 setUser action을 import
+import { db } from '../../../firebaseConfig';
+import { useSelector, useDispatch } from 'react-redux';
+import { setUser } from '../../../store/slice/userSlice';
 
 const UserInfoStep4 = ({ navigation, route }) => {
   const [region, setRegion] = useState('');
-  const user = useSelector(state => state.user.user); // Redux에서 사용자 정보를 가져옵니다. 상태 관리 방식에 따라 수정이 필요할 수 있습니다.
+  const [loading, setLoading] = useState(false);
+  const user = useSelector(state => state.user.user);
   const dispatch = useDispatch();
 
   const handleFinish = async () => {
-    if (region) {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const profileData = {
-          education: route.params.education,
-          gender: route.params.gender,
-          mbti: route.params.mbti,
-          region: region
-        };
-        
-        await updateDoc(userRef, {
-          profile: profileData
-        });
-        
-        // Redux 상태 업데이트
-        dispatch(setUser({
-          ...user,
-          profile: profileData
-        }));
-        
-        console.log('프로필 정보가 성공적으로 저장되었습니다.');
-        navigation.navigate('Home');
-      } catch (error) {
-        console.error('프로필 정보 저장 중 오류 발생:', error);
-        alert('프로필 정보 저장에 실패했습니다. 다시 시도해주세요.');
-      }
-    } else {
-      alert('지역명을 입력해주세요.');
+    if (!region) return;
+
+    setLoading(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const profileData = {
+        education: route.params.education,
+        gender: route.params.gender,
+        mbti: route.params.mbti,
+        region: region
+      };
+      
+      await updateDoc(userRef, {
+        profile: profileData
+      });
+      
+      dispatch(setUser({
+        ...user,
+        profile: profileData
+      }));
+      
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('프로필 정보 저장 중 오류 발생:', error);
+      alert('프로필 정보 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={['#FF9A8B', '#FF6A88', '#FF99AC']} style={styles.container}>
-      <ProgressBar step={4} totalSteps={4} />
-      <Text style={styles.title}>당신이 사는 지역은 어디인가요?</Text>
-      <Text style={styles.subtitle}>지역명은 위치 기반 추천에 사용됩니다.</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="예: 서울시 강남구, 부산시 해운대구"
-        value={region}
-        onChangeText={setRegion}
-      />
-      <TouchableOpacity 
-        style={[styles.button, !region && styles.disabledButton]} 
-        onPress={handleFinish}
-        disabled={!region}
+    <SafeAreaView style={extraCommonStyles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <Text style={styles.buttonText}>완료</Text>
-      </TouchableOpacity>
-    </LinearGradient>
+        <View style={extraCommonStyles.innerContainer}>
+          <ProgressBar step={4} totalSteps={4} />
+          
+          <Text style={extraCommonStyles.title}>지역을 입력해주세요</Text>
+          <Text style={extraCommonStyles.subtitle}>
+            주변 지역의 사람들과 더 쉽게 연결될 수 있어요
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="location-outline" size={20} color="#657786" />
+            <TextInput
+              style={styles.input}
+              placeholder="예: 서울시 강남구"
+              placeholderTextColor="#657786"
+              value={region}
+              onChangeText={setRegion}
+            />
+          </View>
+
+          <View style={styles.noticeContainer}>
+            <Ionicons name="information-circle-outline" size={20} color="#657786" />
+            <Text style={styles.noticeText}>
+              입력하신 지역 정보는 위치 기반 추천에만 사용되며,
+              정확한 주소는 공개되지 않습니다.
+            </Text>
+          </View>
+
+          <TouchableOpacity 
+            style={[
+              extraCommonStyles.button,
+              !region && extraCommonStyles.disabledButton,
+              styles.finishButton
+            ]}
+            onPress={handleFinish}
+            disabled={!region || loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={extraCommonStyles.buttonText}>프로필 설정 완료</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F8FA',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
     paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 30,
-    textAlign: 'center',
-    color: '#fff',
-    opacity: 0.8,
+    marginHorizontal: 20,
+    height: 50,
+    marginTop: 20,
   },
   input: {
-    height: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 30,
-    fontSize: 18,
-    color: '#333',
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#14171A',
   },
-  button: {
-    backgroundColor: '#3897f0',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 30,
+  noticeContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F8FA',
+    borderRadius: 12,
+    padding: 15,
+    marginHorizontal: 20,
+    marginTop: 20,
+    alignItems: 'flex-start',
   },
-  disabledButton: {
-    backgroundColor: 'rgba(56, 151, 240, 0.5)',
+  noticeText: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#657786',
+    lineHeight: 20,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+  finishButton: {
+    marginTop: 'auto',
+    marginBottom: 20,
   },
 });
 
