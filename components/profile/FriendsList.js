@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { getFirestore, collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const FriendsList = () => {
   const [friends, setFriends] = useState([]);
@@ -10,10 +11,25 @@ const FriendsList = () => {
   const [showAll, setShowAll] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
+  const navigation = useNavigation();
   
   useEffect(() => {
     fetchFriends();
   }, []);
+
+  const handleProfilePress = (userData) => {
+    navigation.navigate('FriendProfile', {
+      userId: userData.userId,
+      userName: userData.userName,
+      userProfile: {
+        userName: userData.userName,
+        birthdate: userData.birthdate
+      },
+      profileImg: userData.profileImg,
+      mbti: userData.mbti,
+      friendId: userData.friendId
+    });
+  };
 
   useEffect(() => {
     if (showAll) {
@@ -42,9 +58,15 @@ const FriendsList = () => {
             const userData = userDoc.data();
             return {
               id: docSnapshot.id,
+              userId: friendData.friendId,
+              friendId: userData.userId,
               userName: userData.profile?.userName || '이름 없음',
               profileImg: userData.profileImg || null,
-              ...friendData
+              mbti: userData.profile?.mbti,
+              userProfile: {
+                userName: userData.profile?.userName,
+                birthdate: userData.profile?.birthdate
+              }
             };
           }
         } catch (error) {
@@ -61,7 +83,10 @@ const FriendsList = () => {
   };
 
   const renderFriendItem = ({ item }) => (
-    <TouchableOpacity style={styles.friendItem}>
+    <TouchableOpacity 
+      style={styles.friendItem}
+      onPress={() => handleProfilePress(item)}
+    >
       {item.profileImg ? (
         <Image 
           source={{ uri: item.profileImg }} 
@@ -74,6 +99,8 @@ const FriendsList = () => {
       )}
       <View style={styles.friendInfo}>
         <Text style={styles.friendName}>{item.userName}</Text>
+        <Text style={styles.userId}>@{item.userId}</Text>
+        {item.mbti && <Text style={styles.mbti}>{item.mbti}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -123,62 +150,69 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   listContainer: {
-    padding: 16,
+    padding: 0,
   },
   friendItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
   },
   profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
   },
   profileImagePlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   friendInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
   friendName: {
     fontSize: 16,
-    color: '#1A1A1A',
-    fontWeight: '500',
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 2,
+  },
+  userId: {
+    fontSize: 14,
+    color: '#536471',
+    marginBottom: 2,
+  },
+  mbti: {
+    fontSize: 14,
+    color: '#536471',
   },
   showMoreButton: {
+    padding: 16,
     alignItems: 'center',
-    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: '#EFEFEF',
-    marginTop: 8,
   },
   showMoreText: {
-    fontSize: 14,
-    color: '#5271ff',
+    fontSize: 15,
+    color: '#000',
     fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginVertical: 8,
+    fontSize: 16,
+    color: '#536471',
+    textAlign: 'center',
+    marginTop: 12,
   },
   emptySubText: {
     fontSize: 14,

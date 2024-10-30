@@ -40,17 +40,19 @@ const ProfileHighlights = () => {
   }, [user]);
 
   useEffect(() => {
-    if (userData) {
-      const newHighlights = [
-        { id: 1, title: '기쁜이', persona: 'Joy', image: userData.persona?.joy },
-        { id: 2, title: '화남이', persona: 'Anger', image: userData.persona?.anger },
-        { id: 3, title: '까칠이', persona: 'Disgust', image: userData.persona?.disgust },
-        { id: 4, title: '슬픔이', persona: 'Sadness', image: userData.persona?.sadness },
-        { id: 5, title: '선비', persona: 'Fear', image: userData.persona?.serious },
-
-
-      ];
-      setHighlights(newHighlights);
+    if (userData && userData.persona) {
+      if (Array.isArray(userData.persona)) {
+        const newHighlights = userData.persona.map((persona, index) => ({
+          id: index + 1,
+          title: persona.DPNAME,
+          persona: persona.Name,
+          image: persona.IMG,
+          description: persona.description,
+          tone: persona.tone,
+          example: persona.example
+        }));
+        setHighlights(newHighlights);
+      }
     }
   }, [userData]);
 
@@ -78,7 +80,7 @@ const ProfileHighlights = () => {
   };
 
   const handleAddPersona = () => {
-    navigation.navigate('BottomTab', { screen: 'PlayGround' });
+    navigation.navigate('PlayGround', { fromProfile: true });
   };
 
   return (
@@ -117,7 +119,9 @@ const ProfileHighlights = () => {
             </View>
             <View style={styles.cardInfo}>
               <Text style={styles.personaTitle}>{highlight.title}</Text>
-              <Text style={styles.personaType}>{highlight.persona}</Text>
+              <Text style={styles.personaType} numberOfLines={1}>
+                {highlight.description?.slice(0, 15)}...
+              </Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -126,14 +130,9 @@ const ProfileHighlights = () => {
   );
 };
 
-// 페르소나별 아이콘 매핑 함수 추가
 const getBadgeIcon = (persona) => {
   const iconMap = {
-    Joy: 'happy',
-    Anger: 'flame',
-    Disgust: 'eye',
-    Sadness: 'rainy',
-    Serious: 'book',
+    custom: 'person',
   };
   return iconMap[persona] || 'person';
 };
