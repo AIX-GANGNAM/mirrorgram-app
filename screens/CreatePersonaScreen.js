@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import {getFirestore, collection, doc, updateDoc} from 'firebase/firestore';
-import Village from './Village';
 import {useFocusEffect} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Icon from 'react-native-vector-icons/Ionicons';
