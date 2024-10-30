@@ -1,6 +1,7 @@
 {
   "expo": {
     "plugins": [
+    
       [
         "expo-notifications",
         {
