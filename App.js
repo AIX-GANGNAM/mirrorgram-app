@@ -15,12 +15,12 @@ import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
 import { createNavigationContainerRef } from '@react-navigation/native';
-
+import ReelsScreen from './screens/ReelsScreen';
 import PostDetail from './components/post/PostDetail';
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import ReelsScreen from './screens/CreatePersonaScreen';
+import CreatePersonaScreen from './screens/CreatePersonaScreen';
 import CalenderScreen from './screens/CalenderScreen';
 import LoginScreen from './screens/LoginScreen';
 import ActivityScreen from './screens/ActivityScreen';
@@ -286,7 +286,7 @@ const App = () => {
                     headerShown: false
                   }}
               />
-              
+              <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
               <Stack.Screen name="Post" component={Post} />
               <Stack.Screen name="PersonaChat" component={PersonaChat} />
               <Stack.Screen name="DebateChat" component={DebateChat} />
