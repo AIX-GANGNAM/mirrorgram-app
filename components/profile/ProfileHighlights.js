@@ -56,6 +56,7 @@ const ProfileHighlights = () => {
     }
   }, [userData]);
 
+
   const handleHighlightPress = (highlight) => {
     navigation.navigate('Chat', { highlightTitle: highlight.title, highlightImage: highlight.image, persona: highlight.persona });
   };
