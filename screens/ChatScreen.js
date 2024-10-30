@@ -12,7 +12,6 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
-  console.log("ChatScreen 실행입니다1");
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -20,8 +19,8 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
 
   const user = useSelector(state => state.user.user);
+  const userPersona = user.persona.find(p => p.Name === persona);
 
-  
   const testNetworkConfig = async () => {
     // 1. HTTP 통신 테스트 - 네트워크 보안 설정 확인
     try {
@@ -115,9 +114,12 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const loadChatHistory = (uid, personaName, limitCount = 50) => {
-    // Firestore 경로: "chats/{uid}/personas/{personaName}/messages"
     const chatRef = collection(db, "chats", uid, "personas", personaName, "messages");
-    const q = query(chatRef, orderBy("timestamp", "asc"), limit(limitCount));
+    const q = query(
+      chatRef,
+      orderBy("timestamp", "desc"),
+      limit(limitCount)
+    );
 
     onSnapshot(q, (snapshot) => {
       const loadedMessages = [];
@@ -129,19 +131,19 @@ const ChatScreen = ({ route, navigation }) => {
           if (typeof data.timestamp.toDate === 'function') {
             timestamp = data.timestamp.toDate();
           } else {
-            // 문자열 타임스탬프 처리
             timestamp = new Date(data.timestamp);
           }
         }
 
         loadedMessages.push({
-          id: doc.id, // Firestore 문서 ID 사용
-          text: data.text || data.message, // 'text' 또는 'message' 처리
+          id: doc.id,
+          text: data.text || data.message,
           sender: data.sender === 'user' ? 'user' : 'other',
           timestamp: timestamp
         });
       });
-      setMessages(loadedMessages);
+
+      setMessages(loadedMessages.sort((a, b) => a.timestamp - b.timestamp));
     });
   };
 
@@ -166,7 +168,7 @@ const ChatScreen = ({ route, navigation }) => {
          // Platform과 ADB 디버깅 여부에 따른 URL 설정
        const isRunningInADB = Boolean(global.isRunningInADB); // adb 디버깅 여부 확인
        const baseURL = Platform.select({
-         ios: 'http://192.168.0.229:8000',
+         ios: 'http://localhost:8000',
          android: 'http://192.168.0.229:8000',
          default: isRunningInADB ? 'http://10.0.2.2:8000' : 'http://localhost:8000'
        });
@@ -175,9 +177,12 @@ const ChatScreen = ({ route, navigation }) => {
 
         // 백엔드에 메시지 전송
         const response = await axios.post(`${baseURL}/v2/chat`,  {
-          persona_name: persona,
+          persona_name: userPersona.Name,
           user_input: inputText, // 백엔드가 'input' 필드를 기대함
-          uid: user.uid // 백엔드가 'uid'를 기대함
+          uid: user.uid ,// 백엔드가 'uid'를 기대함
+          tone: userPersona.tone,
+          example: userPersona.example,
+          description: userPersona.description
         },
         {
           headers: {

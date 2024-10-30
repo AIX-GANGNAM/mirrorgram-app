@@ -33,42 +33,36 @@ const FriendHeader = ({ onTabChange, activeTab }) => {
 
   return (
     <View style={styles.headerContainer}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-
-      <Image source={require('../../assets/logo/mybot-log-color.png')} style={styles.logo} />
-
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('FriendRequests')} 
-        style={styles.notificationButton}
-      >
-        <Ionicons name="people-outline" size={24} color="#5271ff" />
-      </TouchableOpacity>
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>친구</Text>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('FriendRequests')} 
+          style={styles.notificationButton}
+        >
+          <Ionicons name="people-outline" size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.tabContainer}>
         <TouchableOpacity 
           onPress={() => onTabChange('friends')} 
           style={[styles.tabButton, activeTab === 'friends' && styles.activeTabButton]}
         >
-          <Text style={[
-            styles.tabText, 
-            activeTab === 'friends' ? styles.activeTabButtonText : styles.inactiveTab
-          ]}>
+          <Text style={styles.tabText}>
             {friendCount} 친구
           </Text>
+          {activeTab === 'friends' && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
         
         <TouchableOpacity 
           onPress={() => onTabChange('ProfileSearch')} 
           style={[styles.tabButton, activeTab === 'ProfileSearch' && styles.activeTabButton]}
         >
-          <Text style={[
-            styles.tabText, 
-            activeTab === 'ProfileSearch' ? styles.activeTabButtonText : styles.inactiveTab
-          ]}>
-            친구찾기
-          </Text>
+          <Text style={styles.tabText}>친구찾기</Text>
+          {activeTab === 'ProfileSearch' && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
       </View>
     </View>
@@ -77,55 +71,50 @@ const FriendHeader = ({ onTabChange, activeTab }) => {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    alignItems: 'center',
-    padding: 16,
     backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   backButton: {
-    position: 'absolute',
-    left: 10,
-    top: 16,
+    padding: 4,
   },
   notificationButton: {
-    position: 'absolute',
-    right: 10,
-    top: 16,
-    padding: 8,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
-    marginBottom: 10,
+    padding: 4,
   },
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: '#DBDBDB',
-  },
-  activeTabButton: {
-    borderBottomColor: '#5271ff',
+    paddingVertical: 12,
+    marginRight: 24,
+    position: 'relative',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+    color: '#536471',
   },
-  activeTabButtonText: {
-    color: '#5271ff',
-    fontWeight: 'bold',
-  },
-  inactiveTab: {
-    color: 'grey',
-    opacity: 0.5,
-  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#000',
+    borderRadius: 3,
+  }
 });
 
 export default FriendHeader;
