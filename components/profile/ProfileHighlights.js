@@ -46,7 +46,7 @@ const ProfileHighlights = () => {
         { id: 2, title: '화남이', persona: 'Anger', image: userData.persona?.anger },
         { id: 3, title: '까칠이', persona: 'Disgust', image: userData.persona?.disgust },
         { id: 4, title: '슬픔이', persona: 'Sadness', image: userData.persona?.sadness },
-        { id: 5, title: '선비', persona: 'Serious', image: userData.persona?.serious },
+        { id: 5, title: '선비', persona: 'Fear', image: userData.persona?.serious },
 
 
       ];

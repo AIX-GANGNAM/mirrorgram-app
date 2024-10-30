@@ -32,7 +32,10 @@ const ProfileGallery = ({ user }) => {
         
         const querySnapshot = await getDocs(q);
         const fetchedPosts = querySnapshot.docs.map(doc => ({
+<<<<<<< HEAD
           folderId: doc.id,
+=======
+>>>>>>> 64a091ae0368f6aa345875131a478057a344f8b2
           id: doc.id,
           ...doc.data()
         }));
@@ -82,9 +85,9 @@ const ProfileGallery = ({ user }) => {
         <Text style={styles.count}>{posts.length}</Text>
       </View>
       <View style={styles.galleryGrid}>
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <TouchableOpacity 
-            key={post.id} 
+            key={`${post.id}_${index}`}
             style={styles.imageContainer}
             onPress={() => handlePostPress(post)}
           >

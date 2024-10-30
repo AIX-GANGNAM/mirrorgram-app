@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import app from '../../firebaseConfig'; // Firebase 앱 인스턴스 import
 import * as Yup from 'yup';
 import { createUserProfile } from '../../firebaseConfig';
+import { FontAwesome } from '@expo/vector-icons';
 
 // 토큰 발급
 async function registerForPushNotificationsAsync() {
@@ -106,50 +107,80 @@ const SignupForm = () => {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/logo/mybot-log-color.png')}
-        style={styles.logo}
-      />
-      <Text style={styles.subtitle}>친구들의 사진과 동영상을 보려면 가입하세요.</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="이메일 주소"
-        placeholderTextColor="#999"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      {email !== '' && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      {password !== '' && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 확인"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
-      {confirmPassword !== '' && errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
-      <TouchableOpacity 
-        style={[styles.signupButton, !isFormValid && styles.disabledButton]} 
-        onPress={handleSignup}
-        disabled={!isFormValid}
-      >
-        <Text style={styles.signupButtonText}>가입</Text>
-      </TouchableOpacity>
-      <Text style={styles.termsText}>
-        가입하면 Mirrorgram의 약관, 데이터 정책 및 쿠키 정책에 동의하게 됩니다.
-      </Text>
-      <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>계정이 있으신가요?</Text>
+      <View style={styles.headerContainer}>
+        <Image
+          source={require('../../assets/logo/mybot-log-color.png')}
+          style={styles.logo}
+        />
+        <Text style={styles.welcomeText}>AI와 함께 시작하세요</Text>
+        <Text style={styles.subText}>지금 가입하고 AI와 함께 소통하세요</Text>
+      </View>
+
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="이메일"
+          placeholderTextColor="#657786"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
+        {email !== '' && errors.email && 
+          <Text style={styles.errorText}>{errors.email}</Text>
+        }
+
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호"
+          placeholderTextColor="#657786"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        {password !== '' && errors.password && 
+          <Text style={styles.errorText}>{errors.password}</Text>
+        }
+
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호 확인"
+          placeholderTextColor="#657786"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+        {confirmPassword !== '' && errors.confirmPassword && 
+          <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+        }
+
+        <TouchableOpacity 
+          style={[styles.button, !isFormValid && styles.disabledButton]} 
+          onPress={handleSignup}
+          disabled={!isFormValid}
+        >
+          <Text style={styles.buttonText}>가입하기</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>또는</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity style={styles.socialLoginButton}>
+          <FontAwesome name="google" size={20} color="#000" />
+          <Text style={styles.socialLoginText}>Google로 가입하기</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.termsText}>
+          가입하면 World With MyBot 의{' '}
+          <Text style={styles.termsLink}>서비스 약관</Text>과{' '}
+          <Text style={styles.termsLink}>개인정보 보호정책</Text>에 동의하게 됩니다.
+        </Text>
+      </View>
+
+      <View style={styles.bottomContainer}>
+        <Text style={styles.bottomText}>이미 계정이 있으신가요?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginLink}>로그인</Text>
         </TouchableOpacity>
@@ -161,102 +192,127 @@ const SignupForm = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 40,
   },
   logo: {
-    width: 300,
-    height: 300,
+    width: 150,
+    height: 150,
     resizeMode: 'contain',
-    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 17,
-    color: '#999',
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#14171A',
+    marginTop: 20,
     textAlign: 'center',
-    marginBottom: 20,
   },
-  facebookButton: {
-    backgroundColor: '#3797EF',
+  subText: {
+    fontSize: 16,
+    color: '#657786',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  formContainer: {
     width: '100%',
-    padding: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  facebookButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  orContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#dbdbdb',
-  },
-  orText: {
-    marginHorizontal: 10,
-    color: '#999',
-    fontWeight: '600',
   },
   input: {
     width: '100%',
-    height: 44,
-    backgroundColor: '#fafafa',
+    height: 50,
+    backgroundColor: '#F5F8FA',
     borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 5,
-    paddingHorizontal: 15,
-    marginBottom: 12,
-    fontSize: 14,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    fontSize: 16,
   },
-  signupButton: {
-    backgroundColor: '#3797EF',
+  button: {
     width: '100%',
-    padding: 12,
-    borderRadius: 5,
+    height: 50,
+    backgroundColor: '#5271ff',
+    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 25,
     marginTop: 10,
   },
-  signupButtonText: {
+  buttonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E1E8ED',
+  },
+  dividerText: {
+    paddingHorizontal: 15,
+    color: '#657786',
+  },
+  socialLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 50,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 25,
+    marginBottom: 15,
+  },
+  socialLoginText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#14171A',
+  },
   termsText: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 13,
+    color: '#657786',
     textAlign: 'center',
     marginTop: 20,
-    marginBottom: 20,
+    lineHeight: 18,
   },
-  loginContainer: {
+  termsLink: {
+    color: '#5271ff',
+  },
+  bottomContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
+    paddingBottom: 30,
   },
-  loginText: {
-    color: '#999',
+  bottomText: {
+    color: '#657786',
     fontSize: 14,
   },
   loginLink: {
-    color: '#3797EF',
+    color: '#5271ff',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 5,
   },
   errorText: {
-    color: 'red',
+    color: '#E0245E',
     fontSize: 12,
-    marginBottom: 5,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 15,
   },
   disabledButton: {
-    backgroundColor: '#B2DFFC',
+    backgroundColor: '#AAB8C2',
   },
 });
 
