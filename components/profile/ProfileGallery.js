@@ -32,10 +32,7 @@ const ProfileGallery = ({ user }) => {
         
         const querySnapshot = await getDocs(q);
         const fetchedPosts = querySnapshot.docs.map(doc => ({
-<<<<<<< HEAD
           folderId: doc.id,
-=======
->>>>>>> 64a091ae0368f6aa345875131a478057a344f8b2
           id: doc.id,
           ...doc.data()
         }));
