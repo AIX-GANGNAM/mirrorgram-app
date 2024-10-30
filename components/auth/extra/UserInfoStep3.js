@@ -4,200 +4,235 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  TextInput, 
-  ScrollView, 
   SafeAreaView,
-  KeyboardAvoidingView,
-  Platform 
+  ScrollView 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProgressBar from './ProgressBar';
 import { extraCommonStyles } from './commonStyles';
 
-const educationLevels = [
-  { label: '고등학교 졸업', value: 'high_school', icon: 'school-outline' },
-  { label: '대학교 재학', value: 'university_enrolled', icon: 'book-outline' },
-  { label: '대학교 졸업', value: 'university_graduate', icon: 'school-outline' },
-  { label: '대학원 재학', value: 'graduate_school_enrolled', icon: 'library-outline' },
-  { label: '대학원 졸업', value: 'graduate_school_graduate', icon: 'school-outline' },
+const COMMUNICATION_STYLES = [
+  { id: 'formal', label: '격식있게', icon: 'business-outline' },
+  { id: 'friendly', label: '친근하게', icon: 'happy-outline' },
+  { id: 'witty', label: '재치있게', icon: 'sparkles-outline' },
+  { id: 'direct', label: '직설적으로', icon: 'arrow-forward-outline' },
+  { id: 'polite', label: '공손하게', icon: 'flower-outline' },
+  { id: 'casual', label: '편하게', icon: 'cafe-outline' },
+];
+
+const SPEAKING_STYLES = [
+  { id: 'honorific', label: '존댓말', description: '예: ~입니다, ~해요' },
+  { id: 'casual', label: '반말', description: '예: ~야, ~해' },
+  { id: 'mixed', label: '상황에 따라 혼용', description: '예: TPO에 맞게' },
+];
+
+const EMOJI_USAGE = [
+  { id: 'frequent', label: '자주 사용', icon: 'heart-outline' },
+  { id: 'moderate', label: '가끔 사용', icon: 'happy-outline' },
+  { id: 'rarely', label: '거의 사용 안 함', icon: 'text-outline' },
 ];
 
 const UserInfoStep3 = ({ navigation, route }) => {
-  const [education, setEducation] = useState('');
-  const [university, setUniversity] = useState('');
-  const [major, setMajor] = useState('');
+  const [communicationStyle, setCommunicationStyle] = useState('');
+  const [speakingStyle, setSpeakingStyle] = useState('');
+  const [emojiStyle, setEmojiStyle] = useState('');
 
   const handleNext = () => {
-    if (education) {
-      const educationInfo = {
-        level: education,
-        university: university,
-        major: major,
-      };
-      navigation.navigate('UserInfoStep4', { ...route.params, education: educationInfo });
+    if (communicationStyle && speakingStyle && emojiStyle) {
+      navigation.navigate('UserInfoStep4', {
+        ...route.params,
+        communicationStyle,
+        speakingStyle,
+        emojiStyle
+      });
     }
   };
 
   return (
     <SafeAreaView style={extraCommonStyles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <ScrollView style={extraCommonStyles.innerContainer}>
-          <ProgressBar step={3} totalSteps={4} />
-          <Text style={extraCommonStyles.title}>학력을 선택해주세요</Text>
-          <Text style={extraCommonStyles.subtitle}>
-            비슷한 교육 배경을 가진 사람들과 매칭됩니다
-          </Text>
+      <ScrollView style={extraCommonStyles.innerContainer}>
+        <ProgressBar step={3} totalSteps={4} />
+        
+        <Text style={extraCommonStyles.title}>대화 스타일을{'\n'}선택해주세요</Text>
+        <Text style={extraCommonStyles.subtitle}>
+          선호하는 대화 방식을 알려주세요
+        </Text>
 
-          <View style={styles.optionsContainer}>
-            {educationLevels.map((level) => (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>대화 스타일</Text>
+          <View style={styles.optionsGrid}>
+            {COMMUNICATION_STYLES.map((item) => (
               <TouchableOpacity
-                key={level.value}
+                key={item.id}
                 style={[
-                  styles.educationOption,
-                  education === level.value && styles.selectedOption
+                  styles.option,
+                  communicationStyle === item.id && styles.selectedOption
                 ]}
-                onPress={() => setEducation(level.value)}
+                onPress={() => setCommunicationStyle(item.id)}
               >
                 <Ionicons 
-                  name={level.icon} 
+                  name={item.icon} 
                   size={24} 
-                  color={education === level.value ? '#fff' : '#657786'} 
+                  color={communicationStyle === item.id ? '#fff' : '#657786'} 
                 />
                 <Text style={[
                   styles.optionText,
-                  education === level.value && styles.selectedText
+                  communicationStyle === item.id && styles.selectedText
                 ]}>
-                  {level.label}
+                  {item.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-
-          {(education?.includes('university') || education?.includes('graduate')) && (
-            <View style={styles.additionalFields}>
-              <Text style={styles.fieldLabel}>학교 정보를 입력해주세요</Text>
-              
-              <View style={styles.inputContainer}>
-                <Ionicons name="school-outline" size={20} color="#657786" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="학교명"
-                  placeholderTextColor="#657786"
-                  value={university}
-                  onChangeText={setUniversity}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Ionicons name="book-outline" size={20} color="#657786" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="전공"
-                  placeholderTextColor="#657786"
-                  value={major}
-                  onChangeText={setMajor}
-                />
-              </View>
-
-              <Text style={styles.helperText}>
-                * 학교명과 전공은 선택사항입니다
-              </Text>
-            </View>
-          )}
-
-          <View style={{ height: 100 }} />
-        </ScrollView>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[
-              extraCommonStyles.button,
-              !education && extraCommonStyles.disabledButton
-            ]}
-            onPress={handleNext}
-            disabled={!education}
-          >
-            <Text style={extraCommonStyles.buttonText}>다음</Text>
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>말투 선택</Text>
+          {SPEAKING_STYLES.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.speakingOption,
+                speakingStyle === item.id && styles.selectedOption
+              ]}
+              onPress={() => setSpeakingStyle(item.id)}
+            >
+              <View>
+                <Text style={[
+                  styles.speakingOptionTitle,
+                  speakingStyle === item.id && styles.selectedText
+                ]}>
+                  {item.label}
+                </Text>
+                <Text style={[
+                  styles.speakingOptionDesc,
+                  speakingStyle === item.id && styles.selectedDescText
+                ]}>
+                  {item.description}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>이모티콘 사용</Text>
+          <View style={styles.emojiOptions}>
+            {EMOJI_USAGE.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.emojiOption,
+                  emojiStyle === item.id && styles.selectedOption
+                ]}
+                onPress={() => setEmojiStyle(item.id)}
+              >
+                <Ionicons 
+                  name={item.icon} 
+                  size={24} 
+                  color={emojiStyle === item.id ? '#fff' : '#657786'} 
+                />
+                <Text style={[
+                  styles.optionText,
+                  emojiStyle === item.id && styles.selectedText
+                ]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity 
+          style={[
+            extraCommonStyles.button,
+            (!communicationStyle || !speakingStyle || !emojiStyle) && extraCommonStyles.disabledButton,
+            { marginVertical: 20 }
+          ]}
+          onPress={handleNext}
+          disabled={!communicationStyle || !speakingStyle || !emojiStyle}
+        >
+          <Text style={extraCommonStyles.buttonText}>다음</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  optionsContainer: {
+  section: {
+    marginTop: 20,
     paddingHorizontal: 20,
   },
-  educationOption: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#14171A',
+    marginBottom: 15,
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  option: {
+    width: '48%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F5F8FA',
     borderWidth: 1,
     borderColor: '#E1E8ED',
-    borderRadius: 25,
-    padding: 20,
-    marginBottom: 15,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  speakingOption: {
+    backgroundColor: '#F5F8FA',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  speakingOptionTitle: {
+    fontSize: 16,
+    color: '#14171A',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  speakingOptionDesc: {
+    fontSize: 14,
+    color: '#657786',
+  },
+  selectedDescText: {
+    color: '#fff',
+    opacity: 0.8,
+  },
+  emojiOptions: {
+    flexDirection: 'column',
+    gap: 10,
+  },
+  emojiOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F8FA',
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    borderRadius: 12,
+    padding: 15,
   },
   selectedOption: {
     backgroundColor: '#5271ff',
     borderColor: '#5271ff',
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#14171A',
-    marginLeft: 15,
+    marginLeft: 10,
     fontWeight: '500',
   },
   selectedText: {
     color: '#fff',
-  },
-  additionalFields: {
-    paddingHorizontal: 20,
-    marginTop: 30,
-    backgroundColor: '#F8FAFD',
-    borderRadius: 15,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E1E8ED',
-  },
-  fieldLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#14171A',
-    marginBottom: 15,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E1E8ED',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    height: 50,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#14171A',
-  },
-  helperText: {
-    fontSize: 14,
-    color: '#657786',
-    marginTop: 5,
-    fontStyle: 'italic',
-  },
-  buttonContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E1E8ED',
   },
 });
 
