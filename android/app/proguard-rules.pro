@@ -12,3 +12,18 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+
+# Firebase
+-keep class com.google.android.gms.measurement.** { *; }
+-dontwarn com.google.android.gms.measurement.**
+-keep class com.google.firebase.analytics.** { *; }
+-dontwarn com.google.firebase.analytics.**
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+
+# WorkManager
+-keepclassmembers class * extends androidx.work.Worker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+-keep class * extends androidx.work.Worker
+-keep class androidx.work.** { *; }

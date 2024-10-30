@@ -175,7 +175,6 @@ const ChatScreen = ({ route, navigation }) => {
 
         // 백엔드에 메시지 전송
         const response = await axios.post(`${baseURL}/v2/chat`,  {
-        
           persona_name: persona,
           user_input: inputText, // 백엔드가 'input' 필드를 기대함
           uid: user.uid // 백엔드가 'uid'를 기대함

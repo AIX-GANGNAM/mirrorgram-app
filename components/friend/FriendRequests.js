@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {View,Text,StyleSheet,
   TouchableOpacity,
-  Image,FlatList,Alert,ActivityIndicator} from 'react-native';
+  Image,FlatList,Alert,ActivityIndicator,Platform} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 // Firebase 관련 기능 import
 import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc} from 'firebase/firestore';
@@ -25,6 +25,7 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
 
   // 친구 요청 목록을 가져오는 함수
   const fetchFriendRequests = async () => {
+    console.log('FriendRequests > fetchFriendRequests > 친구 요청 목록 가져오기');
     if (!auth.currentUser) return; // 로그인 상태 확인
 
     try {
@@ -53,6 +54,7 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
 
   // 친구 요청 수락 처리 함수
   const handleAcceptRequest = async (request) => {
+    console.log('FriendRequests > handleAcceptRequest > 친구 요청 수락 처리');
     if (processingId) return; // 이미 처리 중인 요청이 있는지 확인
     setProcessingId(request.id); // 처리 중 상태로 설정
 
@@ -64,22 +66,31 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
         createdAt: new Date().toISOString()
       });
 
+      const UserUid=await getUserUidByUserId(request.fromId);
+      const response = await axios.post("http://localhost:8000/notification",  {
+        uid: UserUid,
+        whoSendMessage: auth.currentUser.uid,
+        message: '친구 요청을 수락했습니다.',
+        pushType: 'friendRequestAccept'
+      });
+      console.log('FriendRequests > handleAcceptRequest > response : ', response);
+
       // 양방향 친구 관계 생성 (요청 보낸 사용자 -> 현재 사용자)
       await addDoc(collection(db, 'friends'), {
-        userId: request.fromId,
-        friendId: auth.currentUser.uid,
+        userId: request.fromId, // 요청 보낸 사용자 ID
+        friendId: auth.currentUser.uid, // 현재 사용자 ID
         createdAt: new Date().toISOString()
       });
 
       // 친구 요청 상태 업데이트
       await updateDoc(doc(db, 'friendRequests', request.id), {
-        status: 'accepted',
-        processedAt: new Date().toISOString()
+        status: 'accepted', // 수락 상태로 업데이트
+        processedAt: new Date().toISOString() // 처리 시간 업데이트
       });
 
       // 로컬 상태 업데이트 (목록에서 제거)
       setRequests(prevRequests => 
-        prevRequests.filter(req => req.id !== request.id)
+        prevRequests.filter(req => req.id !== request.id) // 목록에서 제거
       );
 
       Alert.alert('성공', '친구 요청을 수락했습니다.');
@@ -93,21 +104,39 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
 
   // 친구 요청 거절 처리 함수
   const handleRejectRequest = async (request) => {
+    console.log('FriendRequests > handleRejectRequest > 친구 요청 거절 처리');
     if (processingId) return; // 이미 처리 중인 요청이 있는지 확인
     setProcessingId(request.id); // 처리 중 상태로 설정
 
     try {
+      const UserUid=await getUserUidByUserId(request.fromId);
+      const response = await axios.post("http://localhost:8000/notification",  {
+        uid: UserUid,
+        whoSendMessage: auth.currentUser.uid,
+        message: '친구 요청을 거절했습니다.',
+        pushType: 'friendRequestReject'
+      });
+      console.log('FriendRequests > handleRejectRequest > response : ', response);
       // 친구 요청 문서 삭제
       await deleteDoc(doc(db, 'friendRequests', request.id));
 
       // 로컬 상태 업데이트 (목록에서 제거)
       setRequests(prevRequests => 
-        prevRequests.filter(req => req.id !== request.id)
+        prevRequests.filter(req => req.id !== request.id) // 목록에서 제거  
       );
 
       Alert.alert('성공', '친구 요청을 거절했습니다.');
     } catch (error) {
-      console.error('Error rejecting friend request:', error);
+      console.error('Error rejecting friend request:', {
+        message: error.message,
+        code: error.code,
+          config: error.config,
+          response: error.response ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          } : null,
+      });
       Alert.alert('오류', '친구 요청 거절 중 오류가 발생했습니다.');
     } finally {
       setProcessingId(null); // 처리 중 상태 해제

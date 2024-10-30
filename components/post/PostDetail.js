@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import {
   View,
   Text,
