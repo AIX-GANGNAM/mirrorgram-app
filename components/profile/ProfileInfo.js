@@ -1,32 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+import FriendRequestButton from './FriendRequestButton';
 
-const ProfileInfo = ({ user }) => {
+const ProfileInfo = ({ user, showAddFriend, targetUserId }) => {
   const [postsCount, setPostsCount] = useState(0);
+  const [friendsCount, setFriendsCount] = useState(0);
   const db = getFirestore();
+  const navigation = useNavigation();
+  const auth = getAuth();
 
   useEffect(() => {
-    const fetchPostsCount = async () => {
+    const fetchCounts = async () => {
       if (!user?.uid) return;
       
       try {
-        const q = query(
+        // 게시물 수 가져오기
+        const postsQuery = query(
           collection(db, 'feeds'),
           where('userId', '==', user.uid)
         );
-        
-        const querySnapshot = await getDocs(q);
-        setPostsCount(querySnapshot.size);
+        const postsSnapshot = await getDocs(postsQuery);
+        setPostsCount(postsSnapshot.size);
+
+        // 친구 수 가져오기
+        const friendsQuery = query(
+          collection(db, 'friends'),
+          where('userId', '==', user.uid)
+        );
+        const friendsSnapshot = await getDocs(friendsQuery);
+        setFriendsCount(friendsSnapshot.size);
       } catch (error) {
-        console.error('Error fetching posts count:', error);
+        console.error('Error fetching counts:', error);
       }
     };
 
-    fetchPostsCount();
+    fetchCounts();
   }, [user]);
+
+  const handleFriendPress = () => {
+    if (user.uid === auth.currentUser.uid) {
+      navigation.navigate('FriendHeader');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -49,10 +69,13 @@ const ProfileInfo = ({ user }) => {
             <Text style={styles.statNumber}>{postsCount}</Text>
             <Text style={styles.statLabel}>게시물</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
+          <TouchableOpacity 
+            style={styles.statItem} 
+            onPress={handleFriendPress}
+          >
+            <Text style={styles.statNumber}>{friendsCount}</Text>
             <Text style={styles.statLabel}>친구</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -74,10 +97,12 @@ const ProfileInfo = ({ user }) => {
             </View>
           )}
         </View>
+
+        {showAddFriend && <FriendRequestButton targetUserId={targetUserId} />}
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -158,7 +183,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
     color: '#4A90E2',
-  },
+  }
 });
 
 export default ProfileInfo;

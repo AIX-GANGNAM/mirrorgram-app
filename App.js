@@ -30,7 +30,7 @@ import ChatScreen from './screens/ChatScreen';
 import ChatListScreen from './screens/ChatListScreen';
 import ChatUserScreen from './screens/ChatUserScreen';
 import Post from './components/home/Post';
-
+import FriendScreen from './screens/FriendScreen';
 import { userImg } from './components/home/Post';
 import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
@@ -48,7 +48,7 @@ import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
 import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
 import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
-
+import FriendRequests from './components/friend/FriendRequests';
 import DebateChat from './screens/DebateChat';
 
 import PersonaProfile from './components/persona/PersonaProfile';
@@ -223,6 +223,9 @@ const App = () => {
                         headerShown: true
                       })}
                   />
+                  
+                  <Stack.Screen name="FriendRequests" component={FriendRequests} options={{ title: "친구 요청" }} />
+                  <Stack.Screen name="FriendHeader" component={FriendScreen} options={{ headerShown: false, }} />
                   <Stack.Screen name="Status" component={Status} />
                   <Stack.Screen name="EditProfile" component={EditProfileScreen} />
                   <Stack.Screen name="Chat" component={ChatScreen} />
@@ -245,6 +248,7 @@ const App = () => {
                         headerShown: true
                       })}
                   />
+                  
                   <Stack.Screen name="Post" component={Post} />
                   <Stack.Screen name="PersonaChat" component={PersonaChat} />
                   <Stack.Screen name="DebateChat" component={DebateChat} />

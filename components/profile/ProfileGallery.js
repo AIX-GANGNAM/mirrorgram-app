@@ -13,7 +13,6 @@ import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
-
 const ProfileGallery = ({ user }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +32,7 @@ const ProfileGallery = ({ user }) => {
         
         const querySnapshot = await getDocs(q);
         const fetchedPosts = querySnapshot.docs.map(doc => ({
+          folderId: doc.id,
           id: doc.id,
           ...doc.data()
         }));
@@ -70,12 +70,6 @@ const ProfileGallery = ({ user }) => {
         <View style={styles.emptyContainer}>
           <Ionicons name="images-outline" size={48} color="#A0A0A0" />
           <Text style={styles.emptyText}>아직 게시물이 없습니다</Text>
-          <TouchableOpacity 
-            style={styles.createButton}
-            onPress={() => navigation.navigate('NewPost')}
-          >
-            <Text style={styles.createButtonText}>첫 게시물 만들기</Text>
-          </TouchableOpacity>
         </View>
       </View>
     );
@@ -197,18 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6C757D',
     marginBottom: 16,
-  },
-  createButton: {
-    backgroundColor: '#4A90E2',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-  },
-  createButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  }
 });
 
 export default ProfileGallery;
