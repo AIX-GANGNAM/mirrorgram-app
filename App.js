@@ -10,7 +10,7 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
-import GetPushToken from './components/notification/GetPushToken';
+import GetPushToken from './components/notification/GetMyPushToken';
 import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
@@ -54,6 +54,7 @@ import DebateChat from './screens/DebateChat';
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
+import { Alert } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -137,6 +138,7 @@ const App = () => {
         });
       }
     });
+
 
     return () => {
       Notifications.removeNotificationSubscription(notificationListener.current);
