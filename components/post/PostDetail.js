@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { Platform } from 'react-native';
 // Firebase 관련 주석 처리
 // import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 // import { useSelector } from 'react-redux';
