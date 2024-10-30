@@ -11,6 +11,8 @@ import CommentsPreview from '../newPost/CommentsPreview';
 import CommentModal from '../newPost/CommentModal';
 import PostFooter from '../newPost/PostFooter';
 import { Ionicons } from '@expo/vector-icons'; // Expo용 vector-icons import
+import axios from 'axios';
+import { Platform } from 'react-native';
 
 const Post = ({post, refreshPosts}) => {
    // post가 undefined인 경우를 처리
@@ -86,62 +88,61 @@ const Post = ({post, refreshPosts}) => {
    };
 
    const addComment = async () => {
-
-      console.log('newComment 확인중우우우우우', newComment);
-
-
      if (newComment.trim() !== '') {
-      
+       try {
+         // 기존 댓글 저장 로직
+         const commentInfo = {
+           nick: user.userId,
+           content: newComment,
+           profileImg: user.profileImg,
+           uid: user.uid,
+           createdAt: new Date().toISOString(),
+           subCommentId: [],
+         }
 
-       // 여기에 Firebase에 댓글을 저장하는 로직을 추가할 수 있습니다.
+         const db = getFirestore();
+         const docRef = await addDoc(collection(db, 'subcomment'), commentInfo);
+         
+         const db2 = getFirestore();
+         const postRef = doc(db2, 'feeds', post.folderId);
+         
+         const newCommentData = {
+           subCommentId: docRef.id,
+           nick: user.userId,
+           content: newComment,
+           profileImg: user.profileImg,
+           uid: user.uid,
+           createdAt: new Date().toISOString(),
+         }
+         const docSnap = await getDoc(postRef);
+        if (docSnap.exists()) {
+          const currentData = docSnap.data();
+          const currentSubComments = currentData.subCommentId || [];
+          const newSubComments = [...currentSubComments, newCommentData];
 
-       const commentInfo ={
-        nick: user.userId,
-        content: newComment,
-        profileImg: user.profileImg,
-        uid: user.uid,
-        createdAt: new Date().toISOString(),
-        subCommentId: [],
+          // Firestore 업데이트
+          await updateDoc(postRef, { subCommentId: newSubComments });
+
+          // 로컬 상태 업데이트
+          setComments(prevComments => [...prevComments, newCommentData]);
+          setNewComment('');
+
+
+          await axios.post('http://localhost:8000/store-comment-interaction', {
+            uid: user.uid,
+            content: newComment,
+            interaction_type: 'comment'
+          });
+
+          console.log('댓글이 성공적으로 추가되었습니다.');
+        } else {
+          console.log('문서가 존재하지 않습니다.');
+        }
+
+        
+       } catch (error) {
+         console.error('댓글 추가 중 오류 발생:', error);
        }
-
-       const db = getFirestore();
-       const docRef = await addDoc(collection(db, 'subcomment'), commentInfo);
-       console.log('docRef', docRef.id);
-       
-       console.log('postadfasdf', post.folderId);
-       
-       const db2 = getFirestore();
-       const postRef = doc(db2, 'feeds', post.folderId);
-
-       console.log('postRef', postRef);
-       const newCommentData = {
-          subCommentId: docRef.id,
-          nick: user.userId,
-          content: newComment,
-          profileImg: user.profileImg,
-          uid: user.uid,
-          createdAt: new Date().toISOString(),
-       }
-       const docSnap = await getDoc(postRef);
-      if (docSnap.exists()) {
-        const currentData = docSnap.data();
-        const currentSubComments = currentData.subCommentId || [];
-        const newSubComments = [...currentSubComments, newCommentData];
-
-        // Firestore 업데이트
-        await updateDoc(postRef, { subCommentId: newSubComments });
-
-        // 로컬 상태 업데이트
-        setComments(prevComments => [...prevComments, newCommentData]);
-        setNewComment('');
-
-        console.log('댓글이 성공적으로 추가되었습니다.');
-      } else {
-        console.log('문서가 존재하지 않습니다.');
-      }
-
-      
-       
      }
    };
 
