@@ -77,6 +77,10 @@ const ProfileHighlights = () => {
     }
   };
 
+  const handleAddPersona = () => {
+    navigation.navigate('BottomTab', { screen: 'PlayGround' });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>나의 페르소나</Text>
@@ -85,7 +89,10 @@ const ProfileHighlights = () => {
         showsHorizontalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
       >
-        <TouchableOpacity style={styles.addCard}>
+        <TouchableOpacity 
+          style={styles.addCard}
+          onPress={handleAddPersona}
+        >
           <View style={styles.addButton}>
             <Ionicons name="add" size={24} color="#fff" />
           </View>
