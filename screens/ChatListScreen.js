@@ -36,11 +36,11 @@ const PersonalChats = ({ navigation }) => {
   const user = useSelector(state => state.user.user);
 
   const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user?.persona?.joy },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user?.persona?.anger },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user?.persona?.disgust },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user?.persona?.sadness },
-    { id: 5, displayName: '선비', persona: 'Fear', image: user?.persona?.serious },
+    { id: 1, displayName: '기쁨이', persona: 'JOY', image: user?.persona?.JOY },
+    { id: 2, displayName: '화남이', persona: 'Anger', image: user?.persona?.ANGER },
+    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user?.persona?.DISGUST },
+    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user?.persona?.SADNESS },
+    { id: 5, displayName: '선비', persona: 'Fear', image: user?.persona?.SERIOUS },
   ];
 
   useEffect(() => {
@@ -232,11 +232,11 @@ const GroupChats = ({ navigation }) => {
   const user = useSelector(state => state.user.user);
   const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear'];
   const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user.persona.joy },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.anger },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.disgust },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.sadness },
-    { id: 5, displayName: '선비', persona: 'Fear', image: user.persona.serious },
+    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user.persona.JOY },
+    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.ANGER },
+    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.DISGUST },
+    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.SADNESS },
+    { id: 5, displayName: '선비', persona: 'Fear', image: user.persona.SERIOUS },
   ];
 
   useEffect(() => {

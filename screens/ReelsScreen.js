@@ -7,8 +7,10 @@ import {getFirestore, collection, doc, updateDoc} from 'firebase/firestore';
 import {useFocusEffect} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Village from '../components/village/Village';
+import sendNotification from '../components/notification/SendNotification';
 
 export default function ReelsScreen() {
+  console.log("ReelsScreen > 화면 진입");
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dotImages, setDotImages] = useState([]);
@@ -88,12 +90,12 @@ export default function ReelsScreen() {
   const handleButtonPress = async () => {
 
     if (!image) {
-      Alert.alert("경고", "이미지를 선택해주세요.");
+      alert("경고", "이미지를 선택해주세요.");
       return;
     }
     
     if (selectedType === '스타일') {
-      Alert.alert("경고", "스타일을 선택해주세요.");
+      alert("경고", "스타일을 선택해주세요.");
       return;
     }
 
@@ -108,27 +110,29 @@ export default function ReelsScreen() {
     });
 
     try {
+      
+
       const response = await axios.post(`http://221.148.97.237:1818/generate-persona-image/${userId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       console.log("response", response.data);
+
       
       if (response.data.status === 'complete') {
-
-        response = await axios.post(`http://localhost:8000/complete-image/${userId}`)
-
-        console.log('메시지 전송 성공', response)
         
         const images = response.data.images;
         const imageUrls = Object.values(images).map(item => item.image_url);
+        const whoSendMessageResult=sendNotification(user.uid,'System', '없음', 'PLAYGROUND');
+        console.log("ReelsScreen > handleButtonPress > whoSendMessageResult", whoSendMessageResult);
         setDotImages(imageUrls);
       }
     } catch (error) {
-      console.log("error", error.response ? error.response.data : error.message);
-      Alert.alert("오류", "이미지 생성 중 오류가 발생했습니다.");
+      console.log("error > ReelsScreen > handleButtonPress >", error.response ? error.response.data : error.message);
+      alert("오류", "이미지 생성 중 오류가 발생했습니다.");
     } finally {
+
       setLoading(false);
     }
   };
