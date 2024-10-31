@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { getFirestore, collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet,
+  Alert
+} from 'react-native';
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  getDoc, 
+  doc,
+  deleteDoc 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 
 const FriendsList = () => {
   const [friends, setFriends] = useState([]);
@@ -11,25 +27,10 @@ const FriendsList = () => {
   const [showAll, setShowAll] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
-  const navigation = useNavigation();
   
   useEffect(() => {
     fetchFriends();
   }, []);
-
-  const handleProfilePress = (userData) => {
-    navigation.navigate('FriendProfile', {
-      userId: userData.userId,
-      userName: userData.userName,
-      userProfile: {
-        userName: userData.userName,
-        birthdate: userData.birthdate
-      },
-      profileImg: userData.profileImg,
-      mbti: userData.mbti,
-      friendId: userData.friendId
-    });
-  };
 
   useEffect(() => {
     if (showAll) {
@@ -58,15 +59,10 @@ const FriendsList = () => {
             const userData = userDoc.data();
             return {
               id: docSnapshot.id,
-              userId: friendData.friendId,
-              friendId: userData.userId,
               userName: userData.profile?.userName || '이름 없음',
               profileImg: userData.profileImg || null,
-              mbti: userData.profile?.mbti,
-              userProfile: {
-                userName: userData.profile?.userName,
-                birthdate: userData.profile?.birthdate
-              }
+              friendId: friendData.friendId,
+              ...friendData
             };
           }
         } catch (error) {
@@ -82,11 +78,52 @@ const FriendsList = () => {
     }
   };
 
+  const deleteFriend = async (friendId, friendDocId) => {
+    try {
+      // 현재 사용자의 친구 목록에서 삭제
+      await deleteDoc(doc(db, 'friends', friendDocId));
+      
+      // 상대방의 친구 목록에서도 삭제
+      const oppositeQuery = query(
+        collection(db, 'friends'),
+        where('userId', '==', friendId),
+        where('friendId', '==', auth.currentUser.uid)
+      );
+      
+      const oppositeSnapshot = await getDocs(oppositeQuery);
+      const deletePromises = oppositeSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      // UI 업데이트
+      setFriends(prevFriends => prevFriends.filter(friend => friend.id !== friendDocId));
+      
+      Alert.alert('알림', '친구가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Error deleting friend:', error);
+      Alert.alert('오류', '친구 삭제 중 문제가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteFriend = (friend) => {
+    Alert.alert(
+      '친구 삭제',
+      `${friend.userName}님을 친구 목록에서 삭제하시겠습니까?`,
+      [
+        {
+          text: '취소',
+          style: 'cancel'
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => deleteFriend(friend.friendId, friend.id)
+        }
+      ]
+    );
+  };
+
   const renderFriendItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.friendItem}
-      onPress={() => handleProfilePress(item)}
-    >
+    <TouchableOpacity style={styles.friendItem}>
       {item.profileImg ? (
         <Image 
           source={{ uri: item.profileImg }} 
@@ -99,9 +136,13 @@ const FriendsList = () => {
       )}
       <View style={styles.friendInfo}>
         <Text style={styles.friendName}>{item.userName}</Text>
-        <Text style={styles.userId}>@{item.userId}</Text>
-        {item.mbti && <Text style={styles.mbti}>{item.mbti}</Text>}
       </View>
+      <TouchableOpacity 
+        style={styles.deleteButton}
+        onPress={() => handleDeleteFriend(item)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#FF4444" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -150,69 +191,65 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   listContainer: {
-    padding: 0,
+    padding: 16,
   },
   friendItem: {
     flexDirection: 'row',
-    padding: 16,
+    alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
   },
   profileImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 16,
   },
   profileImagePlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   friendInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   friendName: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 2,
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
-  userId: {
-    fontSize: 14,
-    color: '#536471',
-    marginBottom: 2,
-  },
-  mbti: {
-    fontSize: 14,
-    color: '#536471',
+  deleteButton: {
+    padding: 8,
   },
   showMoreButton: {
-    padding: 16,
     alignItems: 'center',
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: '#EFEFEF',
+    marginTop: 8,
   },
   showMoreText: {
-    fontSize: 15,
-    color: '#000',
+    fontSize: 14,
+    color: '#5271ff',
     fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: 20,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#536471',
-    textAlign: 'center',
-    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginVertical: 8,
   },
   emptySubText: {
     fontSize: 14,
