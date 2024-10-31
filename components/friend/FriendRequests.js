@@ -66,9 +66,9 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
         createdAt: new Date().toISOString()
       });
 
-      const UserUid=await getUserUidByUserId(request.fromId);
+    
       const response = await axios.post("http://localhost:8000/notification",  {
-        uid: UserUid,
+        uid: request.fromId,
         whoSendMessage: auth.currentUser.uid,
         message: '친구 요청을 수락했습니다.',
         pushType: 'friendRequestAccept'
@@ -109,9 +109,8 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
     setProcessingId(request.id); // 처리 중 상태로 설정
 
     try {
-      const UserUid=await getUserUidByUserId(request.fromId);
       const response = await axios.post("http://localhost:8000/notification",  {
-        uid: UserUid,
+        uid: request.fromId,
         whoSendMessage: auth.currentUser.uid,
         message: '친구 요청을 거절했습니다.',
         pushType: 'friendRequestReject'

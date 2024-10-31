@@ -3,34 +3,30 @@ import Constants from 'expo-constants';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth } from 'firebase/auth';
 import { db } from 'firebase/firestore';
+import NowPushToken from './NowPushToken';
 
-const GetPushToken = async () => {
-  console.log("GetPushToken.js 실행");
+const UpdatePushToken = async () => {
+  console.log("UpdatePushToken.js 실행");
   let token;
   
   try {
     // 현재 토큰 가져오기
-    const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-    if (!projectId) {
-      throw new Error('Project ID not found');
-    }
-    
-    // Expo 푸시 토큰을 가져와서 형식 맞추기
-    const expoPushToken = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    token = `ExponentPushToken[${expoPushToken.split('[')[1]}`; // 형식 맞추기
-    console.log("현재 토큰:", token);
+    const nowExpoPushToken = await NowPushToken();
+    console.log("현재 토큰:", nowExpoPushToken);
 
-    // Firebase에서 저장된 토큰 가져오기
+    // Firebase에서 현재 로그인한 사용자의 문서 참조 가져오기
     const userRef = doc(db, 'users', auth.currentUser.uid);
     const userDoc = await getDoc(userRef);
-    const savedToken = userDoc.data()?.pushToken;
+    
+    // pushToken 필드 값 가져오기 (ExponentPushToken[lw5mTFNA-GtnOzFP5WrmMU] 형식)
+    const savedToken = userDoc.exists() ? userDoc.data().pushToken || null : null;
     console.log("저장된 토큰:", savedToken);
 
     // 토큰이 다르면 업데이트
-    if (savedToken !== token) {
+    if (savedToken !== nowExpoPushToken) {
       console.log("토큰 업데이트 필요");
       await updateDoc(userRef, {
-        pushToken: token
+        pushToken: nowExpoPushToken
       });
       console.log("토큰 업데이트 완료");
     }
@@ -41,4 +37,4 @@ const GetPushToken = async () => {
   }
 };
 
-export default GetPushToken;
+export default UpdatePushToken;

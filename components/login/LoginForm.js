@@ -11,6 +11,7 @@ import { getFirestore, doc, getDoc  , setDoc} from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import UpdatePushToken from '../notification/UpdatePushToken';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -103,6 +104,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   };
 
   const handleLogin = async () => {
+    console.log("handleLogin 실행");
     try {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
       const userRef = doc(db, 'users', user.uid);
@@ -114,6 +116,8 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         const userData = userSnapshot.data();
         dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
+        const result = await UpdatePushToken();
+        console.log("UpdatePushToken 결과 : ", result);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
         navigation.navigate('UserVerificationStep0');

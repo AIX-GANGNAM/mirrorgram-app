@@ -2,37 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import app from '../../firebaseConfig'; // Firebase 앱 인스턴스 import
 import * as Yup from 'yup';
 import { createUserProfile } from '../../firebaseConfig';
 import { FontAwesome } from '@expo/vector-icons';
+import NowPushToken from '../notification/NowPushToken';
 
 // 토큰 발급
-async function registerForPushNotificationsAsync() {
-  console.log("registerForPushNotificationsAsync 함수 실행");
-  let token;
-  
-    try {
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-        console.log("프로젝트ID : ", projectId);
-      if (!projectId) {
-        throw new Error('Project ID not found');
-      }
-      console.log("토큰 값 출력 시작");
-      // token = (await Notifications.getDevicePushTokenAsync()).data;
-      token = (await Notifications.getExpoPushTokenAsync({projectId,})).data;
-      console.log("토큰 값 : ", token);
-    } catch (e) {
-      token = `${e}`;
-    }
-
-
-  return token;
-}
-
 const SignupSchema = Yup.object().shape({
   email: Yup.string().email('올바른 이메일 형식을 입력해주세요').required('이메일을 입력해주세요'),
   password: Yup.string().min(8, '비밀번호는 8자리 이상이어야 합니다').required('비밀번호를 입력해주세요'),
@@ -85,7 +61,7 @@ const SignupForm = () => {
     try {
       const auth = getAuth(app);
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      const pushToken = await registerForPushNotificationsAsync();
+      const pushToken = await NowPushToken();
       await createUserProfile(user, { displayName: email.split('@')[0], pushToken: pushToken }); // 회원가입 완료 후 프로필 생성
       console.log("푸시 알림 토큰 : ", pushToken);
       alert('회원가입이 완료되었습니다.');
