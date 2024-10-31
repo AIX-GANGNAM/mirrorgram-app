@@ -18,7 +18,7 @@ const Header = () => {
       <View style={styles.rightSection}>
         <TouchableOpacity 
           style={styles.iconButton}
-          onPress={() => navigation.navigate('NewPost')}
+          onPress={() => navigation.navigate('CreatePersona')}
         >
           <Ionicons name="add-circle-outline" size={26} color="#1A1A1A" />
         </TouchableOpacity>

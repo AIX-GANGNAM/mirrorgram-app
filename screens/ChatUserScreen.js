@@ -1,59 +1,74 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  TextInput, 
+  TouchableOpacity, 
+  KeyboardAvoidingView, 
+  Platform, 
+  Image, 
+  SafeAreaView, 
+  ActivityIndicator 
+} from 'react-native';
+import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../firebaseConfig';
+import { useSelector } from 'react-redux';
 
-const ChatScreen = ({ route, navigation }) => {
-  const { chatId, recipientId, recipientName: initialRecipientName } = route.params;
+const ChatUserScreen = ({ route, navigation }) => {
+  const { 
+    chatId, 
+    recipientId, 
+    recipientName = 'Unknown User',
+    profileImg 
+  } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [recipientName, setRecipientName] = useState(initialRecipientName || 'Unknown User');
+  const currentUser = useSelector(state => state.user.user);
   const flatListRef = useRef(null);
 
   useEffect(() => {
-    const fetchRecipientName = async () => {
-      if (!recipientId) {
-        console.error("RecipientId is undefined or null");
-        return;
-      }
-
+    const initializeChat = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', recipientId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData?.username) {
-            setRecipientName(userData.username);
-          }
+        const chatRef = doc(db, 'chat', chatId);
+        const chatDoc = await getDoc(chatRef);
+        
+        if (!chatDoc.exists()) {
+          // 채팅방 생성
+          await setDoc(chatRef, {
+            info: {
+              participants: [currentUser.uid, recipientId],
+              createdAt: new Date(),
+              lastMessage: '',
+              lastMessageTime: new Date(),
+              lastSenderId: ''
+            }
+          });
         }
-      } catch (err) {
-        console.error("Error fetching recipient data: ", err);
+      } catch (error) {
+        console.error('Error initializing chat:', error);
       }
     };
 
-    if (!initialRecipientName) {
-      fetchRecipientName();
-    }
-  }, [recipientId, initialRecipientName]);
+    initializeChat();
+  }, [chatId, currentUser.uid, recipientId]);
 
   useEffect(() => {
-    navigation.setOptions({ title: recipientName });
-  }, [navigation, recipientName]);
+    // 메시지 실시간 리스닝
+    const q = query(
+      collection(db, `chat/${chatId}/messages`), 
+      orderBy('timestamp', 'asc')
+    );
 
-  useEffect(() => {
-    const q = query(collection(db, `chats/${chatId}/messages`), orderBy('timestamp'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({
+      const newMessages = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })));
-      setLoading(false);
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, (err) => {
-      console.error("Error fetching messages: ", err);
-      setError(err.message);
+      }));
+      setMessages(newMessages);
       setLoading(false);
     });
 
@@ -64,129 +79,248 @@ const ChatScreen = ({ route, navigation }) => {
     if (inputMessage.trim() === '') return;
 
     try {
-      const newMessageRef = await addDoc(collection(db, `chats/${chatId}/messages`), {
+      const messageData = {
         text: inputMessage,
-        senderId: auth.currentUser.uid,
+        senderId: currentUser.uid,
         timestamp: new Date(),
-      });
+        read: false
+      };
 
-      const chatRef = doc(db, 'chats', chatId);
-      await updateDoc(chatRef, {
-        lastMessage: inputMessage,
-        lastMessageTime: new Date(),
+      // 메시지 추가
+      await addDoc(collection(db, `chat/${chatId}/messages`), messageData);
+
+      // 채팅방 정보 업데이트
+      await updateDoc(doc(db, 'chat', chatId), {
+        'info.lastMessage': inputMessage,
+        'info.lastMessageTime': new Date(),
+        'info.lastSenderId': currentUser.uid
       });
 
       setInputMessage('');
-      flatListRef.current?.scrollToEnd({ animated: true });
-    } catch (err) {
-      console.error("Error sending message: ", err);
-      alert("메시지 전송에 실패했습니다.");
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('메시지 전송에 실패했습니다.');
     }
   };
 
-  const renderMessage = ({ item }) => (
-    <View style={[styles.messageBubble, item.senderId === auth.currentUser.uid ? styles.myMessage : styles.theirMessage]}>
-      <Text style={styles.messageText}>{item.text}</Text>
-    </View>
-  );
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    
+    // Firestore Timestamp 객체인 경우
+    if (timestamp.toDate) {
+      return timestamp.toDate().toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+    
+    // Date 객체인 경우
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+
+    // timestamp가 숫자(밀리초)인 경우
+    if (typeof timestamp === 'number') {
+      return new Date(timestamp).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+
+    return '';
+  };
+
+  const renderMessage = ({ item, index }) => {
+    const currentTime = item.timestamp ? formatTime(item.timestamp) : '';
+    const previousTime = index > 0 && messages[index - 1].timestamp ? 
+      formatTime(messages[index - 1].timestamp) : '';
+
+    return (
+      <View key={item.id}>
+        {(index === 0 || currentTime !== previousTime) && currentTime ? (
+          <Text style={styles.timeStamp}>{currentTime}</Text>
+        ) : null}
+        <View style={[
+          styles.messageBubble, 
+          item.senderId === auth.currentUser.uid ? styles.userMessage : styles.otherMessage
+        ]}>
+          <Text style={[
+            styles.messageText,
+            item.senderId === auth.currentUser.uid ? styles.userMessageText : styles.otherMessageText
+          ]}>
+            {item.text}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
-  if (error) {
-    return <Text style={styles.errorText}>Error: {error}</Text>;
+    return <ActivityIndicator size="large" color="#0095f6" />;
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={90}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.messageList}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputMessage}
-          onChangeText={(text) => setInputMessage(text)}
-          placeholder="메시지를 입력하세요..."
-          placeholderTextColor="#888"
-          multiline={true}
-          blurOnSubmit={false}
-          keyboardType="default"
-          autoCorrect={false}
-          autoCapitalize="none"
-          maxLength={1000}
-          returnKeyType="done"
-          textAlignVertical="top" // 한글 입력 시 충돌 방지
-          editable={true} // 한글 입력을 가능하도록 설정
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <Ionicons name="send" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileContainer}>
+            <Image 
+              source={{ uri: profileImg || 'default_image_url' }} 
+              style={styles.profileImage} 
+            />
+            <Text style={styles.headerTitle}>{recipientName}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.chatContainer}>
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.messageList}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+            onLayout={() => flatListRef.current?.scrollToEnd()}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TouchableOpacity style={styles.cameraButton}>
+            <Ionicons name="camera-outline" size={24} color="#000" />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={inputMessage}
+            onChangeText={setInputMessage}
+            placeholder="메시지 보내기..."
+            placeholderTextColor="#999"
+            multiline
+            maxLength={1000}
+          />
+          {inputMessage.length > 0 ? (
+            <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+              <Ionicons name="send" size={24} color="#0095f6" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.micButton}>
+              <Ionicons name="mic-outline" size={24} color="#000" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 40 : 25,
     backgroundColor: '#fff',
   },
-  messageList: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
+  keyboardAvoidingView: {
+    flex: 1,
   },
-  inputContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
-  input: {
-    flex: 1,
-    minHeight: 40, // 높이를 최소한으로 설정 (기존 height 대신 minHeight 사용)
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
+  backButton: {
     marginRight: 10,
-    backgroundColor: '#f9f9f9',
-    textAlignVertical: 'top', // 한글 입력 시 충돌 방지
   },
-  sendButton: {
-    backgroundColor: '#3897f0',
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 10,
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  chatContainer: {
+    flex: 1,
+  },
+  messageList: {
+    paddingVertical: 10,
   },
   messageBubble: {
-    maxWidth: '75%',
+    maxWidth: '70%',
     padding: 10,
-    borderRadius: 15,
-    marginVertical: 5,
+    borderRadius: 20,
+    marginVertical: 2,
+    marginHorizontal: 10,
   },
-  myMessage: {
+  userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#dcf8c6',
-    borderBottomRightRadius: 0,
+    backgroundColor: '#0095f6',
   },
-  theirMessage: {
+  otherMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e5e5e5',
-    borderBottomLeftRadius: 0,
+    backgroundColor: '#f0f0f0',
   },
   messageText: {
     fontSize: 16,
+  },
+  userMessageText: {
+    color: '#fff',
+  },
+  otherMessageText: {
+    color: '#000',
+  },
+  timeStamp: {
+    alignSelf: 'center',
+    color: '#999',
+    fontSize: 12,
+    marginVertical: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  cameraButton: {
+    marginRight: 10,
+    padding: 5,
+  },
+  input: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    backgroundColor: '#f0f2f5',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginHorizontal: 8,
+  },
+  sendButton: {
+    padding: 5,
+    marginLeft: 5,
+  },
+  micButton: {
+    padding: 5,
+    marginLeft: 5,
   },
   errorText: {
     textAlign: 'center',
@@ -195,4 +329,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatScreen;
+export default ChatUserScreen;

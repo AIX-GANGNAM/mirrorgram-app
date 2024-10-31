@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Text } from 'react-native';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import ProfileInfo from '../components/profile/ProfileInfo';
-
 import ProfileGallery from '../components/profile/ProfileGallery';
+import ProfileHighlights from '../components/profile/ProfileHighlights';
 
 const FriendProfileScreen = ({ route }) => {
   const [userData, setUserData] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
+  const navigation = useNavigation();
   const db = getFirestore();
   const auth = getAuth();
   const { userId, userName, profileImg, mbti, friendId } = route.params;
@@ -43,6 +46,22 @@ const FriendProfileScreen = ({ route }) => {
     fetchUserData();
   }, [userId]);
 
+  const handleMessage = async () => {
+    try {
+      // 채팅방 ID 생성 (두 사용자 ID를 정렬하여 일관된 ID 생성)
+      const chatId = [auth.currentUser.uid, userId].sort().join('_');
+      
+      navigation.navigate('ChatUser', {
+        chatId: chatId,
+        recipientId: userId,
+        recipientName: userData?.profile?.userName || 'Unknown User',
+        profileImg: profileImg
+      });
+    } catch (error) {
+      console.error('Error navigating to chat:', error);
+    }
+  };
+
   if (!userData) {
     return null;
   }
@@ -55,7 +74,17 @@ const FriendProfileScreen = ({ route }) => {
           showAddFriend={!isFriend}
           targetUserId={userId}
         />
+        {isFriend && (
+          <TouchableOpacity 
+            style={styles.messageButton}
+            onPress={handleMessage}
+          >
+            <Ionicons name="chatbubble-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.messageButtonText}>메시지 보내기</Text>
+          </TouchableOpacity>
+        )}
       </View>
+      <ProfileHighlights/>
       <ProfileGallery user={userData} />
     </ScrollView>
   );
@@ -64,11 +93,30 @@ const FriendProfileScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
     backgroundColor: '#FFFFFF',
   },
   profileContainer: {
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
+    paddingBottom: 16,
+  },
+  messageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#5271FF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginTop: 12,
+  },
+  messageButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
   }
 });
 

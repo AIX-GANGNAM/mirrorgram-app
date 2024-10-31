@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, View, Image, Text, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Image, Text, Platform, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,17 +10,17 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
-import GetPushToken from './components/notification/GetPushToken';
+import GetPushToken from './components/notification/UpdatePushToken';
 import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
 import { createNavigationContainerRef } from '@react-navigation/native';
-
+import ReelsScreen from './screens/ReelsScreen';
 import PostDetail from './components/post/PostDetail';
 import HomeScreen from './screens/HomeScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import ReelsScreen from './screens/ReelsScreen';
+import CreatePersonaScreen from './screens/CreatePersonaScreen';
 import CalenderScreen from './screens/CalenderScreen';
 import LoginScreen from './screens/LoginScreen';
 import ActivityScreen from './screens/ActivityScreen';
@@ -139,6 +139,7 @@ const App = () => {
       }
     });
 
+
     return () => {
       Notifications.removeNotificationSubscription(notificationListener.current);
       Notifications.removeNotificationSubscription(responseListener.current);
@@ -147,128 +148,155 @@ const App = () => {
   }, []);
 
 
-  const BottomTabScreen = () => {
-    const auth = getAuth(); // Firebase 인증 객체 생성
+  const MainTabs = () => {
+    const auth = getAuth();
 
-    // 로그아웃 처리 함수
+    // 로그아웃 처리 함수를 MainTabs 내부로 이동
     const handleLogout = () => {
       signOut(auth)
-          .then(() => {
-            Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
-            setIsAuthenticated(false); // 로그인 상태 업데이트
-          })
-          .catch((error) => {
-            console.error('로그아웃 에러:', error);
-            Alert.alert('로그아웃 실패', '다시 시도해 주세요.');
-          });
+        .then(() => {
+          Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
+          setIsAuthenticated(false);
+        })
+        .catch((error) => {
+          console.error('로그아웃 에러:', error);
+          Alert.alert('로그아웃 실패', '다시 시도해 주세요.');
+        });
     };
 
     return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-                if (route.name === 'Home') {
-                  iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Calender') {
-                  iconName = focused ? 'calendar' : 'calendar-outline';
-                } else if (route.name === 'NewPost') {
-                  iconName = focused ? 'add-circle' : 'add-circle-outline';
-                } else if (route.name === 'PlayGround') {
-                  iconName = focused ? 'body' : 'body-outline';
-                } else if (route.name === 'Profile') {
-                  iconName = focused ? 'person' : 'person-outline';
-                }
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#5271ff',
-              tabBarInactiveTintColor: 'gray',
-              headerShown: false,
-            })}
-        >
-
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Calender" component={CalenderScreen} />
-          <Tab.Screen name="NewPost" component={NewPostScreen} />
-          <Tab.Screen name="PlayGround" component={ReelsScreen} />
-          <Tab.Screen name="Profile">
-            {props => <ProfileScreen {...props} setIsAuthenticated={setIsAuthenticated} handleLogout={handleLogout} />}
-          </Tab.Screen>
-        </Tab.Navigator>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Calender') {
+              iconName = focused ? 'calendar' : 'calendar-outline';
+            } else if (route.name === 'NewPost') {
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            } else if (route.name === 'PlayGround') {
+              iconName = focused ? 'body' : 'body-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#5271ff',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Calender" component={CalenderScreen} />
+        <Tab.Screen name="NewPost" component={NewPostScreen} />
+        <Tab.Screen name="PlayGround" component={ReelsScreen} />
+        <Tab.Screen name="Profile">
+          {props => (
+            <ProfileScreen 
+              {...props} 
+              setIsAuthenticated={setIsAuthenticated} 
+              handleLogout={handleLogout}
+            />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
     );
   };
 
+  const BottomTabScreen = () => {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen 
+          name="MainTabs" 
+          component={MainTabs} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="FriendProfile" 
+          component={FriendProfileScreen}
+          options={({ route }) => ({
+            title: route.params.userName,
+            headerShown: true
+          })}
+        />
+      </Stack.Navigator>
+    );
+  };
 
   return(
-      <Provider store={store}>
-        <NavigationContainer>
-          <Stack.Navigator
-              screenOptions={{
-                headerShown: false,
-              }}
-          >
-            {!isAuthenticated ? (
-                <Stack.Screen name="Login">
-                  {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
-                </Stack.Screen>
-            ) : (
-                <>
-                  <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-                  <Stack.Screen name="Activity" component={ActivityScreen} />
-                  <Stack.Screen name="Home" component={HomeScreen} />
-                  <Stack.Screen
-                      name="FriendProfile"
-                      component={FriendProfileScreen}
-                      options={({ route }) => ({
-                        title: route.params.name,
-                        headerShown: true
-                      })}
-                  />
-                  
-                  <Stack.Screen name="FriendRequests" component={FriendRequests} options={{ title: "친구 요청" }} />
-                  <Stack.Screen name="FriendHeader" component={FriendScreen} options={{ headerShown: false, }} />
-                  <Stack.Screen name="Status" component={Status} />
-                  <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-                  <Stack.Screen name="Chat" component={ChatScreen} />
-                  <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
-                  <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
-                  <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
-                  <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
-                  <Stack.Screen
-                      name="ChatList"
-                      component={ChatListScreen}
-                      options={{
-                        headerShown: true,
-                      }}
-                  />
-                  <Stack.Screen
-                      name="ChatUser"
-                      component={ChatUserScreen}
-                      options={({ route }) => ({
-                        title: route.params.name,
-                        headerShown: true
-                      })}
-                  />
-                  
-                  <Stack.Screen name="Post" component={Post} />
-                  <Stack.Screen name="PersonaChat" component={PersonaChat} />
-                  <Stack.Screen name="DebateChat" component={DebateChat} />
-                  <Stack.Screen name="PostDetail" component={PostDetail} />
-                </>
-            )}
-            <Stack.Screen name="Signup" component={SignupForm} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
-            <Stack.Screen name="UserVerification" component={UserVerification} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationStep0" component={UserVerificationStep0} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} options={{ headerShown: false }} />
-            <Stack.Screen name="UserVerificationSummary">
-              {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
-            </Stack.Screen>
-            <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
-            <Stack.Screen 
+    <Provider store={store}>
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          {!isAuthenticated ? (
+            // 인증되지 않은 상태의 스크린들
+            <>
+              <Stack.Screen name="Login">
+                {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
+              <Stack.Screen name="Signup" component={SignupForm} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
+              <Stack.Screen name="UserVerification" component={UserVerification} />
+              <Stack.Screen name="UserVerificationStep0" component={UserVerificationStep0} />
+              <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} />
+              <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} />
+              <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} />
+              <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} />
+              <Stack.Screen name="UserVerificationSummary">
+                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
+            </>
+          ) : (
+            // 인증된 상태의 스크린들
+            <>
+              <Stack.Screen name="BottomTab" component={BottomTabScreen} />
+              <Stack.Screen name="Activity" component={ActivityScreen} />
+              <Stack.Screen name="Home" component={HomeScreen} />
+              <Stack.Screen
+                  name="FriendProfile"
+                  component={FriendProfileScreen}
+                  options={({ route }) => ({
+                    title: route.params.name,
+                    headerShown: true
+                  })}
+              />
+              
+              <Stack.Screen name="FriendRequests" component={FriendRequests} options={{ title: "친구 요청" }} />
+              <Stack.Screen name="FriendHeader" component={FriendScreen} options={{ headerShown: false, }} />
+              <Stack.Screen name="Status" component={Status} />
+              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
+              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
+              <Stack.Screen
+                  name="ChatList"
+                  component={ChatListScreen}
+                  options={{
+                    headerShown: true,
+                  }}
+              />
+              <Stack.Screen
+                  name="ChatUser"
+                  component={ChatUserScreen}
+                  options={{
+                    headerShown: false
+                  }}
+              />
+              <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
+              <Stack.Screen name="Post" component={Post} />
+              <Stack.Screen name="PersonaChat" component={PersonaChat} />
+              <Stack.Screen name="DebateChat" component={DebateChat} />
+              <Stack.Screen name="PostDetail" component={PostDetail} />
+            </>
+          )}
+          <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
+          <Stack.Screen 
                 name="CreatePersonaPost" 
                 component={CreatePersonaPostScreen}
                 options={{
@@ -277,9 +305,9 @@ const App = () => {
                   headerTitleAlign: 'center',
                 }}
               />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </Provider>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
 }
 

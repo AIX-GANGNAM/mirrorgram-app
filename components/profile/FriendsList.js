@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { getFirestore, collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet,
+  Alert
+} from 'react-native';
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  getDoc, 
+  doc,
+  deleteDoc 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -44,6 +61,7 @@ const FriendsList = () => {
               id: docSnapshot.id,
               userName: userData.profile?.userName || '이름 없음',
               profileImg: userData.profileImg || null,
+              friendId: friendData.friendId,
               ...friendData
             };
           }
@@ -58,6 +76,50 @@ const FriendsList = () => {
     } catch (error) {
       console.error('Error fetching friends:', error);
     }
+  };
+
+  const deleteFriend = async (friendId, friendDocId) => {
+    try {
+      // 현재 사용자의 친구 목록에서 삭제
+      await deleteDoc(doc(db, 'friends', friendDocId));
+      
+      // 상대방의 친구 목록에서도 삭제
+      const oppositeQuery = query(
+        collection(db, 'friends'),
+        where('userId', '==', friendId),
+        where('friendId', '==', auth.currentUser.uid)
+      );
+      
+      const oppositeSnapshot = await getDocs(oppositeQuery);
+      const deletePromises = oppositeSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      // UI 업데이트
+      setFriends(prevFriends => prevFriends.filter(friend => friend.id !== friendDocId));
+      
+      Alert.alert('알림', '친구가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Error deleting friend:', error);
+      Alert.alert('오류', '친구 삭제 중 문제가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteFriend = (friend) => {
+    Alert.alert(
+      '친구 삭제',
+      `${friend.userName}님을 친구 목록에서 삭제하시겠습니까?`,
+      [
+        {
+          text: '취소',
+          style: 'cancel'
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => deleteFriend(friend.friendId, friend.id)
+        }
+      ]
+    );
   };
 
   const renderFriendItem = ({ item }) => (
@@ -75,6 +137,12 @@ const FriendsList = () => {
       <View style={styles.friendInfo}>
         <Text style={styles.friendName}>{item.userName}</Text>
       </View>
+      <TouchableOpacity 
+        style={styles.deleteButton}
+        onPress={() => handleDeleteFriend(item)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#FF4444" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -155,6 +223,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1A1A1A',
     fontWeight: '500',
+  },
+  deleteButton: {
+    padding: 8,
   },
   showMoreButton: {
     alignItems: 'center',
