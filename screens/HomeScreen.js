@@ -1,22 +1,27 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, BackHandler, TouchableOpacity, Modal, Animated, Alert, Platform, FlatList, RefreshControl } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, BackHandler, TouchableOpacity, Modal, Animated, Alert, Platform, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { getFirestore, collection, query, where, getDocs, orderBy, limit, startAfter } from 'firebase/firestore';
 
 import Header from '../components/home/Header';
 import ProfileHighlights from '../components/profile/ProfileHighlights';
 import Post from '../components/home/Post';
-import { POSTS } from '../data/posts';
 
 const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
   const user = useSelector((state) => state.user.user);
   const [slideAnimation] = useState(new Animated.Value(0));
   const [isModalVisible, setModalVisible] = useState(false);
 
   const navigation = useNavigation();
+  const db = getFirestore();
+  const POSTS_PER_PAGE = 10;
 
   useEffect(() => {
     if (!user.profile?.mbti) {
@@ -43,36 +48,107 @@ const HomeScreen = () => {
     navigation.navigate('UserInfoStep1');
   };
 
+  const fetchPosts = useCallback(async (isLoadingMore = false) => {
+    if (!user?.uid || (!isLoadingMore && isLoading)) return;
+
+    try {
+      if (!isLoadingMore) {
+        setIsLoading(true);
+      }
+
+      // 1. 친구 목록 가져오기
+      const friendsRef = collection(db, 'friends');
+      const friendsQuery = query(friendsRef, where('userId', '==', user.uid));
+      const friendsSnapshot = await getDocs(friendsQuery);
+      const friendIds = friendsSnapshot.docs.map(doc => doc.data().friendId);
+      
+      // 검색할 ID 목록에 자신의 ID도 포함
+      const searchIds = [user.uid, ...friendIds];
+
+      // 2. 피드 쿼리 생성
+      let feedQuery;
+      if (isLoadingMore && lastVisible) {
+        feedQuery = query(
+          collection(db, 'feeds'),
+          where('userId', 'in', searchIds),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisible),
+          limit(POSTS_PER_PAGE)
+        );
+      } else {
+        feedQuery = query(
+          collection(db, 'feeds'),
+          where('userId', 'in', searchIds),
+          orderBy('createdAt', 'desc'),
+          limit(POSTS_PER_PAGE)
+        );
+      }
+
+      const feedSnapshot = await getDocs(feedQuery);
+      
+      // 마지막 문서 저장
+      const lastVisibleDoc = feedSnapshot.docs[feedSnapshot.docs.length - 1];
+      setLastVisible(lastVisibleDoc);
+      
+      // 더 불러올 게시물이 있는지 확인
+      setHasMorePosts(feedSnapshot.docs.length === POSTS_PER_PAGE);
+
+      const newPosts = feedSnapshot.docs.map(doc => ({
+        folderId: doc.id,
+        ...doc.data()
+      }));
+
+      if (isLoadingMore) {
+        setPosts(prevPosts => [...prevPosts, ...newPosts]);
+      } else {
+        setPosts(newPosts);
+      }
+    } catch (error) {
+      console.error('포스트 데이터 가져오기 실패:', error);
+      Alert.alert('오류', '포스트를 불러오는 데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [user, lastVisible]);
+
+  const loadMorePosts = async () => {
+    if (!hasMorePosts || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    await fetchPosts(true);
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setLastVisible(null);
+    setHasMorePosts(true);
     await fetchPosts();
     setRefreshing(false);
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      setLastVisible(null);
+      setHasMorePosts(true);
       fetchPosts();
     }, [])
   );
 
-  const fetchPosts = useCallback(async () => {
-    if (user && user.uid) {
-      try {
-        setIsLoading(true);
-        const fetchedPosts = await POSTS(user.uid);
-        setPosts(fetchedPosts);
-      } catch (error) {
-        console.error('포스트 데이터 가져오기 실패:', error);
-        Alert.alert('오류', '포스트를 불러오는 데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, [user]);
-
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator size="small" color="#D2691E" />
+        <Text style={styles.loadingText}>더 많은 게시물 불러오는 중...</Text>
+      </View>
+    );
+  };
 
   const ListHeader = () => (
     <View style={styles.highlightsContainer}>
@@ -89,14 +165,16 @@ const HomeScreen = () => {
           <Post post={item} navigation={navigation} />
         )}
         ListHeaderComponent={ListHeader}
-        keyExtractor={(item) => item.id}
+        ListFooterComponent={renderFooter}
+        keyExtractor={(item) => item.folderId}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        onEndReached={loadMorePosts}
+        onEndReachedThreshold={0.5}
         stickyHeaderIndices={[]}
       />
       
-      {/* 모달 컴포넌트 추가 */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -203,6 +281,17 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: 'white',
   },
+  loadingFooter: {
+    padding: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  }
 });
 
 export default HomeScreen;
