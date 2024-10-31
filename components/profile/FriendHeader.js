@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -9,27 +9,37 @@ import { getAuth } from 'firebase/auth';
 const FriendHeader = ({ onTabChange, activeTab }) => {
   const navigation = useNavigation();
   const [friendCount, setFriendCount] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const db = getFirestore();
   const auth = getAuth();
 
   useEffect(() => {
     if (!auth.currentUser) return;
 
-    // 친구 수를 실시간으로 감시하는 리스너 설정
     const friendsQuery = query(
       collection(db, 'friends'),
       where('userId', '==', auth.currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(friendsQuery, (snapshot) => {
+    const friendsUnsubscribe = onSnapshot(friendsQuery, (snapshot) => {
       setFriendCount(snapshot.size);
-    }, (error) => {
-      console.error('Error listening to friends count:', error);
     });
 
-    // 컴포넌트 언마운트 시 리스너 해제
-    return () => unsubscribe();
-  }, [db, auth.currentUser]);
+    const requestsQuery = query(
+      collection(db, 'friendRequests'),
+      where('toId', '==', auth.currentUser.uid),
+      where('status', '==', 'pending')
+    );
+
+    const requestsUnsubscribe = onSnapshot(requestsQuery, (snapshot) => {
+      setPendingRequests(snapshot.size);
+    });
+
+    return () => {
+      friendsUnsubscribe();
+      requestsUnsubscribe();
+    };
+  }, [auth.currentUser]);
 
   return (
     <View style={styles.headerContainer}>
@@ -37,12 +47,26 @@ const FriendHeader = ({ onTabChange, activeTab }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>친구</Text>
+        
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../assets/logo/mybot-log-color.png')} 
+            style={styles.logo}
+          />
+        </View>
+        
         <TouchableOpacity 
           onPress={() => navigation.navigate('FriendRequests')} 
           style={styles.notificationButton}
         >
-          <Ionicons name="people-outline" size={24} color="#000" />
+          <View>
+            <Ionicons name="people-outline" size={24} color="#000" />
+            {pendingRequests > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingRequests}</Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -82,6 +106,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  logoContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 100,  // 로고 크기를 적절히 조절하세요
+    height: 100,  // 로고 크기를 적절히 조절하세요
+    resizeMode: 'contain',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -114,6 +148,23 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: '#000',
     borderRadius: 3,
+  },
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   }
 });
 
