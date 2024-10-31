@@ -268,6 +268,7 @@ const ChatScreen = ({ route, navigation }) => {
                   title: highlightTitle,
                   image: highlightImage,
                   interests: [],
+                  persona: persona,
                 },
                 userId: user.uid
               })
