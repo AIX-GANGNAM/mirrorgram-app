@@ -2,30 +2,29 @@
 
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+        buildToolsVersion = "34.0.0"
+        minSdkVersion = 23
+        compileSdkVersion = 34
+        targetSdkVersion = 34
         kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
-
+        hermesVersion = "0.11.0"  // hermes-engine 버전과 맞춤
         ndkVersion = "26.1.10909125"
-    }
-     ext {
-        // 버전을 명시적으로 지정
-        firebaseMessagingVersion = "23.0.0"
-        firebaseCoreVersion = "21.0.0"
-        // ... 기타 버전들
+        androidGradlePluginVersion = '8.1.1'
     }
     repositories {
         google()
         mavenCentral()
+        maven {
+            // All of React Native (JS, Android binaries) is installed from npm
+            url "$rootDir/../node_modules/react-native/android"
+        }
     }
     dependencies {
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
         classpath 'com.google.gms:google-services:4.4.1'
-        classpath('com.android.tools.build:gradle')
+        classpath("com.android.tools.build:gradle:8.1.1")
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
     }
 }
 
@@ -33,6 +32,10 @@ apply plugin: "com.facebook.react.rootproject"
 
 allprojects {
     repositories {
+        maven {
+            // Android JSC is installed from npm
+            url("$rootDir/../node_modules/jsc-android/dist")
+        }
         maven {
             // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
             url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))

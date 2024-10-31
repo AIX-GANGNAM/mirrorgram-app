@@ -12,7 +12,6 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
-  console.log("ChatScreen 실행");
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -20,6 +19,83 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
 
   const user = useSelector(state => state.user.user);
+  const userPersona = user.persona.find(p => p.Name === persona);
+
+  const testNetworkConfig = async () => {
+    // 1. HTTP 통신 테스트 - 네트워크 보안 설정 확인
+    try {
+      const response = await axios.get('http://httpstat.us/200');
+      if (response.status === 200) {
+        console.log("Network security config 적용됨: HTTP 요청 성공");
+      } else {
+        console.log("HTTP 요청 실패:", response.status);
+      }
+    } catch (error) {
+      console.error("HTTP 요청 실패 - network_security_config 미적용 가능성:", {
+        message: error.message,
+        config: error.config,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          headers: error.response.headers,
+          data: error.response.data,
+        } : null,
+      });
+    }
+  
+    // 2. Base URL 설정 로깅
+    const isRunningInADB = Boolean(global.isRunningInADB); // adb 디버깅 여부 확인
+    const baseURL = Platform.select({
+      ios: 'http://192.168.0.229:8000',
+      android: 'http://192.168.0.229:8000',
+      default: isRunningInADB ? 'http://10.0.2.2:8000' : 'http://localhost:8000'
+    });
+    console.log("testNetworkConfig baseURL:", baseURL, "| ADB 디버깅 상태:", isRunningInADB);
+  
+    // 3. 엔드포인트에 연결 시도
+    try {
+      const response = await axios.get(`${baseURL}/v2/networkcheck`, {
+        timeout: 5000, // 타임아웃 설정 (필요 시 조정)
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
+  
+      // 요청 성공 여부 확인
+      if (response.data && response.data.status === "success") {
+        console.log("endpoint 호출 성공:", {
+          data: response.data,
+          status: response.status,
+          headers: response.headers
+        });
+      } else {
+        console.log("endpoint 호출 실패 - 서버에서 성공 응답을 받지 못함:", {
+          data: response.data,
+          status: response.status
+        });
+      }
+    } catch (error) {
+      console.error("endpoint 호출 실패 - network_security_config 미적용 가능성:", {
+        message: error.message,
+        config: error.config,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          headers: error.response.headers,
+          data: error.response.data,
+        } : null,
+      });
+    }
+  };
+
+
+
+  useEffect(() => {
+    // 네트워크 통신 설정 확인
+    testNetworkConfig();
+  }, []);
+  
 
   useEffect(() => {
     loadChatHistory(user.uid, persona);
@@ -38,9 +114,12 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const loadChatHistory = (uid, personaName, limitCount = 50) => {
-    // Firestore 경로: "chats/{uid}/personas/{personaName}/messages"
     const chatRef = collection(db, "chats", uid, "personas", personaName, "messages");
-    const q = query(chatRef, orderBy("timestamp", "asc"), limit(limitCount));
+    const q = query(
+      chatRef,
+      orderBy("timestamp", "desc"),
+      limit(limitCount)
+    );
 
     onSnapshot(q, (snapshot) => {
       const loadedMessages = [];
@@ -52,24 +131,24 @@ const ChatScreen = ({ route, navigation }) => {
           if (typeof data.timestamp.toDate === 'function') {
             timestamp = data.timestamp.toDate();
           } else {
-            // 문자열 타임스탬프 처리
             timestamp = new Date(data.timestamp);
           }
         }
 
         loadedMessages.push({
-          id: doc.id, // Firestore 문서 ID 사용
-          text: data.text || data.message, // 'text' 또는 'message' 처리
+          id: doc.id,
+          text: data.text || data.message,
           sender: data.sender === 'user' ? 'user' : 'other',
           timestamp: timestamp
         });
       });
-      setMessages(loadedMessages);
+
+      setMessages(loadedMessages.sort((a, b) => a.timestamp - b.timestamp));
     });
   };
 
   const sendMessage = async () => {
-    console.log("sendMessage 실행");
+    console.log("sendMessage 실행하고 있어요");
     if (inputText.trim().length > 0) {
       const userMessage = {
         text: inputText,
@@ -85,12 +164,33 @@ const ChatScreen = ({ route, navigation }) => {
         setInputText('');
         setIsTyping(true);
 
+
+         // Platform과 ADB 디버깅 여부에 따른 URL 설정
+       const isRunningInADB = Boolean(global.isRunningInADB); // adb 디버깅 여부 확인
+       const baseURL = Platform.select({
+         ios: 'http://localhost:8000',
+         android: 'http://192.168.0.229:8000',
+         default: isRunningInADB ? 'http://10.0.2.2:8000' : 'http://localhost:8000'
+       });
+       console.log("sendMessage 함수 baseURL", baseURL);
+
+
         // 백엔드에 메시지 전송
-        const response = await axios.post('http://localhost:8000/v2/chat', {
-          persona_name: persona,
+        const response = await axios.post(`${baseURL}/v2/chat`,  {
+          persona_name: userPersona.Name,
           user_input: inputText, // 백엔드가 'input' 필드를 기대함
-          uid: user.uid // 백엔드가 'uid'를 기대함
-        });
+          uid: user.uid ,// 백엔드가 'uid'를 기대함
+          tone: userPersona.tone,
+          example: userPersona.example,
+          description: userPersona.description
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+        },);
 
         if (response.data && response.data.response) {
           const botResponse = {
@@ -102,7 +202,16 @@ const ChatScreen = ({ route, navigation }) => {
           await addDoc(chatRef, botResponse);
         }
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('sendMessage 에러 발생:', {
+          message: error.message,
+          code: error.code,
+          config: error.config,
+          response: error.response ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          } : null,
+        });
       } finally {
         setIsTyping(false);
       }

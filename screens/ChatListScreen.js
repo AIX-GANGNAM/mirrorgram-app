@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput,   ActivityIndicator } from 'react-native';
-import { getFirestore, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, getDocs, getDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -33,80 +33,128 @@ const PersonalChats = ({ navigation }) => {
   const [search, setSearch] = useState('');
   const auth = getAuth();
   const db = getFirestore();
-
-  // Redux에서 사용자 정보 가져오기
   const user = useSelector(state => state.user.user);
+
   const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy',  image: user.persona.joy },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.anger },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.disgust },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.sadness },
-    { id: 5, displayName: '선비',   persona: 'Fear', image: user.persona.serious },
+    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user?.persona?.joy },
+    { id: 2, displayName: '화남이', persona: 'Anger', image: user?.persona?.anger },
+    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user?.persona?.disgust },
+    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user?.persona?.sadness },
+    { id: 5, displayName: '선비', persona: 'Fear', image: user?.persona?.serious },
   ];
 
   useEffect(() => {
     const currentUser = auth.currentUser;
     if (!currentUser || !user || !user.persona) return;
 
-    const fetchChats = async () => {
-      const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear']; // 페르소나 목록
+    const fetchAllChats = async () => {
+      try {
+        // 1. 페르소나 채팅 가져오기
+        const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear'];
+        const personaChats = await Promise.all(
+          personas.map(async (personaName) => {
+            const messagesRef = collection(db, 'chats', currentUser.uid, 'personas', personaName, 'messages');
+            const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
+            const querySnapshot = await getDocs(q);
 
-      const chatList = await Promise.all(
-        personas.map(async (personaName) => {
-          // 경로 수정: /chats/{uid}/personas/{persona}/messages
-          const messagesRef = collection(db, 'chats', currentUser.uid, 'personas', personaName, 'messages');
-          const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
-          const querySnapshot = await getDocs(q);
+            const personaData = highlights.find(item => item.persona === personaName);
+            const personaImage = personaData?.image;
+            const displayName = personaData?.displayName || personaName;
 
-          // 해당 페르소나의 이미지와 표시 이름 가져오기
-          const personaData = highlights.find(item => item.persona === personaName);
-          const personaImage = personaData?.image;
-          const displayName = personaData?.displayName || personaName;
+            if (!querySnapshot.empty) {
+              const lastMessageDoc = querySnapshot.docs[0];
+              const lastMessageData = lastMessageDoc.data();
 
-          if (!querySnapshot.empty) {
-            const lastMessageDoc = querySnapshot.docs[0];
-            const lastMessageData = lastMessageDoc.data();
+              return {
+                id: personaName,
+                type: 'persona',
+                name: displayName,
+                lastResponse: lastMessageData.message || '',
+                sender: lastMessageData.sender,
+                lastMessageTime: lastMessageData.timestamp?.toDate() || null,
+                profileImage: personaImage,
+              };
+            }
+            return null;
+          })
+        );
+
+        // 2. 1대1 채팅 가져오기
+        const userChatsRef = collection(db, 'chat');
+        const userChatsQuery = query(
+          userChatsRef,
+          where('info.participants', 'array-contains', currentUser.uid)
+        );
+        const userChatsSnapshot = await getDocs(userChatsQuery);
+        
+        const userChats = await Promise.all(
+          userChatsSnapshot.docs.map(async (document) => {
+            const chatData = document.data();
+            // 상대방 ID 찾기
+            const otherUserId = chatData.info.participants.find(id => id !== currentUser.uid);
+            
+            // 상대방 정보 가져오기
+            const userDocRef = doc(db, 'users', otherUserId);
+            const userDocSnap = await getDoc(userDocRef);
+            const userData = userDocSnap.data();
 
             return {
-              id: personaName,
-              name: displayName,
-              lastResponse: lastMessageData.message || '', // 'text' 필드로 변경
-              sender: lastMessageData.sender, // sender 필드 추가
-              lastMessageTime: lastMessageData.timestamp ? lastMessageData.timestamp.toDate() : null,
-              profileImage: personaImage,
+              id: document.id,
+              type: 'user',
+              name: userData?.profile?.userName || 'Unknown User',
+              lastResponse: chatData.info.lastMessage || '',
+              lastMessageTime: chatData.info.lastMessageTime?.toDate() || null,
+              profileImage: userData?.profileImg || null,
+              recipientId: otherUserId
             };
-          } else {
-            return {
-              id: personaName,
-              name: displayName,
-              lastResponse: '',
-              sender: '',
-              lastMessageTime: null,
-              profileImage: personaImage,
-            };
-          }
-        })
-      );
+          })
+        );
 
-      // 마지막 메시지 시간으로 정렬
-      chatList.sort((a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0));
+        // 3. 모든 채팅 합치기 및 정렬
+        const allChats = [...personaChats, ...userChats]
+          .filter(chat => chat !== null)
+          .sort((a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0));
 
-      setChats(chatList);
+        setChats(allChats);
+      } catch (error) {
+        console.error('Error fetching chats:', error);
+      }
     };
 
-    fetchChats();
+    fetchAllChats();
   }, [user]);
-
-  const filteredChats = search
-    ? chats.filter(chat => chat.name?.toLowerCase().includes(search.toLowerCase()))
-    : chats;
 
   const renderChatItem = ({ item }) => (
     <TouchableOpacity
       style={styles.chatItem}
-      onPress={() => navigation.navigate('Chat', { highlightTitle: item.name, highlightImage: item.profileImage, persona: item.id })}
+      onPress={() => {
+        if (item.type === 'persona') {
+          navigation.navigate('Chat', {
+            highlightTitle: item.name,
+            highlightImage: item.profileImage,
+            persona: item.id
+          });
+        } else {
+          navigation.navigate('ChatUser', {
+            chatId: item.id,
+            recipientId: item.recipientId,
+            recipientName: item.name,
+            profileImg: item.profileImage
+          });
+        }
+      }}
     >
-      <Image source={{ uri: item.profileImage }} style={styles.profileImage} />
+      <View style={styles.avatarContainer}>
+        <Image 
+          source={{ uri: item.profileImage }} 
+          style={styles.profileImage} 
+        />
+        {item.type === 'user' && (
+          <View style={styles.userBadge}>
+            <Icon name="person" size={12} color="#FFFFFF" />
+          </View>
+        )}
+      </View>
       <View style={styles.chatInfo}>
         <View style={styles.chatHeader}>
           <Text style={styles.chatName}>{item.name}</Text>
@@ -116,14 +164,8 @@ const PersonalChats = ({ navigation }) => {
             </Text>
           )}
         </View>
-        <Text
-          style={styles.lastMessage}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          {item.lastResponse && item.lastResponse.length > 50
-            ? item.lastResponse.substring(0, 50) + '...'
-            : item.lastResponse}
+        <Text style={styles.lastMessage} numberOfLines={2} ellipsizeMode="tail">
+          {item.lastResponse}
         </Text>
       </View>
       <Icon name="chevron-forward" size={20} color="#8e8e8e" />
@@ -163,14 +205,14 @@ const PersonalChats = ({ navigation }) => {
         />
       </View>
       {/* 채팅 목록 */}
-      {filteredChats.length === 0 ? (
+      {chats.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyMessage}>현재 대화가 없습니다.</Text>
           <Text style={styles.emptySubMessage}>새 대화를 시작해보세요!</Text>
         </View>
       ) : (
         <FlatList
-          data={filteredChats}
+          data={chats}
           keyExtractor={(item) => item.id}
           renderItem={renderChatItem}
         />
@@ -497,49 +539,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#efefef',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#FFFFFF',
   },
-  profileImageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  groupProfileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginLeft: -10, // 이미지 겹치기
-    borderWidth: 1,
-    borderColor: '#fff',
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12,
   },
   profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f0f0f0',
+  },
+  userBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#5271FF',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   chatInfo: {
     flex: 1,
-    justifyContent: 'center',
+    marginRight: 8,
   },
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   chatName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#262626',
+    fontWeight: '600',
+    color: '#141619',
   },
   lastMessage: {
-    fontSize: 14,
-    color: '#8e8e8e',
-    marginTop: 4,
+    fontSize: 15,
+    color: '#687684',
+    lineHeight: 20,
   },
   timestamp: {
-    fontSize: 12,
-    color: '#8e8e8e',
+    fontSize: 13,
+    color: '#687684',
   },
   unreadBadge: {
     backgroundColor: '#ff3b30',

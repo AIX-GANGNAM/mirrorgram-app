@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, TextInput, FlatList, Image, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, TextInput, FlatList, Image, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { getFirestore, collection, query as fbQuery, where, getDocs, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -8,36 +8,51 @@ import { useNavigation } from '@react-navigation/native';
 const FriendSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [searchType, setSearchType] = useState('id'); // 'id' or 'mbti'
+  const [searchType, setSearchType] = useState('id');
+  const [isLoading, setIsLoading] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
   const navigation = useNavigation();
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  // debounce 함수 구현
+  const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
 
+  // handleSearch 함수를 useCallback으로 메모이제이션
+  const handleSearch = useCallback(async (searchText) => {
+    if (!searchText.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       let results = [];
       const currentUser = auth.currentUser;
 
       if (searchType === 'id') {
         // 아이디로 검색
-        const idQuery = query(
+        const idQueryRef = fbQuery(
           collection(db, 'users'),
-          where('userId', '>=', searchQuery.toLowerCase()),
-          where('userId', '<=', searchQuery.toLowerCase() + '\uf8ff')
+          where('userId', '>=', searchText.toLowerCase()),
+          where('userId', '<=', searchText.toLowerCase() + '\uf8ff')
         );
-        const idSnapshot = await getDocs(idQuery);
+        const idSnapshot = await getDocs(idQueryRef);
         
         // 이름으로 검색
-        const nameQuery = query(
+        const nameQueryRef = fbQuery(
           collection(db, 'users'),
-          where('profile.userName', '>=', searchQuery),
-          where('profile.userName', '<=', searchQuery + '\uf8ff')
+          where('profile.userName', '>=', searchText),
+          where('profile.userName', '<=', searchText + '\uf8ff')
         );
-        const nameSnapshot = await getDocs(nameQuery);
+        const nameSnapshot = await getDocs(nameQueryRef);
 
-        // 결과 합치기 (현재 로그인한 사용자 제외)
+        // 결과 합치기
         const combinedResults = new Map();
         
         idSnapshot.forEach((doc) => {
@@ -61,11 +76,12 @@ const FriendSearch = () => {
         results = Array.from(combinedResults.values());
       } else {
         // MBTI로 검색
-        const mbtiQuery = query(
+        const mbtiQueryRef = fbQuery(
           collection(db, 'users'),
-          where('profile.mbti', '==', searchQuery.toUpperCase())
+          where('profile.mbti', '>=', searchText.toUpperCase()),
+          where('profile.mbti', '<=', searchText.toUpperCase() + '\uf8ff')
         );
-        const mbtiSnapshot = await getDocs(mbtiQuery);
+        const mbtiSnapshot = await getDocs(mbtiQueryRef);
         results = mbtiSnapshot.docs
           .filter(doc => doc.id !== currentUser.uid)
           .map(doc => ({
@@ -75,11 +91,11 @@ const FriendSearch = () => {
       }
       
       // 친구 목록 가져오기
-      const friendsQuery = query(
+      const friendsQueryRef = fbQuery(
         collection(db, 'friends'),
         where('userId', '==', currentUser.uid)
       );
-      const friendsSnapshot = await getDocs(friendsQuery);
+      const friendsSnapshot = await getDocs(friendsQueryRef);
       const friendIds = new Set(friendsSnapshot.docs.map(doc => doc.data().friendId));
       
       // 친구 상태 표시하기
@@ -92,15 +108,28 @@ const FriendSearch = () => {
     } catch (error) {
       console.error('Error searching users:', error);
       Alert.alert('검색 오류', '사용자 검색 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [searchType, auth.currentUser, db]);
+
+  // debounced search 함수 생성
+  const debouncedSearch = useCallback(
+    debounce((query) => handleSearch(query), 300),
+    [handleSearch]
+  );
+
+  // searchQuery가 변경될 때마다 검색 실행
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
 
   const handleAddFriend = async (userId) => {
     try {
       const currentUser = auth.currentUser;
       
       // 이미 친구 요청을 보냈는지 확인
-      const requestQuery = query(
+      const requestQuery = fbQuery(
         collection(db, 'friendRequests'),
         where('fromId', '==', currentUser.uid),
         where('toId', '==', userId)
@@ -140,47 +169,47 @@ const FriendSearch = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#536471" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={searchType === 'id' ? "아이디 또는 이름으로 검색" : "MBTI로 검색"}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize={searchType === 'mbti' ? "characters" : "none"}
+        />
+        {isLoading && (
+          <ActivityIndicator size="small" color="#536471" style={styles.loadingIndicator} />
+        )}
+      </View>
+
       <View style={styles.searchTypeContainer}>
         <TouchableOpacity 
           style={[styles.typeButton, searchType === 'id' && styles.activeType]}
           onPress={() => setSearchType('id')}
         >
-          <Text style={[styles.typeText, searchType === 'id' && styles.activeTypeText]}>아이디</Text>
+          <Text style={[styles.typeText, searchType === 'id' && styles.activeTypeText]}>
+            아이디/이름
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.typeButton, searchType === 'mbti' && styles.activeType]}
           onPress={() => setSearchType('mbti')}
         >
-          <Text style={[styles.typeText, searchType === 'mbti' && styles.activeTypeText]}>MBTI</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={
-            searchType === 'id' ? "아이디 또는 이름으로 검색하기" : 
-            "MBTI로 검색하기 (예: ENFP)"
-          }
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          autoCapitalize={searchType === 'mbti' ? "characters" : "none"}
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Ionicons name="search" size={24} color="#5271ff" />
+          <Text style={[styles.typeText, searchType === 'mbti' && styles.activeTypeText]}>
+            MBTI
+          </Text>
         </TouchableOpacity>
       </View>
       
       <FlatList
         data={searchResults}
         renderItem={({ item }) => (
-          <View style={styles.userItem}>
-            <TouchableOpacity 
-              style={styles.profileSection}
-              onPress={() => handleProfilePress(item)}
-            >
+          <TouchableOpacity 
+            style={styles.userItem}
+            onPress={() => handleProfilePress(item)}
+          >
+            <View style={styles.profileSection}>
               <Image 
                 source={item.profileImg 
                   ? { uri: item.profileImg } 
@@ -197,30 +226,29 @@ const FriendSearch = () => {
                   <Text style={styles.mbti}>{item.profile.mbti}</Text>
                 )}
               </View>
-            </TouchableOpacity>
+            </View>
             
             {!item.isFriend && (
               <TouchableOpacity 
                 style={styles.addButton}
                 onPress={() => handleAddFriend(item.id)}
               >
-                <Ionicons name="person-add-outline" size={24} color="#5271ff" />
+                <Text style={styles.addButtonText}>팔로우</Text>
               </TouchableOpacity>
             )}
             {item.isFriend && (
               <View style={styles.friendBadge}>
-                <Text style={styles.friendBadgeText}>친구</Text>
+                <Text style={styles.friendBadgeText}>팔로잉</Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery ? '검색 결과가 없습니다.' : 
-                `${searchType === 'id' ? '아이디 또는 이름' : 'MBTI'}로 검색해보세요!`}
+              {searchQuery ? '검색 결과가 없습니다.' : '새로운 친구를 찾아보세요'}
             </Text>
           </View>
         )}
@@ -234,57 +262,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    padding: 0,
+  },
   searchTypeContainer: {
     flexDirection: 'row',
-    padding: 16,
-    justifyContent: 'center',
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
   },
   typeButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    marginHorizontal: 8,
-    borderRadius: 20,
-    backgroundColor: '#F8F9FA',
-  },
-  activeType: {
-    backgroundColor: '#5271ff',
-  },
-  typeText: {
-    color: '#6C757D',
-    fontWeight: '600',
-  },
-  activeTypeText: {
-    color: 'white',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     marginRight: 8,
+    borderRadius: 16,
+    backgroundColor: '#F7F7F7',
   },
-  searchButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+  activeType: {
+    backgroundColor: '#000',
+  },
+  typeText: {
+    fontSize: 14,
+    color: '#536471',
+  },
+  activeTypeText: {
+    color: '#FFFFFF',
   },
   listContainer: {
-    padding: 16,
+    flexGrow: 1,
   },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
   },
@@ -294,50 +319,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 2,
   },
   userId: {
     fontSize: 14,
-    color: '#6C757D',
-    marginBottom: 4,
+    color: '#536471',
+    marginBottom: 2,
   },
   mbti: {
     fontSize: 14,
-    color: '#5271ff',
+    color: '#536471',
   },
   addButton: {
-    padding: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#000',
+    marginLeft: 12,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   friendBadge: {
-    paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#E9ECEF',
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#EFEFEF',
+    marginLeft: 12,
   },
   friendBadgeText: {
-    fontSize: 12,
-    color: '#6C757D',
+    color: '#536471',
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyContainer: {
-    padding: 20,
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 32,
   },
   emptyText: {
     fontSize: 16,
-    color: '#6C757D',
+    color: '#536471',
     textAlign: 'center',
+  },
+  loadingIndicator: {
+    marginLeft: 8,
   },
 });
 

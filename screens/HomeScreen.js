@@ -197,9 +197,10 @@ const HomeScreen = () => {
               },
             ]}
           >
-            <Text style={styles.modalTitle}>MBTI 입력하기</Text>
+            <Text style={styles.modalTitle}>AI 분신 맞춤 설정</Text>
             <Text style={styles.modalText}>
-              MBTI를 입력하면 더 나은 경험을 제공할 수 있습니다. 지금 입력하시겠습니까?
+              당신의 성향과 가치관을 반영하여{'\n'}
+              더 진정성 있는 AI 분신을 만들어보세요.
             </Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={handleLater}>
@@ -210,7 +211,7 @@ const HomeScreen = () => {
                 onPress={handleInputNow}
               >
                 <Text style={[styles.buttonText, styles.primaryButtonText]}>
-                  지금 입력하기
+                  지금 설정하기
                 </Text>
               </TouchableOpacity>
             </View>
