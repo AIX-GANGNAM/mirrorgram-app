@@ -20,6 +20,9 @@
     },
     "name": "mirrorgram",
     "slug": "mirrorgram",
+    "updates": {
+      "enabled": false
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo/mybot-log-color.png",
@@ -40,7 +43,7 @@
         }
       }
     },
-    "android": {
+    "android": {  
       "permissions": [
         "WAKE_LOCK",
         "NOTIFICATIONS",

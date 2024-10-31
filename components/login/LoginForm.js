@@ -12,7 +12,6 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UpdatePushToken from '../notification/UpdatePushToken';
-
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginSchema = Yup.object().shape({
@@ -111,15 +110,17 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       const userSnapshot = await getDoc(userRef);
       
       await saveCredentials();
-      
+    
+      const updatedPushToken = await UpdatePushToken(user.uid);
+      console.log("LoginForm > handleLogin > Push 토큰 업데이트 결과:", updatedPushToken);
+
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();
         dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
-        const result = await UpdatePushToken();
-        console.log("UpdatePushToken 결과 : ", result);
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
+        
         navigation.navigate('UserVerificationStep0');
       }
     } catch (error) {

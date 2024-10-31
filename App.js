@@ -10,7 +10,6 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
-import GetPushToken from './components/notification/UpdatePushToken';
 import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
@@ -37,6 +36,7 @@ import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
 
+
 import UserVerificationStep0 from './components/auth/UserVerificationStep0';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
 import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
@@ -54,11 +54,12 @@ import DebateChat from './screens/DebateChat';
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
+import GoToScreen from './components/notification/GoToScreen';
 import CreatePersonaPostScreen from './screens/CreatePersonaPostScreen';
-
 import { serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { doc, collection } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -81,15 +82,9 @@ const App = () => {
   useEffect(() => {
     const initializeApp = async () => {
       registerForPushNotificationsAsync();
-      await GetPushToken();
     };
     
     initializeApp();
-    
-    // fetchPushToken() 대신 GetPushToken 컴포넌트 사용
-
-
-    // setupBackgroundTask(); 백그라운드 작업 등록 중단
 
     const personaImages = {
       "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
@@ -114,7 +109,10 @@ const App = () => {
       
       const {content}  = notification.request;
       console.log("알림수신 : content : ", content);
-      console.log("알림수신 : content.data.pushType : ", content.data.pushType);      
+      console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
+      console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
+      console.log("알림수신 : content.data.URL : ", content.data.URL);
+      console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
       console.log("알림수신 : content.body : ", content.body);      
       console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
       console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
@@ -125,21 +123,31 @@ const App = () => {
 
     // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
-
-      console.log("알림 터치됨:", response);
-      const persona = response.notification.request.content.title;
-
-      console.log("persona : ", persona);
-
-      const highlightImage = personaImages[persona] || defaultImage;
+      const { content } = response.notification.request;
+      console.log("알림 터치됨:", content.data.screenType);
+      const screenType = content.data.screenType;
 
       // navigationRef가 준비되었고 persona가 존재하는 경우에만 네비게이션 실행
-      if (navigationRef.isReady() && persona) {
-        navigationRef.navigate('Chat', { 
-          persona: persona,
-          highlightTitle: persona, // 또는 다른 적절한 제목
-          highlightImage: highlightImage // persona에 따른 이미지 URL
-        });
+      if (navigationRef.isReady()) {
+        console.log("navigationRef.isReady() 참");
+        switch (screenType) {
+          case 'PLAYGROUND':
+            console.log("PLAYGROUND 케이스 실행");
+            navigationRef.navigate('PlayGround');
+            break;
+            case 'PLAYGROUND':
+              console.log("친구 리스트 케이스 실행");
+              navigationRef.navigate('FriendRequests');
+              break;
+          case 'NEW_POST':
+            navigationRef.navigate('BottomTab', {
+              screen: 'NewPost',
+            });
+            break;
+          default:
+            console.warn('알 수 없는 화면 타입:', screenType);
+            break;
+        }
       }
     });
 
@@ -157,6 +165,13 @@ const App = () => {
         }
       };
 
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    
+    };
+
       // 1분마다 활동 시간 업데이트
       const activityInterval = setInterval(updateActivity, 60000);
       
@@ -170,6 +185,7 @@ const App = () => {
         Notifications.removeNotificationSubscription(responseListener.current);
       };
     }
+
   }, []);
 
 
