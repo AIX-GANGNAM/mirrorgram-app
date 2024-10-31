@@ -10,6 +10,11 @@ const PostHeader = ({post, onEdit, onDelete}) => {
   
     useEffect(() => {
       const fetchUserData = async () => {
+        if (post.personaprofileImage) {
+          setProfileImg(post.personaprofileImage);
+          return;
+        }
+        
         const user = post.userId;
         const db = getFirestore();
         const postDoc = doc(db, 'users', user);
@@ -25,7 +30,7 @@ const PostHeader = ({post, onEdit, onDelete}) => {
       };
   
       fetchUserData();
-    }, [post.userId]);
+    }, [post.userId, post.personaprofileImage]);
   
     return(
       <View style={styles.header}>

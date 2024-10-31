@@ -54,6 +54,7 @@ import DebateChat from './screens/DebateChat';
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
+import CreatePersonaPostScreen from './screens/CreatePersonaPostScreen';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -267,6 +268,15 @@ const App = () => {
               {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
             </Stack.Screen>
             <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
+            <Stack.Screen 
+                name="CreatePersonaPost" 
+                component={CreatePersonaPostScreen}
+                options={{
+                  headerShown: true,
+                  title: '페르소나 피드 자동 생성',
+                  headerTitleAlign: 'center',
+                }}
+              />
           </Stack.Navigator>
         </NavigationContainer>
       </Provider>
