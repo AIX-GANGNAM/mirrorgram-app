@@ -12,10 +12,11 @@ import {
   SafeAreaView, 
   ActivityIndicator 
 } from 'react-native';
-import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../firebaseConfig';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
 
 const ChatUserScreen = ({ route, navigation }) => {
   const { 
@@ -29,6 +30,7 @@ const ChatUserScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const currentUser = useSelector(state => state.user.user);
   const flatListRef = useRef(null);
+  const ACTIVITY_THRESHOLD = 5 * 60 * 1000; // 5분
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -75,6 +77,29 @@ const ChatUserScreen = ({ route, navigation }) => {
     return () => unsubscribe();
   }, [chatId]);
 
+  const checkUserActivity = async () => {
+    try {
+      const userRef = doc(db, 'users', recipientId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const lastActivity = userData.lastActivity?.toDate();
+        
+        if (!lastActivity) return false;
+        
+        const now = new Date();
+        const timeDiff = now - lastActivity;
+        console.log('마지막 활동으로부터 경과 시간(분):', timeDiff / 1000 / 60);
+        return timeDiff < ACTIVITY_THRESHOLD;
+      }
+      return false;
+    } catch (error) {
+      console.error('활동 상태 확인 실패:', error);
+      return false;
+    }
+  };
+
   const sendMessage = async () => {
     if (inputMessage.trim() === '') return;
 
@@ -82,23 +107,52 @@ const ChatUserScreen = ({ route, navigation }) => {
       const messageData = {
         text: inputMessage,
         senderId: currentUser.uid,
-        timestamp: new Date(),
+        timestamp: serverTimestamp(),
         read: false
       };
 
-      // 메시지 추가
-      await addDoc(collection(db, `chat/${chatId}/messages`), messageData);
+      // 메시지 저장
+      const messageRef = await addDoc(collection(db, `chat/${chatId}/messages`), messageData);
 
       // 채팅방 정보 업데이트
       await updateDoc(doc(db, 'chat', chatId), {
         'info.lastMessage': inputMessage,
-        'info.lastMessageTime': new Date(),
+        'info.lastMessageTime': serverTimestamp(),
         'info.lastSenderId': currentUser.uid
       });
 
+      // 상대방 활동 상태 확인
+      const isRecipientActive = await checkUserActivity();
+      console.log('상대방 활동 상태:', isRecipientActive ? '온라인' : '오프라인');
+
+      
+      // 상대방이 오프라인일 때만 AI 응답 요청
+      if (!isRecipientActive) {
+        try {
+          const response = await axios.post('http://localhost:8000/clone-chat', {
+            senderId: currentUser.uid,
+            recipientId: recipientId,
+            chatId: chatId,
+            message: inputMessage,
+          });
+
+          if (response.data?.message) {
+            await addDoc(collection(db, `chat/${chatId}/messages`), {
+              text: response.data.message,
+              senderId: recipientId,
+              timestamp: serverTimestamp(),
+              read: false,
+              isAI: true
+            });
+          }
+        } catch (error) {
+          console.error('AI 응답 생성 실패:', error);
+        }
+      }
+
       setInputMessage('');
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('메시지 전송 실패:', error);
       alert('메시지 전송에 실패했습니다.');
     }
   };
@@ -134,6 +188,8 @@ const ChatUserScreen = ({ route, navigation }) => {
   };
 
   const renderMessage = ({ item, index }) => {
+    const isAIMessage = item.isAI;
+    
     const currentTime = item.timestamp ? formatTime(item.timestamp) : '';
     const previousTime = index > 0 && messages[index - 1].timestamp ? 
       formatTime(messages[index - 1].timestamp) : '';
@@ -144,12 +200,16 @@ const ChatUserScreen = ({ route, navigation }) => {
           <Text style={styles.timeStamp}>{currentTime}</Text>
         ) : null}
         <View style={[
-          styles.messageBubble, 
-          item.senderId === auth.currentUser.uid ? styles.userMessage : styles.otherMessage
+          styles.messageBubble,
+          item.senderId === currentUser.uid ? styles.userMessage : styles.otherMessage,
+          isAIMessage && styles.aiMessage
         ]}>
+          {isAIMessage && (
+            <Text style={styles.aiLabel}>AI 응답</Text>
+          )}
           <Text style={[
             styles.messageText,
-            item.senderId === auth.currentUser.uid ? styles.userMessageText : styles.otherMessageText
+            item.senderId === currentUser.uid ? styles.userMessageText : styles.otherMessageText
           ]}>
             {item.text}
           </Text>
@@ -327,6 +387,14 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 20,
   },
+  aiMessage: {
+    backgroundColor: '#E8F5E9',
+  },
+  aiLabel: {
+    fontSize: 10,
+    color: '#4CAF50',
+    marginBottom: 4,
+  }
 });
 
 export default ChatUserScreen;
