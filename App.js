@@ -55,6 +55,11 @@ import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
 import GoToScreen from './components/notification/GoToScreen';
+import CreatePersonaPostScreen from './screens/CreatePersonaPostScreen';
+import { serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
+import { db } from './firebaseConfig';
+
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -96,7 +101,7 @@ const App = () => {
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
       try {
         await saveNotification(notification);
-        console.log("알림 저장 성공");
+        console.log("알림 저장 공");
       } catch (error) {
         console.error("알림 저장 중 오류 발생:", error);
       }
@@ -146,12 +151,41 @@ const App = () => {
       }
     });
 
+    // 사용자 활동 상태 추적 추가
+    const auth = getAuth();
+    if (auth.currentUser) {
+      const updateActivity = async () => {
+        try {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          await updateDoc(userRef, {
+            lastActivity: serverTimestamp()
+          });
+        } catch (error) {
+          console.error('활동 시간 업데이트 실패:', error);
+        }
+      };
+
 
     return () => {
       Notifications.removeNotificationSubscription(notificationListener.current);
       Notifications.removeNotificationSubscription(responseListener.current);
     
     };
+
+      // 1분마다 활동 시간 업데이트
+      const activityInterval = setInterval(updateActivity, 60000);
+      
+      // 초기 활동 시간 설정
+      updateActivity();
+
+      // 클린업에 interval 정리 추가
+      return () => {
+        clearInterval(activityInterval);
+        Notifications.removeNotificationSubscription(notificationListener.current);
+        Notifications.removeNotificationSubscription(responseListener.current);
+      };
+    }
+
   }, []);
 
 
@@ -303,6 +337,15 @@ const App = () => {
             </>
           )}
           <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
+          <Stack.Screen 
+                name="CreatePersonaPost" 
+                component={CreatePersonaPostScreen}
+                options={{
+                  headerShown: true,
+                  title: '페르소나 피드 자동 생성',
+                  headerTitleAlign: 'center',
+                }}
+              />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
@@ -342,7 +385,7 @@ async function registerForPushNotificationsAsync() {
       return; // 함수 종료
     }
   } else {
-    // 물리 디바이스가 아닌 경우, 사용자에게 알림
+    // 물리 디바이스가 아닌 경우, 사용자에게 림
     alert('실제 단말기를 사용해주세요');
 
   }

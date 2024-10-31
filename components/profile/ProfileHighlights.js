@@ -42,15 +42,17 @@ const ProfileHighlights = () => {
   useEffect(() => {
     if (userData && userData.persona) {
       if (Array.isArray(userData.persona)) {
-        const newHighlights = userData.persona.map((persona, index) => ({
-          id: index + 1,
-          title: persona.DPNAME,
-          persona: persona.Name,
-          image: persona.IMG,
-          description: persona.description,
-          tone: persona.tone,
-          example: persona.example
-        }));
+        const newHighlights = userData.persona
+          .filter(persona => persona.Name !== 'clone')
+          .map((persona, index) => ({
+            id: index + 1,
+            title: persona.DPNAME,
+            persona: persona.Name,
+            image: persona.IMG,
+            description: persona.description,
+            tone: persona.tone,
+            example: persona.example
+          }));
         setHighlights(newHighlights);
       }
     }

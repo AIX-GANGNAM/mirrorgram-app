@@ -10,6 +10,11 @@ const PostHeader = ({post, onEdit, onDelete}) => {
   
     useEffect(() => {
       const fetchUserData = async () => {
+        if (post.personaprofileImage) {
+          setProfileImg(post.personaprofileImage);
+          return;
+        }
+        
         const user = post.userId;
         const db = getFirestore();
         const postDoc = doc(db, 'users', user);
@@ -25,7 +30,7 @@ const PostHeader = ({post, onEdit, onDelete}) => {
       };
   
       fetchUserData();
-    }, [post.userId]);
+    }, [post.userId, post.personaprofileImage]);
   
     return(
       <View style={styles.header}>
@@ -37,8 +42,7 @@ const PostHeader = ({post, onEdit, onDelete}) => {
             /> */}
           </TouchableOpacity>
           <View style={styles.userDetails}>
-            <Text style={styles.userName}>{post.nick}</Text>
-            <Text style={styles.userHandle}>@{post.userId}</Text>
+            <Text style={styles.userName}>{post.nick || '사용자'}</Text>
           </View>
         </View>
 
@@ -114,10 +118,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0F1419',
-  },
-  userHandle: {
-    fontSize: 13,
-    color: '#536471',
   },
   moreButton: {
     padding: 8,
