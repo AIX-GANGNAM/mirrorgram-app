@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useSelector } from 'react-redux';
-import { Platform } from 'react-native';
 
 const PostDetail = ({ route }) => {
   const { post } = route.params;
