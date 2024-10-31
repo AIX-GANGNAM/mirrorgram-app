@@ -443,7 +443,7 @@ export default function Village() {
           ]}
         >
           <Image
-  source={require('../../assets/jelda.png')}
+  source={require('../../assets/character/purple.png')}
   style={{
     width: spriteConfig.frameWidth * 10,
     height: spriteConfig.frameHeight * 8,
@@ -458,7 +458,7 @@ export default function Village() {
       ))}
       
       {/* 방향키 컨트롤러 */}
-      <View style={styles.controls}>
+      {/* <View style={styles.controls}>
         <TouchableOpacity style={styles.button} onPress={() => handleMove('up')}>
           <Text>↑</Text>
         </TouchableOpacity>
@@ -473,7 +473,7 @@ export default function Village() {
             <Text>→</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
       {/* <MatrixOverlay /> */}
       
       <TouchableOpacity 
