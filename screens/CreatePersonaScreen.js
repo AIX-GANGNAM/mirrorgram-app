@@ -15,13 +15,19 @@ const generatePersonaImages = async (formData) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
+
+    console.log('dkdkdkdkdkddkdkdkd')
     
     if (!user) {
       throw new Error('사용자 인증 정보가 없습니다.');
     }
     
     formData.append('uid', user.uid);
-    
+    // 주소수정 http://221.148.97.237:1818/generate-persona-image
+
+    console.log('generate 이미지 formData', formData)
+
+
     const response = await axios.post(`http://221.148.97.237:1818/generate-persona-images`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -45,7 +51,7 @@ const generatePersonaDetails = async (customPersona) => {
       throw new Error('사용자 인증 정보가 없습니다.');
     }
 
-    const response = await axios.post(`http://localhost:8000/generate-personality`, {
+    const response = await axios.post(`http://10.0.2.2:8000/generate-personality`, {
       uid: user.uid,
       name: customPersona.name,
       personality: customPersona.personality,
@@ -143,13 +149,21 @@ export default function ReelsScreen() {
   };
 
   // handleGeneratePersonas 함수 수정
-  const handleGeneratePersonas = async (skipImage = false) => {
-    if (!skipImage && !image) {
-      Alert.alert("알림", "먼저 사진을 선택해주세요.");
-      return;
-    }
+  const handleGeneratePersonas = async (skipImage) => {
+    if(skipImage){
+      console.log('이미지 없이 생성')
 
-    setLoading(true);
+      const formData = new FormData();
+      formData.append('customPersona', JSON.stringify({
+        name: personaDetails.custom.name,
+        personality: personaDetails.custom.personality,
+        speechStyle: personaDetails.custom.speechStyle
+      }));
+
+      const generatedImages = await generatePersonaImages(formData);
+    }else{
+      console.log('이미지 있이 생성')
+    }
     
     try {
       // 커스텀 페르소나 정보가 없는 경우 알림
@@ -166,6 +180,8 @@ export default function ReelsScreen() {
           type: 'image/jpeg',
           name: 'image.jpg'
         });
+
+        formData.append('uid', user.uid);
         
         formData.append('customPersona', JSON.stringify({
           name: personaDetails.custom.name,
