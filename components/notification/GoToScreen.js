@@ -35,6 +35,7 @@ if(navigationRef.isReady() ){
         postId: URL
       });
       break;
+      
 
     case 'PLAYGROUND':
       console.log("이미지 생성 완료 알림 처리");
