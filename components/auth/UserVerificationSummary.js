@@ -12,12 +12,13 @@ import { Ionicons } from '@expo/vector-icons';
 const UserVerificationSummary = ({ setIsAuthenticated }) => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { username, name, birthdate, phone } = route.params;
+  const { username, name, birthdate, phone, gender } = route.params;
   const auth = getAuth(app);
   const db = getFirestore(app);
   const dispatch = useDispatch();
 
   const handleSaveProfile = async () => {
+    console.log(route.params);
     try {
       const user = auth.currentUser;
       if (user) {
@@ -28,7 +29,7 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
           profile: {
             userName: name,
             birthdate: birthdate,
-            gender: route.params.gender,
+            gender: gender,
           },
           lastActivity: serverTimestamp(),
           isOnline: true,
