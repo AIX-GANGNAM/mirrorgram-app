@@ -111,8 +111,8 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       
       await saveCredentials();
     
-      const updatedPushToken = await UpdatePushToken(user.uid);
-      console.log("LoginForm > handleLogin > Push 토큰 업데이트 결과:", updatedPushToken);
+      // const updatedPushToken = await UpdatePushToken(user.uid);
+      // console.log("LoginForm > handleLogin > Push 토큰 업데이트 결과:", updatedPushToken);
 
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();

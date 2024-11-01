@@ -6,7 +6,7 @@ const findProfileImageFromUid = async (uid) => {
   const userDoc = await firestore().collection('users').doc(uid).get();
   const profileImage = userDoc.data().profileImage;
   if(profileImage === undefined){
-    return 'https://example.com/default-image.jpg'; // 기본 이미지 주소
+    return 'https://example.com/default-image.jpg'; // 기본 이미지
   }
   return profileImage
 }
@@ -17,12 +17,13 @@ const findUserNameFromUid = async (uid) => {
     return '시스템';
   }
   else if(uid === 'Joy' || uid === 'Anger'){
-    return 'Persona';  
+    return uid;  
   }
 
   try {
     const userDoc = await firestore().collection('users').doc(uid).get();
     console.log('findUserNameFromUid > userDoc : ', userDoc);
+    
     if (userDoc.exists) {
       const userData = userDoc.data();
       const email = userData.email || '';
@@ -65,10 +66,6 @@ const SCREEN_TYPES = {
     type: 'POST_COMMENT',
     getMessage: (data) => `${data.userName}님이 회원님의 게시물에 댓글을 남겼습니다.`
   },
-  MENTION: {
-    type: 'MENTION',
-    getMessage: (data) => `${data.userName}님이 회원님을 멘션했습니다.`
-  }
 };
 
 // 각 pushType에 대한 URL이 있어야 이동을 한다
@@ -135,24 +132,3 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
 };
 
 export default sendNotificationToUser;
-
-// 사용 예시:
-/*
-// 좋아요 알림
-await sendNotificationToUser(userId, {
-  userName: '홍길동',
-  metadata: { postId: 'post123' }
-}, 'LIKE');
-
-// 친구 요청 알림
-await sendNotificationToUser(userId, {
-  userName: '김철수'
-}, 'FRIEND_REQUEST');
-
-// 채팅 메시지 알림
-await sendNotificationToUser(userId, {
-  userName: '이영희',
-  message: '안녕하세요!',
-  metadata: { chatRoomId: 'chat456' }
-}, 'PERSONA_CHAT');
-*/

@@ -22,6 +22,7 @@ const GoToScreen = ({response}) => {
     return;
 }
 
+if(navigationRef.isReady() ){
 
   console.log("navigationRef.isReady() 참");
   console.log("screenType : ", screenType);
@@ -66,11 +67,11 @@ const GoToScreen = ({response}) => {
     case 'MENTION':
       console.log("멘션 알림 처리");
       if (data.locationType === 'post') {
-        navigate('PostDetail', {
+        navigationRef.navigate('PostDetail', {
           postId: data.postId
         });
       } else if (data.locationType === 'comment') {
-        navigate('PostDetail', {
+        navigationRef.navigate('PostDetail', {
           postId: data.postId,
           commentId: data.commentId
         });
@@ -79,6 +80,7 @@ const GoToScreen = ({response}) => {
 
     default:
       console.log('알 수 없는 알림 타입:', type);
+    }
   }
 };
 

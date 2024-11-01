@@ -15,13 +15,19 @@ const generatePersonaImages = async (formData) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
+
+    console.log('dkdkdkdkdkddkdkdkd')
     
     if (!user) {
       throw new Error('사용자 인증 정보가 없습니다.');
     }
     
     formData.append('uid', user.uid);
-    
+    // 주소수정 http://221.148.97.237:1818/generate-persona-image
+
+    console.log('generate 이미지 formData', formData)
+
+
     const response = await axios.post(`http://221.148.97.237:1818/generate-persona-images`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -36,28 +42,28 @@ const generatePersonaImages = async (formData) => {
 };
 
 // 성격 생성 API 호출
-const generatePersonaDetails = async (customPersona) => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
+// const generatePersonaDetails = async (customPersona) => {
+//   try {
+//     const auth = getAuth();
+//     const user = auth.currentUser;
     
-    if (!user) {
-      throw new Error('사용자 인증 정보가 없습니다.');
-    }
+//     if (!user) {
+//       throw new Error('사용자 인증 정보가 없습니다.');
+//     }
 
-    const response = await axios.post(`http://localhost:8000/generate-personality`, {
-      uid: user.uid,
-      name: customPersona.name,
-      personality: customPersona.personality,
-      speechStyle: customPersona.speechStyle
-    });
-    return response.data.details;
-  } catch (error) {
-    console.error('Error generating persona details:', error);
-    Alert.alert("오류", "페르소나 성격 생성 중 오류가 발생했습니다.");
-    throw error;
-  }
-};
+//     const response = await axios.post(`http://10.0.2.2:8000/generate-personality`, {
+//       uid: user.uid,
+//       name: customPersona.name,
+//       personality: customPersona.personality,
+//       speechStyle: customPersona.speechStyle
+//     });
+//     return response.data.details;
+//   } catch (error) {
+//     console.error('Error generating persona details:', error);
+//     Alert.alert("오류", "페르소나 성격 생성 중 오류가 발생했습니다.");
+//     throw error;
+//   }
+// };
 
 export default function ReelsScreen() {
   const [image, setImage] = useState(null);
@@ -143,50 +149,82 @@ export default function ReelsScreen() {
   };
 
   // handleGeneratePersonas 함수 수정
-  const handleGeneratePersonas = async (skipImage = false) => {
-    if (!skipImage && !image) {
-      Alert.alert("알림", "먼저 사진을 선택해주세요.");
+  const handleGeneratePersonas = async (skipImage) => {
+
+    if (!personaDetails.custom.name) {
+      Alert.alert("알림", "페르소나 정보를 입력해주세요.");
       return;
     }
 
-    setLoading(true);
-    
-    try {
-      // 커스텀 페르소나 정보가 없는 경우 알림
-      if (!personaDetails.custom.name) {
-        Alert.alert("알림", "페르소나 정보를 입력해주세요.");
-        return;
-      }
+    const formData = new FormData();
+      formData.append('customPersona', JSON.stringify({
+        name: personaDetails.custom.name,
+        personality: personaDetails.custom.personality,
+        speechStyle: personaDetails.custom.speechStyle
+      }));
 
-      // 1. 이미지 생성 API 호출 (사진 선택을 건너뛰지 않은 경우에만)
-      if (!skipImage) {
-        const formData = new FormData();
+
+try{
+
+
+    if(skipImage){
+      console.log('이미지 없이 생성')
+
+      
+
+      const generatedImages = await generatePersonaImages(formData);
+
+      // setGeneratedPersonas(generatedImages);
+    }else{
+      
+
         formData.append('image', {
           uri: image,
           type: 'image/jpeg',
           name: 'image.jpg'
         });
-        
-        formData.append('customPersona', JSON.stringify({
-          name: personaDetails.custom.name,
-          personality: personaDetails.custom.personality,
-          speechStyle: personaDetails.custom.speechStyle
-        }));
 
         const generatedImages = await generatePersonaImages(formData);
-        setGeneratedPersonas(generatedImages);
-      }
+        // setGeneratedPersonas(generatedImages);
 
-      // 2. 성격 생성 API 호출
-      const generatedDetails = await generatePersonaDetails(personaDetails.custom);
-      setPersonaDetails(prev => ({
-        ...prev,
-        ...generatedDetails
-      }));
 
-    } catch (error) {
+    }
+  }
+    
+    // try {
+    //   // 커스텀 페르소나 정보가 없는 경우 알림
+      
+
+    //   // 1. 이미지 생성 API 호출 (사진 선택을 건너뛰지 않은 경우에만)
+    //   if (!skipImage) {
+    //     const formData = new FormData();
+    //     formData.append('image', {
+    //       uri: image,
+    //       type: 'image/jpeg',
+    //       name: 'image.jpg'
+    //     });
+
+    //     formData.append('uid', user.uid);
+        
+    //     formData.append('customPersona', JSON.stringify({
+    //       name: personaDetails.custom.name,
+    //       personality: personaDetails.custom.personality,
+    //       speechStyle: personaDetails.custom.speechStyle
+    //     }));
+
+        
+    //   }
+
+    //   // 2. 성격 생성 API 호출
+    //   // const generatedDetails = await generatePersonaDetails(personaDetails.custom);
+    //   // setPersonaDetails(prev => ({
+    //   //   ...prev,
+    //   //   ...generatedDetails
+    //   // }));
+          
+    catch (error) {
       console.error('Error in handleGeneratePersonas:', error);
-      Alert.alert("오류", "페르소나 생성 중 오류가 발생했습니다.");
+      Alert.alert("오류", "페르소나 이미지 생성중 오류");
     } finally {
       setLoading(false);
     }
@@ -219,6 +257,7 @@ export default function ReelsScreen() {
           </View>
         ) : (
           <View style={styles.emptyPersona}>
+            {/* 여기다가 넣어야한다 */}
             <Icon name="person-outline" size={40} color="#CCCCCC" />
             <Text style={styles.emptyPersonaText}>
               {type === 'joy' ? '기쁨이' :

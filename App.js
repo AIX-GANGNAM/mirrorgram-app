@@ -78,8 +78,43 @@ const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const notificationListener = useRef();
   const responseListener = useRef();
+  
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const auth = getAuth();
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const userData = await AsyncStorage.getItem('user');
+            if (userData) {
+              setIsAuthenticated(true);
+            }
+          } else {
+            await AsyncStorage.removeItem('user');
+            setIsAuthenticated(false);
+          }
+          setLoading(false);
+        });
+
+        // 저장된 로그인 정보 확인
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          setIsAuthenticated(true);
+        }
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -132,20 +167,23 @@ const App = () => {
       const updateActivity = async () => {
         try {
           const userRef = doc(db, 'users', auth.currentUser.uid);
+          const timestamp = serverTimestamp();
+          
+          // Firestore에는 serverTimestamp 저장
           await updateDoc(userRef, {
-            lastActivity: serverTimestamp()
+            lastActivity: timestamp
           });
+          
+          // Redux store에는 일반 숫자로 저장
+          dispatch(setUser({
+            ...userData,
+            lastActivity: Date.now()
+          }));
+          
         } catch (error) {
-          console.error('활동 시간 업데이트 실패:', error);
+          console.error('활동 상태 업데이트 실패:', error);
         }
       };
-
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
-    
-    };
 
       // 1분마다 활동 시간 업데이트
       const activityInterval = setInterval(updateActivity, 60000);
@@ -239,7 +277,13 @@ const App = () => {
       </Stack.Navigator>
     );
   };
-
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   return(
     <Provider store={store}>
       <NavigationContainer ref={navigationRef}>
