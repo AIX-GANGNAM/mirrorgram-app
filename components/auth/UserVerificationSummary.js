@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import app from '../../firebaseConfig';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
@@ -28,12 +28,21 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
           profile: {
             userName: name,
             birthdate: birthdate,
+            gender: route.params.gender,
+          },
+          lastActivity: serverTimestamp(),
+          isOnline: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          settings: {
+            notifications: phone ? true : false,
+            privacy: 'public',
           }
         };
+
         await setDoc(userRef, profileData, { merge: true });
         dispatch(setUser({ uid: user.uid, ...profileData }));
         setIsAuthenticated(true);
-        // navigation.navigate('PlayGround', { fromProfile: true });
       }
     } catch (error) {
       console.error('프로필 저장 중 오류 발생:', error);
