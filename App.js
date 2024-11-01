@@ -157,11 +157,21 @@ const App = () => {
       const updateActivity = async () => {
         try {
           const userRef = doc(db, 'users', auth.currentUser.uid);
+          const timestamp = serverTimestamp();
+          
+          // Firestore에는 serverTimestamp 저장
           await updateDoc(userRef, {
-            lastActivity: serverTimestamp()
+            lastActivity: timestamp
           });
+          
+          // Redux store에는 일반 숫자로 저장
+          dispatch(setUser({
+            ...userData,
+            lastActivity: Date.now()
+          }));
+          
         } catch (error) {
-          console.error('활동 시간 업데이트 실패:', error);
+          console.error('활동 상태 업데이트 실패:', error);
         }
       };
 
@@ -366,7 +376,7 @@ async function registerForPushNotificationsAsync() {
 
   if (Device.isDevice) {
     console.log("App.js > registerForPushNotificationsAsync > 디바이스 확인");
-    console.log("실제 디바이스 인가?? : ",Device.isDevice);
+    console.log("실제 디��이스 인가?? : ",Device.isDevice);
     console.log("디바이스 이름 : ",Constants.deviceName);
 
     // 기존 푸시 알림 권한 상태를 확인

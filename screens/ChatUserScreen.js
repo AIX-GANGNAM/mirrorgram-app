@@ -102,58 +102,39 @@ const ChatUserScreen = ({ route, navigation }) => {
 
   const sendMessage = async () => {
     if (inputMessage.trim() === '') return;
+    
+    // 전송할 메시지 임시 저장
+    const messageToSend = inputMessage;
 
     try {
-      const messageData = {
-        text: inputMessage,
-        senderId: currentUser.uid,
-        timestamp: serverTimestamp(),
-        read: false
-      };
-
-      // 메시지 저장
-      const messageRef = await addDoc(collection(db, `chat/${chatId}/messages`), messageData);
-
-      // 채팅방 정보 업데이트
-      await updateDoc(doc(db, 'chat', chatId), {
-        'info.lastMessage': inputMessage,
-        'info.lastMessageTime': serverTimestamp(),
-        'info.lastSenderId': currentUser.uid
-      });
-
-      // 상대방 활동 상태 확인
-      const isRecipientActive = await checkUserActivity();
-      console.log('상대방 활동 상태:', isRecipientActive ? '온라인' : '오프라인');
-
-      
-      // 상대방이 오프라인일 때만 AI 응답 요청
-      if (!isRecipientActive) {
-        try {
-          const response = await axios.post('http://localhost:8000/clone-chat', {
+        // 메시지 데이터 준비
+        const messageData = {
             senderId: currentUser.uid,
             recipientId: recipientId,
             chatId: chatId,
-            message: inputMessage,
-          });
+            message: messageToSend,
+            timestamp: new Date().toISOString()
+        };
 
-          if (response.data?.message) {
-            await addDoc(collection(db, `chat/${chatId}/messages`), {
-              text: response.data.message,
-              senderId: recipientId,
-              timestamp: serverTimestamp(),
-              read: false,
-              isAI: true
-            });
-          }
-        } catch (error) {
-          console.error('AI 응답 생성 실패:', error);
+        // 전송 버튼 비활성화 또는 로딩 상태 표시 가능
+        // setIsSending(true); 
+
+        // 백엔드로 메시지 전송
+        const response = await axios.post('http://localhost:8000/clone-chat', messageData);
+
+        // 전송 성공 시에만 입력창 초기화
+        if (response.status === 200) {
+            setInputMessage('');
+        } else {
+            throw new Error('메시지 전송 실패');
         }
-      }
 
-      setInputMessage('');
     } catch (error) {
-      console.error('메시지 전송 실패:', error);
-      alert('메시지 전송에 실패했습니다.');
+        console.error('메시지 전송 실패:', error);
+        alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+        // 전송 버튼 활성화 또는 로딩 상태 해제
+        // setIsSending(false);
     }
   };
 
