@@ -1,8 +1,15 @@
 import axios from 'axios';
-import { getDeviceIPAddress } from '../../utils/getIpAddress';
-import { Platform } from 'react-native';
-import auth from '@react-native-firebase/auth';
-import { useSelector } from 'react-redux';
+import firestore from '@react-native-firebase/firestore';
+
+const findProfileImageFromUid = async (uid) => {
+  console.log("보내는 사람의 대표 이미지 찾기");
+  const userDoc = await firestore().collection('users').doc(uid).get();
+  const profileImage = userDoc.data().profileImage;
+  if(profileImage === undefined){
+    return 'https://example.com/default-image.jpg'; // 기본 이미지 주소
+  }
+  return profileImage
+}
 
 const findUserNameFromUid = async (uid) => {
   console.log('findUserNameFromUid > uid : ', uid);
@@ -15,6 +22,7 @@ const findUserNameFromUid = async (uid) => {
 
   try {
     const userDoc = await firestore().collection('users').doc(uid).get();
+    console.log('findUserNameFromUid > userDoc : ', userDoc);
     if (userDoc.exists) {
       const userData = userDoc.data();
       const email = userData.email || '';
@@ -68,6 +76,7 @@ const SCREEN_TYPES = {
 const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenType) => {
   try {
     const whoSendMessage = await findUserNameFromUid(fromUid);
+    const profileImage = await findProfileImageFromUid(fromUid);
     console.log('sendNotificationToUser > whoSendMessage : ', whoSendMessage);
 
     if (!targetUserUid || !whoSendMessage) {
@@ -75,6 +84,7 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     }
 
     const screenType = SCREEN_TYPES[inputScreenType.toUpperCase()];
+    console.log('sendNotificationToUser > screenType : ', screenType);
     if (!screenType) {
       throw new Error(`잘못된 화면 타입입니다 : ${inputScreenType}`);
     }
@@ -83,7 +93,8 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     const requestData = {
       targetUid: targetUserUid,
       fromUid: fromUid,
-      whoSendMessage: whoSendMessage,
+      whoSendMessage: "MyBot",
+      profileImage: profileImage,
       message: screenType.getMessage({ userName: whoSendMessage }),
       screenType: screenType.type,
       URL: URL || '없음'
