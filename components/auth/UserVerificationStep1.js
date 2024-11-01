@@ -3,14 +3,18 @@ import { View, TextInput, TouchableOpacity, Text, SafeAreaView, StyleSheet } fro
 import { useNavigation } from '@react-navigation/native';
 import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
+import { useRoute } from '@react-navigation/native';
 
 const UserVerificationStep1 = () => {
   const [username, setUsername] = useState('');
   const navigation = useNavigation();
 
+  const route = useRoute();
+  const { gender } = route.params;
+
   const handleNext = () => {
     if (username) {
-      navigation.navigate('UserVerificationStep2', { username });
+      navigation.navigate('UserVerificationStep2', { username, gender });
     } else {
       alert('사용자 ID를 입력해주세요.');
     }
