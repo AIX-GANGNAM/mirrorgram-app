@@ -4,11 +4,13 @@ import {View,Text,StyleSheet,
   Image,FlatList,Alert,ActivityIndicator} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 // Firebase 관련 기능 import
-import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc} from 'firebase/firestore';
+import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc ,firestore} from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { confirmPasswordReset, getAuth } from 'firebase/auth';
+import  sendNotificationToUser from '../notification/SendNotification';
 
 const FriendRequests = ({ navigation }) => {  // navigation prop 추가
+  console.log("FriendRequests.js 실행");
   // 상태 관리를 위한 state 선언
   const [requests, setRequests] = useState([]); // 친구 요청 목록
   const [loading, setLoading] = useState(true); // 로딩 상태
@@ -25,6 +27,7 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
 
   // 친구 요청 목록을 가져오는 함수
   const fetchFriendRequests = async () => {
+    console.log("fetchFriendRequests (친구 요청 목록 가져오기) 실행");
     if (!auth.currentUser) return; // 로그인 상태 확인
 
     try {
@@ -57,12 +60,17 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
     setProcessingId(request.id); // 처리 중 상태로 설정
 
     try {
+      console.log("친구 요청 수락 처리 시작");
+      console.log("request.fromId : ", request.fromId);
       // 양방향 친구 관계 생성 (현재 사용자 -> 요청 보낸 사용자)
       await addDoc(collection(db, 'friends'), {
         userId: auth.currentUser.uid,
         friendId: request.fromId,
         createdAt: new Date().toISOString()
       });
+
+      // 친구 요청 수락 알림 보내기 (누구에게, 내가, 자세한 화면 위치, 화면 위치)
+      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FRIEND_ACCEPT');
 
       // 양방향 친구 관계 생성 (요청 보낸 사용자 -> 현재 사용자)
       await addDoc(collection(db, 'friends'), {
@@ -97,6 +105,10 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
     setProcessingId(request.id); // 처리 중 상태로 설정
 
     try {
+      console.log("친구 요청 거절 처리 시작");
+      console.log("request.fromId : ", request.fromId);
+      // 친구 요청 거절 알림 보내기 (누구에게, 내가, 자세한 화면 위치, 화면 위치)
+      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FRIEND_REJECT');
       // 친구 요청 문서 삭제
       await deleteDoc(doc(db, 'friendRequests', request.id));
 

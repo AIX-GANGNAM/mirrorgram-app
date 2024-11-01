@@ -105,6 +105,8 @@ const NewPostScreen = ({ navigation }) => {
   }, [navigation]);
 
   const triggerFeedGeneration = async (user) => {
+    console.log("triggerFeedGeneration 실행");
+    console.log("user.uid : ", user.uid);
     setIsGenerating(true);
     setGenerationProgress(0);
 
@@ -120,7 +122,7 @@ const NewPostScreen = ({ navigation }) => {
 
     try {
         // UUID 생성
-        const uuid = generateUUID();
+        const uuid = generateUUID(); // 피드에 대한 UUID 생성
   
         // userData state를 사용하여 페르소나 이미지 URL 접근
         // const personaImage = userDataState.persona?.[persona.type.toLowerCase()];
@@ -140,6 +142,9 @@ const NewPostScreen = ({ navigation }) => {
         }
 
         console.log('피드 생성 결과:', response.data.message);
+        // name=custom, dpname으로 한다
+        // 피드 생성 알림 보내기(누구에게, 내가, 피드 uid, 화면 위치)
+        sendNotificationToUser(user.uid, user.uid, uuid, 'FEED_GENERATION');
         //refreshPosts(); //(보류)
       clearInterval(progressInterval);
       setGenerationProgress(100);
