@@ -1,10 +1,84 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, View, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot,
+  getFirestore
+} from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const Header = () => {
   const navigation = useNavigation();
+  const [notificationCount, setNotificationCount] = useState(0);
+  const db = getFirestore();
+  const auth = getAuth();
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    try {
+      // 친구 요청 쿼리
+      const friendRequestsQuery = query(
+        collection(db, 'friendRequests'),
+        where('toId', '==', auth.currentUser.uid),
+        where('status', '==', 'pending')
+      );
+
+      // 좋아요 알림 쿼리
+      const likesQuery = query(
+        collection(db, 'likes'),
+        where('toId', '==', auth.currentUser.uid),
+        where('status', '==', 'unread')
+      );
+
+      // 실시간 리스너 설정
+      const unsubscribeFriendRequests = onSnapshot(friendRequestsQuery, (snapshot) => {
+        const friendRequestCount = snapshot.docs.length;
+        updateTotalCount(friendRequestCount, 'friendRequests');
+      }, (error) => {
+        console.log("Friend requests listener error:", error);
+      });
+
+      const unsubscribeLikes = onSnapshot(likesQuery, (snapshot) => {
+        const likesCount = snapshot.docs.length;
+        updateTotalCount(likesCount, 'likes');
+      }, (error) => {
+        console.log("Likes listener error:", error);
+      });
+
+      // 클린업 함수
+      return () => {
+        unsubscribeFriendRequests();
+        unsubscribeLikes();
+      };
+    } catch (error) {
+      console.log("Error setting up listeners:", error);
+    }
+  }, [auth.currentUser]);
+
+  // 알림 카운트를 개별적으로 관리
+  const [counts, setCounts] = useState({
+    friendRequests: 0,
+    likes: 0
+  });
+
+  // 개별 카운트 업데이트 함수
+  const updateTotalCount = (count, type) => {
+    setCounts(prev => ({
+      ...prev,
+      [type]: count
+    }));
+  };
+
+  // 전체 알림 카운트 계산
+  useEffect(() => {
+    const total = counts.friendRequests + counts.likes;
+    setNotificationCount(total);
+  }, [counts]);
 
   return (
     <View style={styles.container}>
@@ -28,10 +102,11 @@ const Header = () => {
           onPress={() => navigation.navigate('Activity')}
         >
           <Ionicons name="heart-outline" size={26} color="#1A1A1A" />
-          {/* 알림이 있을 때만 배지 표시 */}
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>12</Text>
-          </View>
+          {notificationCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{notificationCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -39,16 +114,11 @@ const Header = () => {
           onPress={() => navigation.navigate('ChatList')}
         >
           <Ionicons name="chatbubble-outline" size={24} color="#1A1A1A" />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>5</Text>
-          </View>
         </TouchableOpacity>
       </View>
     </View>
   );
-}
-
-export default Header;
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -101,3 +171,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 });
+
+export default Header;
