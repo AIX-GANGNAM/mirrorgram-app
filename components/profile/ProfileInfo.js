@@ -82,7 +82,6 @@ const ProfileInfo = ({ user, showAddFriend, targetUserId }) => {
 
      <View style={styles.infoSection}>
        <Text style={styles.name}>{user?.profile?.userName || '이름 없음'}</Text>
-       <Text style={styles.username}>@{user?.userId}</Text>
        
        <View style={styles.detailsContainer}>
          {user?.profile?.mbti && (
@@ -158,11 +157,6 @@ const styles = StyleSheet.create({
    fontSize: 18,
    fontWeight: '700',
    color: '#1A1A1A',
-   marginBottom: 4,
- },
- username: {
-   fontSize: 14,
-   color: '#6C757D',
    marginBottom: 12,
  },
  detailsContainer: {
