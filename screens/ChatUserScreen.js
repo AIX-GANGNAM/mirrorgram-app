@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../firebaseConfig';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { checkUserOnlineStatus } from '../utils/presenceSystem';
 
 const ChatUserScreen = ({ route, navigation }) => {
   const { 
@@ -77,64 +78,66 @@ const ChatUserScreen = ({ route, navigation }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  const checkUserActivity = async () => {
-    try {
-      const userRef = doc(db, 'users', recipientId);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const lastActivity = userData.lastActivity?.toDate();
-        
-        if (!lastActivity) return false;
-        
-        const now = new Date();
-        const timeDiff = now - lastActivity;
-        console.log('마지막 활동으로부터 경과 시간(분):', timeDiff / 1000 / 60);
-        return timeDiff < ACTIVITY_THRESHOLD;
-      }
-      return false;
-    } catch (error) {
-      console.error('활동 상태 확인 실패:', error);
-      return false;
-    }
-  };
 
   const sendMessage = async () => {
     if (inputMessage.trim() === '') return;
     
-    // 전송할 메시지 임시 저장
     const messageToSend = inputMessage;
+    setInputMessage(''); // 즉시 입력창 초기화
 
     try {
-        // 메시지 데이터 준비
+        const isRecipientOnline = await checkUserOnlineStatus(recipientId);
+
+        console.log('isRecipientOnline:', isRecipientOnline);
+        
         const messageData = {
+            text: messageToSend,
             senderId: currentUser.uid,
             recipientId: recipientId,
-            chatId: chatId,
-            message: messageToSend,
-            timestamp: new Date().toISOString()
+            timestamp: serverTimestamp(),
+            isRead: false
         };
 
-        // 전송 버튼 비활성화 또는 로딩 상태 표시 가능
-        // setIsSending(true); 
+        if (isRecipientOnline) {
+            // 사용자가 온라인인 경우 - Firestore에 직접 저장
+            const messagesRef = collection(db, `chat/${chatId}/messages`);
+            await addDoc(messagesRef, messageData);
 
-        // 백엔드로 메시지 전송
-        const response = await axios.post('http://localhost:8000/clone-chat', messageData);
-
-        // 전송 성공 시에만 입력창 초기화
-        if (response.status === 200) {
-            setInputMessage('');
+            // 채팅방 정보 업데이트
+            const chatRef = doc(db, 'chat', chatId);
+            await updateDoc(chatRef, {
+                'info.lastMessage': messageToSend,
+                'info.lastMessageTime': serverTimestamp(),
+                'info.lastSenderId': currentUser.uid
+            });
         } else {
-            throw new Error('메시지 전송 실패');
+            // 사용자가 오프라인인 경우 - 서버로 전송
+            const serverMessageData = {
+                message: messageToSend,
+                senderId: currentUser.uid,
+                recipientId: recipientId,
+                chatId: chatId,
+                timestamp: new Date().toISOString(),
+                isRead: false,
+                senderName: currentUser.displayName || '',
+                senderProfileImage: currentUser.photoURL || ''
+            };
+            
+            console.log('서버로 보내는 데이터:', serverMessageData);
+            
+            const response = await axios.post('http://localhost:8000/clone-chat', serverMessageData);
+            
+            if (response.status !== 200) {
+                throw new Error('메시지 전송 실패');
+            }
         }
 
     } catch (error) {
         console.error('메시지 전송 실패:', error);
+        if (error.response) {
+            console.error('에러 응답:', error.response.data);
+        }
         alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-        // 전송 버튼 활성화 또는 로딩 상태 해제
-        // setIsSending(false);
     }
   };
 
