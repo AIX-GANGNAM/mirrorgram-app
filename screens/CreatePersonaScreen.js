@@ -34,6 +34,8 @@ const generatePersonaImages = async (formData) => {
       },
     });
     return response.data.images;
+
+
   } catch (error) {
     console.error('Error generating persona images:', error);
     Alert.alert("오류", "페르소나 이미지 생성 중 오류가 발생했습니다.");
@@ -174,7 +176,12 @@ try{
 
       const generatedImages = await generatePersonaImages(formData);
 
-      // setGeneratedPersonas(generatedImages);
+      console.log('generatedImages', generatedImages)
+
+
+      setGeneratedPersonas(generatedImages);
+
+
     }else{
       
 
@@ -185,7 +192,10 @@ try{
         });
 
         const generatedImages = await generatePersonaImages(formData);
-        // setGeneratedPersonas(generatedImages);
+
+        console.log('generatedImages', generatedImages)
+
+        setGeneratedPersonas(generatedImages);
 
 
     }
@@ -233,6 +243,9 @@ try{
   const renderPersonaCard = (type) => {
     const persona = generatedPersonas[type];
     const details = personaDetails[type];
+
+    console.log('persona', persona)
+    
     
     return (
       <TouchableOpacity 
@@ -242,7 +255,7 @@ try{
       >
         {persona ? (
           <>
-            <Image source={{ uri: persona }} style={styles.personaImage} />
+            <Image source={{ uri: persona['image_url'] }} style={styles.personaImage} />
             <Text style={styles.personaName}>{details.name}</Text>
             {details.personality && (
               <Text style={styles.personaDetail} numberOfLines={1}>
