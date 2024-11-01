@@ -8,11 +8,11 @@ const UserVerificationStep2 = () => {
   const [name, setName] = useState('');
   const navigation = useNavigation();
   const route = useRoute();
-  const { username } = route.params;
+  const { username, gender } = route.params;
 
   const handleNext = () => {
     if (name) {
-      navigation.navigate('UserVerificationStep3', { username, name });
+      navigation.navigate('UserVerificationStep3', { username, name, gender });
     } else {
       alert('이름을 입력해주세요.');
     }

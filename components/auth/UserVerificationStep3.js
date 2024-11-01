@@ -8,11 +8,11 @@ const UserVerificationStep3 = () => {
   const [birthdate, setBirthdate] = useState('');
   const navigation = useNavigation();
   const route = useRoute();
-  const { username, name } = route.params;
+  const { username, name, gender } = route.params;
 
   const handleNext = () => {
     if (isValidDate(birthdate)) {
-      navigation.navigate('UserVerificationStep4', { username, name, birthdate });
+      navigation.navigate('UserVerificationStep4', { username, name, birthdate, gender });
     } else {
       alert('올바른 생년월일 형식을 입력해주세요. (예: 1990-01-01)');
     }
