@@ -62,11 +62,6 @@ const UserVerificationStep0 = () => {
             label="여성" 
             iconName="female" 
           />
-          <GenderOption 
-            gender="other" 
-            label="기타" 
-            iconName="person" 
-          />
         </View>
 
         <TouchableOpacity 

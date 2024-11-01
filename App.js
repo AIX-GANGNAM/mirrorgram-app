@@ -10,7 +10,6 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
 import { TextInput } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
-import GetPushToken from './components/notification/UpdatePushToken';
 import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
@@ -37,6 +36,7 @@ import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
 
+
 import UserVerificationStep0 from './components/auth/UserVerificationStep0';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
 import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
@@ -54,52 +54,80 @@ import DebateChat from './screens/DebateChat';
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
+import GoToScreen from './components/notification/GoToScreen';
+import CreatePersonaPostScreen from './screens/CreatePersonaPostScreen';
+import { serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
+import { db } from './firebaseConfig';
+import { navigationRef } from './utils/navigationRef';
+
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true ,
+    priority: 'high',  // 이 부분 추가
+    importance: 'high' // 이 부분 추가
   }),
 });
 
-// NavigationContainer에 대한 ref 생성
-const navigationRef = createNavigationContainerRef();
+
 
 const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const notificationListener = useRef();
   const responseListener = useRef();
+  
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const auth = getAuth();
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const userData = await AsyncStorage.getItem('user');
+            if (userData) {
+              setIsAuthenticated(true);
+            }
+          } else {
+            await AsyncStorage.removeItem('user');
+            setIsAuthenticated(false);
+          }
+          setLoading(false);
+        });
+
+        // 저장된 로그인 정보 확인
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          setIsAuthenticated(true);
+        }
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       registerForPushNotificationsAsync();
-      await GetPushToken();
     };
     
     initializeApp();
-    
-    // fetchPushToken() 대신 GetPushToken 컴포넌트 사용
-
-
-    // setupBackgroundTask(); 백그라운드 작업 등록 중단
-
-    const personaImages = {
-      "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
-      "Joy": "https://img1.daumcdn.net/thumb/R1280x0/?fname=http://t1.daumcdn.net/brunch/service/user/gI8/image/nl4J4OCc7QyIoC8rBK8Fn1kYVCc.jpg",
-      "Sadness": "https://d3ihz389yobwks.cloudfront.net/1597427709625898634218810800.jpg",
-      "Anger": "https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/201506/28/htm_20150628083828504.jpg",
-      "Fear": "https://img.newspim.com/news/2017/01/31/1701311632536400.jpg",
-      // 다른 persona들에 대한 이미지 URL 추가
-    };
-
-
-
     // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
       try {
+        // 알림 우선순위 설정 추가
+        notification.request.content.priority = 'high';
+        notification.request.content.importance = 'high'; 
         await saveNotification(notification);
         console.log("알림 저장 성공");
       } catch (error) {
@@ -109,41 +137,68 @@ const App = () => {
       
       const {content}  = notification.request;
       console.log("알림수신 : content : ", content);
-      console.log("알림수신 : content.data.pushType : ", content.data.pushType);      
+      console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
+      console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
+      console.log("알림수신 : content.data.URL : ", content.data.URL);
+      console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
       console.log("알림수신 : content.body : ", content.body);      
       console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
       console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
       console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
     });
 
-    const defaultImage = "https://example.com/default-image.jpg";
-
     // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const { content } = response.notification.request;
+      console.log("알림 터치됨:", content.data.screenType);
+      console.log("알림 터치됨:", content.data.URL);
 
-      console.log("알림 터치됨:", response);
-      const persona = response.notification.request.content.title;
+      // priority 설정 추가
+      content.priority = 'high';
+      content.importance = 'high';
 
-      console.log("persona : ", persona);
-
-      const highlightImage = personaImages[persona] || defaultImage;
-
-      // navigationRef가 준비되었고 persona가 존재하는 경우에만 네비게이션 실행
-      if (navigationRef.isReady() && persona) {
-        navigationRef.navigate('Chat', { 
-          persona: persona,
-          highlightTitle: persona, // 또는 다른 적절한 제목
-          highlightImage: highlightImage // persona에 따른 이미지 URL
-        });
-      }
+      GoToScreen({response: content}); // 터치하면 해당 화면으로 이동
+      
     });
 
+    // 사용자 활동 상태 추적 추가
+    const auth = getAuth();
+    if (auth.currentUser) {
+      const updateActivity = async () => {
+        try {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const timestamp = serverTimestamp();
+          
+          // Firestore에는 serverTimestamp 저장
+          await updateDoc(userRef, {
+            lastActivity: timestamp
+          });
+          
+          // Redux store에는 일반 숫자로 저장
+          dispatch(setUser({
+            ...userData,
+            lastActivity: Date.now()
+          }));
+          
+        } catch (error) {
+          console.error('활동 상태 업데이트 실패:', error);
+        }
+      };
 
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
-      // Notifications.unregisterTaskAsync(BACKGROUND_NOTIFICATION_TASK);
-    };
+      // 1분마다 활동 시간 업데이트
+      const activityInterval = setInterval(updateActivity, 60000);
+      
+      // 초기 활동 시간 설정
+      updateActivity();
+
+      // 클린업에 interval 정리 추가
+      return () => {
+        clearInterval(activityInterval);
+        Notifications.removeNotificationSubscription(notificationListener.current);
+        Notifications.removeNotificationSubscription(responseListener.current);
+      };
+    }
+
   }, []);
 
 
@@ -222,7 +277,13 @@ const App = () => {
       </Stack.Navigator>
     );
   };
-
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   return(
     <Provider store={store}>
       <NavigationContainer ref={navigationRef}>
@@ -295,6 +356,15 @@ const App = () => {
             </>
           )}
           <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
+          <Stack.Screen 
+                name="CreatePersonaPost" 
+                component={CreatePersonaPostScreen}
+                options={{
+                  headerShown: true,
+                  title: '페르소나 피드 자동 생성',
+                  headerTitleAlign: 'center',
+                }}
+              />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
@@ -310,6 +380,11 @@ async function registerForPushNotificationsAsync() {
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      enableLights: true,
+    enableVibrate: true,
+    showBadge: true,
+    sound: 'default'
     });
   }
 
@@ -334,7 +409,7 @@ async function registerForPushNotificationsAsync() {
       return; // 함수 종료
     }
   } else {
-    // 물리 디바이스가 아닌 경우, 사용자에게 알림
+    // 물리 디바이스가 아닌 경우, 사용자에게 림
     alert('실제 단말기를 사용해주세요');
 
   }

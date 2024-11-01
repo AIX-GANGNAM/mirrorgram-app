@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { app } from '../../firebaseConfig'; // Firebase 설정 파일 import
 import { doc, updateDoc, getFirestore, setDoc, getDoc } from 'firebase/firestore';
 
 const PersonaProfile = ({ route, navigation }) => {
     const { persona, userId } = route.params;
-    const personaId = `${userId}_${persona.persona}`;  // 영어 persona 값을 사용하여 ID 생성
-
-    console.log('Firebase에 저장될 personaId:', personaId); // 로그 추가
+    // console.log("페르소나: " + JSON.stringify(persona), "유저 아이디: " + userId);
+    const personaId = `${userId}_${persona.persona ? persona.persona.toLowerCase() : 'default'}`;  // 영어 persona 값을 사용하여 ID 생성
 
     const [interests, setInterests] = useState([]);
     const [newInterest, setNewInterest] = useState('');
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [newName, setNewName] = useState(persona.name); // 초기값으로 현재 이름 설정
+    const [displayName, setDisplayName] = useState(persona.title);
 
     const db = getFirestore(app);
     const inputRef = useRef(null);
@@ -22,28 +24,29 @@ const PersonaProfile = ({ route, navigation }) => {
             headerTitleAlign: 'center',
         });
 
-        // Firestore에서 초기 관심사 로드
-        const loadInterests = async () => {
-            try {
-                const personaRef = doc(db, 'personas', personaId);
-                const docSnap = await getDoc(personaRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data && data.interests) {
-                        setInterests(data.interests);
-                    }
-                } else {
-                    console.log('해당 페르소나 문서가 존재하지 않습니다.');
-                }
-            } catch (error) {
-                console.error('Failed to load interests from Firebase:', error);
-                Alert.alert('오류', '관심사를 불러오지 못했습니다. 다시 시도해주세요.');
-            }
-        };
-
+        loadProfile();
         loadInterests();
     }, [navigation, personaId]);
+
+    // Firestore에서 초기 관심사 로드
+    const loadInterests = async () => {
+        try {
+            const personaRef = doc(db, 'personas', personaId);
+            const docSnap = await getDoc(personaRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data && data.interests) {
+                    setInterests(data.interests);
+                }
+            } else {
+                console.log('해당 페르소나 문서가 존재하지 않습니다.');
+            }
+        } catch (error) {
+            console.error('Failed to load interests from Firebase:', error);
+            Alert.alert('오류', '관심사를 불러오지 못했습니다. 다시 시도해주세요.');
+        }
+    };
 
     // Firebase에서 관심사 업데이트
     const updateInterestsInFirebase = async (updatedInterests) => {
@@ -84,10 +87,71 @@ const PersonaProfile = ({ route, navigation }) => {
         updateInterestsInFirebase(updatedInterests);
     };
 
+    // 프로필 로드 함수 
+    const loadProfile = async () => {
+        try {
+            const personaRef = doc(db, 'personas', personaId);
+            const docSnap = await getDoc(personaRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data && data.profile && data.profile.name) {
+                    setNewName(data.profile.name);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load profile from Firebase:', error);
+            Alert.alert('오류', '프로필을 불러오지 못했습니다.');
+        }
+    };
+
+    // handleSave 함수 수정
+    const handleSave = async () => {
+        try {
+            // personas 컬렉션 업데이트
+            const personaRef = doc(db, 'personas', personaId);
+            const docSnap = await getDoc(personaRef);
+            
+            if (docSnap.exists()) {
+                await updateDoc(personaRef, {
+                    'profile.name': newName
+                });
+            } else {
+                await setDoc(personaRef, {
+                    profile: {
+                        name: newName
+                    }
+                });
+            }
+
+            // users 컬렉션의 persona 필드 업데이트
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
+                [`persona.${persona.persona.toLowerCase()}_title`]: newName
+            });
+                
+            setDisplayName(newName);
+            navigation.setOptions({
+                headerTitle: `${newName} 프로필`,
+            });
+            
+            setModalVisible(false);
+            Alert.alert('성공', '이름이 수정되었습니다.');
+        } catch (error) {
+            console.error('Failed to update name in Firebase:', error);
+            Alert.alert('오류', '이름 수정에 실패했습니다.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Image source={{ uri: persona.image }} style={styles.image} />
-            <Text style={styles.name}>{persona.title}</Text>
+            <View style={styles.nameContainer}>
+                <Text style={styles.name}>{displayName}</Text>
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.editButton}>
+                    <Ionicons name="pencil" size={20} color="black" />
+                </TouchableOpacity>
+            </View>
             <View style={styles.horizontalLine} />
             <View style={styles.interestsContainer}>
                 <Text style={styles.interestsTitle}>관심 키워드♥</Text>
@@ -115,7 +179,6 @@ const PersonaProfile = ({ route, navigation }) => {
                     onSubmitEditing={addInterest}
                     blurOnSubmit={false}
                     multiline={false}
-                    keyboardType="visible-password"
                     autoCorrect={false}
                     placeholder="새 관심사 추가"
                 />
@@ -123,6 +186,41 @@ const PersonaProfile = ({ route, navigation }) => {
                     <Text style={styles.addButtonText}>추가</Text>
                 </TouchableOpacity>
             </View>
+            
+
+            <Modal
+                visible={isModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>이름 수정</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            value={newName}
+                            onChangeText={setNewName}
+                            placeholder="새 이름 입력"
+                            placeholderTextColor="#999"
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={styles.modalButtonCancel}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.modalButtonTextCancel}>취소</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.modalButtonSubmit}
+                                onPress={handleSave}
+                            >
+                                <Text style={styles.modalButtonTextSubmit}>수정</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -150,11 +248,24 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
     },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        marginBottom: 20,
+        marginLeft : 250,
+    },
     name: {
+        flex: 1,
+        textAlign: 'center',
         fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 20,
         color: '#333',
+    },
+    editButton: {
+        marginRight:230,
+        // cursor : 'pointer'
     },
     horizontalLine: {
         width: '90%',
@@ -237,6 +348,65 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '85%',
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        padding: 25,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#333',
+    },
+    modalInput: {
+        height: 50,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        marginBottom: 25,
+        backgroundColor: '#f9f9f9',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    modalButtonCancel: {
+        flex: 1,
+        marginRight: 10,
+        backgroundColor: '#ccc',
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalButtonSubmit: {
+        flex: 1,
+        backgroundColor: '#0095f6',
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalButtonTextCancel: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    modalButtonTextSubmit: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });
 

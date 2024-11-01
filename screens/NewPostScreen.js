@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Platform, ActivityIndicator, Modal } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { getFirestore, addDoc, collection, setDoc, doc } from 'firebase/firestore';
+import { getFirestore, addDoc, collection, doc, updateDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import axios from 'axios'; // Axios import 추가
+import { Alert } from 'react-native'; // Alert 모듈을 올바르게 import
 
 const NewPostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
@@ -14,8 +15,36 @@ const NewPostScreen = ({ navigation }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.user.user);
+  const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [personas, setPersonas] = useState([]);
+  const db = getFirestore();
+  const [lastSelectedPersona, setLastSelectedPersona] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   console.log('user', user);
+
+  useEffect(() => {
+    if (user && user.uid) {
+      const unsub = onSnapshot(
+        doc(db, 'users', user.uid),
+        (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            // setUserDataState(docSnapshot.data());
+            setPersonas([
+              { type: 'joy', title: userData.persona?.joy_title || '기쁨이', image: userData.persona?.joy },
+              { type: 'anger', title: userData.persona?.anger_title || '화남이', image: userData.persona?.anger },
+              { type: 'sadness', title: userData.persona?.sadness_title || '슬픔이', image: userData.persona?.sadness },
+              { type: 'fear', title: userData.persona?.fear_title || '걱정이', image: userData.persona?.fear }
+            ]);
+          }
+        }
+      );
+
+      return () => unsub();
+    }
+  }, [user]);
 
   const takePicture = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -53,6 +82,80 @@ const NewPostScreen = ({ navigation }) => {
       return v.toString(16);
     });
   }
+
+  const handlePersonaSelect = (persona) => {
+    const uuid = generateUUID();
+    setLastSelectedPersona(null);
+    navigation.navigate('CreatePersonaPost', { 
+      persona,
+      id: uuid,
+      parentNick: user.userId,
+      userId: user.uid
+    });
+  };
+
+  useEffect(() => {
+    // 화면에 포커스가 올 때마다 실행
+    const unsubscribe = navigation.addListener('focus', () => {
+      setLastSelectedPersona(null);
+      setShowPersonaModal(false);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const triggerFeedGeneration = async (user) => {
+    console.log("triggerFeedGeneration 실행");
+    console.log("user.uid : ", user.uid);
+    setIsGenerating(true);
+    setGenerationProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 500);
+
+    try {
+        // UUID 생성
+        const uuid = generateUUID(); // 피드에 대한 UUID 생성
+  
+        // userData state를 사용하여 페르소나 이미지 URL 접근
+        // const personaImage = userDataState.persona?.[persona.type.toLowerCase()];
+  
+        // POST 요청으로 데이터 전달
+        const response = await axios.post('http://10.0.2.2:8000/feedAutomatic', {
+          id: uuid, // 피드 uid
+          parentNick: user.userId, // 부모 닉네임
+          userId: user.uid, // 부모 uid,
+        });
+
+        // 서버의 응답에서 메시지 가져오기
+        if (response.status === 200 && response.data.message) {
+          Alert.alert('알림', response.data.message);
+        } else {
+          Alert.alert('알림', '알 수 없는 오류가 발생했습니다.');
+        }
+
+        console.log('피드 생성 결과:', response.data.message);
+        // name=custom, dpname으로 한다
+        // 피드 생성 알림 보내기(누구에게, 내가, 피드 uid, 화면 위치)
+        sendNotificationToUser(user.uid, user.uid, uuid, 'FEED_GENERATION');
+        //refreshPosts(); //(보류)
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
+    } catch (error) {
+      console.error('피드 생성 요청 실패:', error);
+      // Alert.alert('오류', '포스트 생성에 실패했습니다.');
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress(0);
+    }
+  };
 
   const handlePost = async () => {
     if (!image) {
@@ -204,13 +307,53 @@ const NewPostScreen = ({ navigation }) => {
               <Text style={styles.optionText}>갤러리에서 선택</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.personaOption} onPress={handlePersonaFeed}>
+            <TouchableOpacity style={styles.personaOption} onPress={() => triggerFeedGeneration(user)}>
               <Ionicons name="sparkles-outline" size={24} color="#ff7043" />
               <Text style={styles.personaOptionText}>페르소나 피드 자동생성</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.personaOption} onPress={() => setShowPersonaModal(true)}>
+              <Ionicons name="sparkles-outline" size={24} color="#ff7043" />
+              <Text style={styles.personaOptionText}>페르소나 피드 사용자생성</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
+
+      {/* 페르소나 선택 모달 */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showPersonaModal}
+        onRequestClose={() => setShowPersonaModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>페르소나 선택</Text>
+            <View style={styles.personaGrid}>
+              {personas.map((persona) => (
+                <TouchableOpacity
+                  key={persona.type}
+                  style={styles.personaItem}
+                  onPress={() => handlePersonaSelect(persona)}
+                >
+                  <Image
+                    source={{ uri: persona.image }}
+                    style={styles.personaImage}
+                  />
+                  <Text style={styles.personaName}>{persona.title}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowPersonaModal(false)}
+            >
+              <Text style={styles.closeButtonText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {isLoading && (
         <View style={styles.overlay}>
@@ -220,6 +363,20 @@ const NewPostScreen = ({ navigation }) => {
             <View style={styles.progressBar}>
               <View style={[styles.progress, { width: `${uploadProgress}%` }]} />
             </View>
+          </View>
+        </View>
+      )}
+
+       {/* 자동 생성 로딩 UI */}
+       {isGenerating && (
+        <View style={styles.loadingOverlay2}>
+          <View style={styles.loadingContainer2}>
+            <Text style={styles.loadingText2}>페르소나가 글을 작성하고 있어요...</Text>
+            <ActivityIndicator size="large" color="#0095f6" />
+            <View style={styles.progressBar2}>
+              <View style={[styles.progress2, { width: `${generationProgress}%` }]} />
+            </View>
+            <Text style={styles.progressText2}>{generationProgress}%</Text>
           </View>
         </View>
       )}
@@ -378,6 +535,94 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#5271ff',
   },
+  
+  // 추가
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  personaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  personaItem: {
+    width: '45%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  personaImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  personaName: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  closeButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#ff7043',
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  loadingOverlay2: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer2: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  loadingText2: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  progressBar2: {
+    width: 200,
+    height: 20,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  progress2: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
+  progressText2: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+  }
 });
 
 export default NewPostScreen;

@@ -1,40 +1,44 @@
-import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth } from 'firebase/auth';
-import { db } from 'firebase/firestore';
-import NowPushToken from './NowPushToken';
+// import * as Notifications from 'expo-notifications';
+// import { auth } from 'firebase/auth';
+// import { db } from 'firebase/firestore';
+// import NowPushToken from './NowPushToken';
 
-const UpdatePushToken = async () => {
-  console.log("UpdatePushToken.js 실행");
-  let token;
-  
-  try {
-    // 현재 토큰 가져오기
-    const nowExpoPushToken = await NowPushToken();
-    console.log("현재 토큰:", nowExpoPushToken);
+// const UpdatePushToken = async (userId) => {
+//   console.log("UpdatePushToken.js 실행");
+//   try {
+//     // userId를 직접 사용
+//     if (!userId) {
+//       console.log("사용자 ID가 제공되지 않았습니다");
+//       return null;
+//     }
 
-    // Firebase에서 현재 로그인한 사용자의 문서 참조 가져오기
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const userDoc = await getDoc(userRef);
+//     // 현재 토큰 가져오기
+//     const nowExpoPushToken = await NowPushToken();
+//     console.log("UpdatePushToken > 현재 토큰:", nowExpoPushToken);
+
+//     // Firestore 문서 참조 및 데이터 가져오기
+//     const userRef = firestore().collection('users').doc(userId);
+//     const userDoc = await userRef.get();
     
-    // pushToken 필드 값 가져오기 (ExponentPushToken[lw5mTFNA-GtnOzFP5WrmMU] 형식)
-    const savedToken = userDoc.exists() ? userDoc.data().pushToken || null : null;
-    console.log("저장된 토큰:", savedToken);
+//     // console.log("Firestore 문서 데이터:", userDoc.data());
 
-    // 토큰이 다르면 업데이트
-    if (savedToken !== nowExpoPushToken) {
-      console.log("토큰 업데이트 필요");
-      await updateDoc(userRef, {
-        pushToken: nowExpoPushToken
-      });
-      console.log("토큰 업데이트 완료");
-    }
+//     const savedToken = userDoc.exists ? userDoc.data().pushToken : null;
+//     console.log("UpdatePushToken > 저장된 토큰:", savedToken);
 
-  } catch (e) {
-    console.error("토큰 처리 중 오류:", e);
-    token = `${e}`;
-  }
-};
+//     if (savedToken !== nowExpoPushToken) {
+//       console.log("UpdatePushToken > 토큰 업데이트 필요");
+//       await userRef.update({
+//         pushToken: nowExpoPushToken
+//       });
+//       console.log("UpdatePushToken > 토큰 업데이트 완료");
+//     }
 
-export default UpdatePushToken;
+//     return nowExpoPushToken;
+//   } catch (e) {
+//     console.error("UpdatePushToken > 토큰 처리 중 오류:", e);
+//     console.error("에러 상세:", e.message);
+//     return null;
+//   }
+// };
+
+// export default UpdatePushToken;

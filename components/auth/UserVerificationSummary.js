@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import app from '../../firebaseConfig';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
@@ -12,12 +12,13 @@ import { Ionicons } from '@expo/vector-icons';
 const UserVerificationSummary = ({ setIsAuthenticated }) => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { username, name, birthdate, phone } = route.params;
+  const { username, name, birthdate, phone, gender } = route.params;
   const auth = getAuth(app);
   const db = getFirestore(app);
   const dispatch = useDispatch();
 
   const handleSaveProfile = async () => {
+    console.log(route.params);
     try {
       const user = auth.currentUser;
       if (user) {
@@ -28,12 +29,21 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
           profile: {
             userName: name,
             birthdate: birthdate,
+            gender: gender,
+          },
+          lastActivity: serverTimestamp(),
+          isOnline: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          settings: {
+            notifications: phone ? true : false,
+            privacy: 'public',
           }
         };
+
         await setDoc(userRef, profileData, { merge: true });
         dispatch(setUser({ uid: user.uid, ...profileData }));
         setIsAuthenticated(true);
-        // navigation.navigate('PlayGround', { fromProfile: true });
       }
     } catch (error) {
       console.error('프로필 저장 중 오류 발생:', error);

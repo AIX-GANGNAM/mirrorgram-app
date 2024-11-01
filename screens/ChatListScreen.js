@@ -4,44 +4,61 @@ import { getFirestore, collection, query, where, orderBy, limit, getDocs, getDoc
 import { getAuth } from 'firebase/auth';
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-
-
-const Tab = createMaterialTopTabNavigator();
 
 const ChatListScreen = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState(0);
+  
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarIndicatorStyle: { backgroundColor: '#5271ff' },
-        tabBarLabelStyle: { fontSize: 16, fontWeight: 'bold' },
-        tabBarActiveTintColor: '#5271ff',
-        tabBarInactiveTintColor: '#8e8e8e',
-      }}
-    >
-      <Tab.Screen name="1:1 대화">
-        {() => <PersonalChats navigation={navigation} />}
-      </Tab.Screen>
-      <Tab.Screen name="페르소나 대화 염탐하기">
-        {() => <GroupChats navigation={navigation} />}
-      </Tab.Screen>
-    </Tab.Navigator>
+    <View style={{flex: 1}}>
+      <View style={{flexDirection: 'row'}}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 0 && styles.activeTab]} 
+          onPress={() => setActiveTab(0)}
+        >
+          <Text style={[styles.tabText, activeTab === 0 && styles.activeTabText]}>
+            1:1 대화
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 1 && styles.activeTab]}
+          onPress={() => setActiveTab(1)}
+        >
+          <Text style={[styles.tabText, activeTab === 1 && styles.activeTabText]}>
+            페르소나 대화 염탐하기
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {activeTab === 0 ? (
+        <PersonalChats navigation={navigation} />
+      ) : (
+        <GroupChats navigation={navigation} />
+      )}
+    </View>
   );
 };
+
 const PersonalChats = ({ navigation }) => {
   const [chats, setChats] = useState([]);
   const [search, setSearch] = useState('');
+  const [highlights, setHighlights] = useState([]);
   const auth = getAuth();
   const db = getFirestore();
   const user = useSelector(state => state.user.user);
 
-  const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user?.persona?.joy },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user?.persona?.anger },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user?.persona?.disgust },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user?.persona?.sadness },
-    { id: 5, displayName: '선비', persona: 'Fear', image: user?.persona?.serious },
-  ];
+  useEffect(() => {
+    if (user?.persona && Array.isArray(user.persona)) {
+      const newHighlights = user.persona
+        .filter(persona => persona.Name !== 'clone')
+        .map((persona, index) => ({
+          id: index + 1,
+          displayName: persona.DPNAME,
+          persona: persona.Name,
+          image: persona.IMG
+        }));
+      setHighlights(newHighlights);
+    }
+  }, [user]);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -50,29 +67,24 @@ const PersonalChats = ({ navigation }) => {
     const fetchAllChats = async () => {
       try {
         // 1. 페르소나 채팅 가져오기
-        const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear'];
         const personaChats = await Promise.all(
-          personas.map(async (personaName) => {
-            const messagesRef = collection(db, 'chats', currentUser.uid, 'personas', personaName, 'messages');
+          highlights.map(async (personaData) => {
+            const messagesRef = collection(db, 'chats', currentUser.uid, 'personas', personaData.persona, 'messages');
             const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(1));
             const querySnapshot = await getDocs(q);
-
-            const personaData = highlights.find(item => item.persona === personaName);
-            const personaImage = personaData?.image;
-            const displayName = personaData?.displayName || personaName;
 
             if (!querySnapshot.empty) {
               const lastMessageDoc = querySnapshot.docs[0];
               const lastMessageData = lastMessageDoc.data();
 
               return {
-                id: personaName,
+                id: personaData.persona,
                 type: 'persona',
-                name: displayName,
+                name: personaData.displayName,
                 lastResponse: lastMessageData.message || '',
                 sender: lastMessageData.sender,
                 lastMessageTime: lastMessageData.timestamp?.toDate() || null,
-                profileImage: personaImage,
+                profileImage: personaData.image,
               };
             }
             return null;
@@ -122,7 +134,7 @@ const PersonalChats = ({ navigation }) => {
     };
 
     fetchAllChats();
-  }, [user]);
+  }, [user, highlights]);
 
   const renderChatItem = ({ item }) => (
     <TouchableOpacity
@@ -232,11 +244,11 @@ const GroupChats = ({ navigation }) => {
   const user = useSelector(state => state.user.user);
   const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear'];
   const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user.persona.joy },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.anger },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.disgust },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.sadness },
-    { id: 5, displayName: '선비', persona: 'Fear', image: user.persona.serious },
+    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user.persona.JOY },
+    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.ANGER },
+    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.DISGUST },
+    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.SADNESS },
+    { id: 5, displayName: '선비', persona: 'Fear', image: user.persona.SERIOUS },
   ];
 
   useEffect(() => {
@@ -622,6 +634,24 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 16,
   },
+  tab: {
+    flex: 1,
+    padding: 15,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#e0e0e0'
+  },
+  activeTab: {
+    borderBottomColor: '#5271ff'
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#8e8e8e'
+  },
+  activeTabText: {
+    color: '#5271ff',
+    fontWeight: 'bold'
+  }
 });
 
 export default ChatListScreen;

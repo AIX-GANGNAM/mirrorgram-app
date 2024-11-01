@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons'; // Ionicons import 추가
 import RecursiveComment from './RecursiveComment';
+import { sendNotification } from '../notification/SendNotification';
 
 const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
     const user = useSelector(state => state.user.user);
@@ -59,6 +60,9 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
   
       try {
         const postRef = doc(db, 'feeds', post.folderId);
+        const targetUserUid = post.userId; // post에 있는 userId를 가져온다. 
+        const pushType = 'POST_COMMENT';
+        const URL = `/post/${post.folderId}`;
         let updatedComments;
         
         if (replyTo) {
@@ -68,7 +72,7 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
         }
   
         await updateDoc(postRef, { comments: updatedComments });
-  
+        sendNotification(targetUserUid, URL, pushType); // 알림 보내기 (누구에게 보내는지, , 어떤 타입인지)
         setComments(updatedComments);
         setCommentCount(updatedComments.length); // 여기서 댓글 수를 업데이트합니다
         setNewComment('');
@@ -242,8 +246,7 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
                   !newComment.trim() && styles.postButtonDisabled
                 ]}
                 onPress={handleAddComment}
-                disabled={!newComment.trim()}
-              >
+                disabled={!newComment.trim()}>
                 <Text style={[
                   styles.postButtonText,
                   !newComment.trim() && styles.postButtonTextDisabled

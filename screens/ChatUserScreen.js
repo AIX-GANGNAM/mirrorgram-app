@@ -12,10 +12,12 @@ import {
   SafeAreaView, 
   ActivityIndicator 
 } from 'react-native';
-import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../firebaseConfig';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { checkUserOnlineStatus } from '../utils/presenceSystem';
 
 const ChatUserScreen = ({ route, navigation }) => {
   const { 
@@ -29,6 +31,7 @@ const ChatUserScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const currentUser = useSelector(state => state.user.user);
   const flatListRef = useRef(null);
+  const ACTIVITY_THRESHOLD = 5 * 60 * 1000; // 5분
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -75,31 +78,66 @@ const ChatUserScreen = ({ route, navigation }) => {
     return () => unsubscribe();
   }, [chatId]);
 
+
   const sendMessage = async () => {
     if (inputMessage.trim() === '') return;
+    
+    const messageToSend = inputMessage;
+    setInputMessage(''); // 즉시 입력창 초기화
 
     try {
-      const messageData = {
-        text: inputMessage,
-        senderId: currentUser.uid,
-        timestamp: new Date(),
-        read: false
-      };
+        const isRecipientOnline = await checkUserOnlineStatus(recipientId);
 
-      // 메시지 추가
-      await addDoc(collection(db, `chat/${chatId}/messages`), messageData);
+        console.log('isRecipientOnline:', isRecipientOnline);
+        
+        const messageData = {
+            text: messageToSend,
+            senderId: currentUser.uid,
+            recipientId: recipientId,
+            timestamp: serverTimestamp(),
+            isRead: false
+        };
 
-      // 채팅방 정보 업데이트
-      await updateDoc(doc(db, 'chat', chatId), {
-        'info.lastMessage': inputMessage,
-        'info.lastMessageTime': new Date(),
-        'info.lastSenderId': currentUser.uid
-      });
+        if (isRecipientOnline) {
+            // 사용자가 온라인인 경우 - Firestore에 직접 저장
+            const messagesRef = collection(db, `chat/${chatId}/messages`);
+            await addDoc(messagesRef, messageData);
 
-      setInputMessage('');
+            // 채팅방 정보 업데이트
+            const chatRef = doc(db, 'chat', chatId);
+            await updateDoc(chatRef, {
+                'info.lastMessage': messageToSend,
+                'info.lastMessageTime': serverTimestamp(),
+                'info.lastSenderId': currentUser.uid
+            });
+        } else {
+            // 사용자가 오프라인인 경우 - 서버로 전송
+            const serverMessageData = {
+                message: messageToSend,
+                senderId: currentUser.uid,
+                recipientId: recipientId,
+                chatId: chatId,
+                timestamp: new Date().toISOString(),
+                isRead: false,
+                senderName: currentUser.displayName || '',
+                senderProfileImage: currentUser.photoURL || ''
+            };
+            
+            console.log('서버로 보내는 데이터:', serverMessageData);
+            
+            const response = await axios.post('http://localhost:8000/clone-chat', serverMessageData);
+            
+            if (response.status !== 200) {
+                throw new Error('메시지 전송 실패');
+            }
+        }
+
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('메시지 전송에 실패했습니다.');
+        console.error('메시지 전송 실패:', error);
+        if (error.response) {
+            console.error('에러 응답:', error.response.data);
+        }
+        alert('메시지 전송에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -134,6 +172,8 @@ const ChatUserScreen = ({ route, navigation }) => {
   };
 
   const renderMessage = ({ item, index }) => {
+    const isAIMessage = item.isAI;
+    
     const currentTime = item.timestamp ? formatTime(item.timestamp) : '';
     const previousTime = index > 0 && messages[index - 1].timestamp ? 
       formatTime(messages[index - 1].timestamp) : '';
@@ -144,12 +184,16 @@ const ChatUserScreen = ({ route, navigation }) => {
           <Text style={styles.timeStamp}>{currentTime}</Text>
         ) : null}
         <View style={[
-          styles.messageBubble, 
-          item.senderId === auth.currentUser.uid ? styles.userMessage : styles.otherMessage
+          styles.messageBubble,
+          item.senderId === currentUser.uid ? styles.userMessage : styles.otherMessage,
+          isAIMessage && styles.aiMessage
         ]}>
+          {isAIMessage && (
+            <Text style={styles.aiLabel}>AI 응답</Text>
+          )}
           <Text style={[
             styles.messageText,
-            item.senderId === auth.currentUser.uid ? styles.userMessageText : styles.otherMessageText
+            item.senderId === currentUser.uid ? styles.userMessageText : styles.otherMessageText
           ]}>
             {item.text}
           </Text>
@@ -327,6 +371,14 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 20,
   },
+  aiMessage: {
+    backgroundColor: '#E8F5E9',
+  },
+  aiLabel: {
+    fontSize: 10,
+    color: '#4CAF50',
+    marginBottom: 4,
+  }
 });
 
 export default ChatUserScreen;

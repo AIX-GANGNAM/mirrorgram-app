@@ -10,7 +10,7 @@ const saveNotification = async (notification) => {
   let pushType;
   try {
     // pushType 추출
-    pushType = content.data.pushType;
+    pushType = content.data.screenType;
     console.log("saveNotification > pushType : ", pushType);
 
     const auth = getAuth();

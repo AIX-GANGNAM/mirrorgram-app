@@ -17,10 +17,10 @@ const UserVerificationStep4 = () => {
   const [phone, setPhone] = useState('');
   const navigation = useNavigation();
   const route = useRoute();
-  const { username, name, birthdate } = route.params;
+  const { username, name, birthdate, gender } = route.params;
 
   const handleNext = () => {
-    navigation.navigate('UserVerificationSummary', { username, name, birthdate, phone });
+    navigation.navigate('UserVerificationSummary', { username, name, birthdate, phone, gender });
   };
 
   const autoHyphen = (value) => {
