@@ -5,6 +5,7 @@ import { app } from '../../firebaseConfig'; // Firebase 설정 파일 import
 import { doc, updateDoc, getFirestore, setDoc, getDoc } from 'firebase/firestore';
 
 const PersonaProfile = ({ route, navigation }) => {
+    console.log("PersonaProfile.js > 호출됨");
     const { persona, userId } = route.params;
     // console.log("페르소나: " + JSON.stringify(persona), "유저 아이디: " + userId);
     const personaId = `${userId}_${persona.persona ? persona.persona.toLowerCase() : 'default'}`;  // 영어 persona 값을 사용하여 ID 생성

@@ -7,6 +7,7 @@ import { useIsFocused } from '@react-navigation/native';
 import PostInfo from './PostInfo.js';
 
 const SingleReel = ({ item, index, currentIndex }) => {
+  console.log("SingleReel.js > 호출됨");
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [status, setStatus] = useState({});

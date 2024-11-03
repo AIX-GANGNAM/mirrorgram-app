@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UpdatePushToken from '../notification/UpdatePushToken';
+import NowPushToken from '../notification/NowPushToken';
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginSchema = Yup.object().shape({
@@ -118,6 +119,9 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         const userData = userSnapshot.data();
         dispatch(setUser({ uid: user.uid, ...userData }));
         setIsAuthenticated(true);
+        console.log("로그인 성공 : uid : ", user.uid);
+        UpdatePushToken(user.uid);
+        NowPushToken();
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
         
@@ -125,6 +129,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       }
     } catch (error) {
       console.error(error);
+      NowPushToken();
       alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.');
     }
   };

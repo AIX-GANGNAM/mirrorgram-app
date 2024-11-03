@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 const Header = () => {
+  console.log("home > Header.js > 호출됨");
   const navigation = useNavigation();
 
   return (

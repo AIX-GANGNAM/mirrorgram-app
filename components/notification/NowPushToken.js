@@ -6,6 +6,7 @@ const NowPushToken = async () => {
   try {
     const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
     const nowExpoPushToken = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    console.log("현재 토큰 : ", nowExpoPushToken);
     return nowExpoPushToken;
   } catch (error) {
     console.error("NowPushToken > 토큰 처리 중 오류:", error);
