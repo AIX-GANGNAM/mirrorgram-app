@@ -19,6 +19,7 @@ import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firest
 import { useSelector } from 'react-redux';
 
 const PostDetail = ({ route }) => {
+  console.log("PostDetail.js > 호출됨");
   const { post } = route.params;
   const navigation = useNavigation();
   const [userProfile, setUserProfile] = useState(null);

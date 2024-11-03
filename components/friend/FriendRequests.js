@@ -22,11 +22,11 @@ import {
   doc,
   addDoc,
   deleteDoc,
-  getDoc
+  getDoc,
+  firestore, getFirestore
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 // Firebase 관련 기능 import
-import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc ,firestore, getFirestore} from 'firebase/firestore';
 import { confirmPasswordReset, getAuth } from 'firebase/auth';
 import  sendNotificationToUser from '../notification/SendNotification';
 

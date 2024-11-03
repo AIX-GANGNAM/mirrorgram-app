@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 const EditForm = ({ name, userId, profileImg, birthdate, phone, mbti, personality, onSave, onImagePick }) => {
+  console.log("EditForm.js > 호출됨");
   const [formData, setFormData] = useState({
     name: name || '',
     userId: userId || '',

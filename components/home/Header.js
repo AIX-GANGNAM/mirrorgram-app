@@ -12,6 +12,7 @@ import {
 import { getAuth } from 'firebase/auth';
 
 const Header = () => {
+  console.log("home > Header.js > 호출됨");
   const navigation = useNavigation();
   const [notificationCount, setNotificationCount] = useState(0);
   const db = getFirestore();
