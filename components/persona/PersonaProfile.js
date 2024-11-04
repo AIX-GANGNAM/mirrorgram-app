@@ -5,15 +5,15 @@ import { app } from '../../firebaseConfig'; // Firebase 설정 파일 import
 import { doc, updateDoc, getFirestore, setDoc, getDoc } from 'firebase/firestore';
 
 const PersonaProfile = ({ route, navigation }) => {
-    console.log("PersonaProfile.js > 호출됨");
     const { persona, userId } = route.params;
-    // console.log("페르소나: " + JSON.stringify(persona), "유저 아이디: " + userId);
-    const personaId = `${userId}_${persona.persona ? persona.persona.toLowerCase() : 'default'}`;  // 영어 persona 값을 사용하여 ID 생성
+    //console.log("persona : ",persona); //{"image": "https://storage.googleapis.com/mirrorgram-20713.appspot.com/generate_images/joy_ComfyUI_01046_.png", "interests": [], "persona": "Joy", "title": "기쁨이"}
+    
+    const personaType = persona.persona;
 
     const [interests, setInterests] = useState([]);
     const [newInterest, setNewInterest] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
-    const [newName, setNewName] = useState(persona.name); // 초기값으로 현재 이름 설정
+    const [newName, setNewName] = useState(persona.title);
     const [displayName, setDisplayName] = useState(persona.title);
 
     const db = getFirestore(app);
@@ -22,46 +22,36 @@ const PersonaProfile = ({ route, navigation }) => {
     useEffect(() => {
         navigation.setOptions({
             headerTitle: `${persona.title} 프로필`,
+            // headerTitle: `${newName} 프로필`,
             headerTitleAlign: 'center',
         });
 
         loadProfile();
-        loadInterests();
-    }, [navigation, personaId]);
+    }, [navigation, personaType]);
 
-    // Firestore에서 초기 관심사 로드
-    const loadInterests = async () => {
+    const loadProfile = async () => {
         try {
-            const personaRef = doc(db, 'personas', personaId);
-            const docSnap = await getDoc(personaRef);
+            const userRef = doc(db, 'users', userId);
+            const userDoc = await getDoc(userRef);
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data && data.interests) {
-                    setInterests(data.interests);
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                // persona 배열에서 해당 타입의 페르소나 찾기
+                const personaData = userData.persona.find(p => p.Name === persona.persona);
+                
+                if (personaData) {
+                    if (personaData.INTERESTS) {
+                        setInterests(personaData.INTERESTS);
+                    }
+                    if (personaData.DPNAME) {
+                        setNewName(personaData.DPNAME);
+                        setDisplayName(personaData.DPNAME);
+                    }
                 }
-            } else {
-                console.log('해당 페르소나 문서가 존재하지 않습니다.');
             }
         } catch (error) {
-            console.error('Failed to load interests from Firebase:', error);
-            Alert.alert('오류', '관심사를 불러오지 못했습니다. 다시 시도해주세요.');
-        }
-    };
-
-    // Firebase에서 관심사 업데이트
-    const updateInterestsInFirebase = async (updatedInterests) => {
-        try {
-            const personaRef = doc(db, 'personas', personaId);
-            const docSnap = await getDoc(personaRef);
-            if (docSnap.exists()) {
-                await updateDoc(personaRef, { interests: updatedInterests });
-            } else {
-                await setDoc(personaRef, { interests: updatedInterests });
-            }
-        } catch (error) {
-            console.error('Failed to update interests in Firebase:', error);
-            Alert.alert('오류', '관심사 업데이트에 실패했습니다. 다시 시도해주세요.');
+            console.error('Failed to load profile from Firebase:', error);
+            Alert.alert('오류', '프로필을 불러오지 못했습니다.');
         }
     };
 
@@ -88,58 +78,74 @@ const PersonaProfile = ({ route, navigation }) => {
         updateInterestsInFirebase(updatedInterests);
     };
 
-    // 프로필 로드 함수 
-    const loadProfile = async () => {
+    const updateInterestsInFirebase = async (updatedInterests) => {
         try {
-            const personaRef = doc(db, 'personas', personaId);
-            const docSnap = await getDoc(personaRef);
+            const userRef = doc(db, 'users', userId);
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const updatedPersona = userData.persona.map(p => {
+                    if (p.Name === persona.persona) {
+                        return {
+                            ...p,
+                            INTERESTS: updatedInterests
+                        };
+                    }
+                    return p;
+                });
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data && data.profile && data.profile.name) {
-                    setNewName(data.profile.name);
-                }
+                await updateDoc(userRef, {
+                    persona: updatedPersona
+                });
             }
         } catch (error) {
-            console.error('Failed to load profile from Firebase:', error);
-            Alert.alert('오류', '프로필을 불러오지 못했습니다.');
+            console.error('Failed to update interests in Firebase:', error);
+            Alert.alert('오류', '관심사 업데이트에 실패했습니다. 다시 시도해주세요.');
         }
     };
 
-    // handleSave 함수 수정
     const handleSave = async () => {
         try {
-            // personas 컬렉션 업데이트
-            const personaRef = doc(db, 'personas', personaId);
-            const docSnap = await getDoc(personaRef);
-            
-            if (docSnap.exists()) {
-                await updateDoc(personaRef, {
-                    'profile.name': newName
-                });
-            } else {
-                await setDoc(personaRef, {
-                    profile: {
-                        name: newName
-                    }
-                });
-            }
-
-            // users 컬렉션의 persona 필드 업데이트
             const userRef = doc(db, 'users', userId);
-            await updateDoc(userRef, {
-                [`persona.${persona.persona.toLowerCase()}_title`]: newName
-            });
-                
-            setDisplayName(newName);
-            navigation.setOptions({
-                headerTitle: `${newName} 프로필`,
-            });
+            const userDoc = await getDoc(userRef);
             
-            setModalVisible(false);
-            Alert.alert('성공', '이름이 수정되었습니다.');
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                console.log('Current userData:', userData); // 현재 데이터 확인
+                
+                const updatedPersona = userData.persona.map(p => {
+                    if (p.Name === personaType) {
+                        console.log('Matching persona found:', p); // 매칭된 페르소나 확인
+                        return {
+                            ...p,
+                            DPNAME: newName
+                        };
+                    }
+                    return p;
+                });
+                
+                console.log('Updated persona array:', updatedPersona); // 업데이트된 배열 확인
+                
+                await updateDoc(userRef, {
+                    persona: updatedPersona
+                });
+                
+                // 업데이트 후 데이터 확인
+                const updatedDoc = await getDoc(userRef);
+                console.log('Updated userData:', updatedDoc.data());
+                
+                setDisplayName(newName);
+                navigation.setOptions({
+                    headerTitle: `${newName} 프로필`,
+                });
+                
+                setModalVisible(false);
+                Alert.alert('성공', '이름이 수정되었습니다.');
+            }
         } catch (error) {
             console.error('Failed to update name in Firebase:', error);
+            console.log('Error details:', error.message); // 에러 상세 정보 확인
             Alert.alert('오류', '이름 수정에 실패했습니다.');
         }
     };
