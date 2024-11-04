@@ -14,8 +14,7 @@ import { Ionicons } from '@expo/vector-icons'; // Expo용 vector-icons import
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-const Post = ({post, refreshPosts}) => {
-  console.log("home > Post.js > 호출됨");
+const Post = ({post, refreshPosts, navigation}) => {
    // post가 undefined인 경우를 처리
    if (!post) {
      return null; // 또는 로딩 인디케이터나 에러 메시지를 표시할 수 있습니다.
@@ -96,56 +95,29 @@ const Post = ({post, refreshPosts}) => {
    const addComment = async () => {
      if (newComment.trim() !== '') {
        try {
-         // 기존 댓글 저장 로직
-         const commentInfo = {
-           nick: user.userId,
-           content: newComment,
-           profileImg: user.profileImg,
-           uid: user.uid,
-           createdAt: new Date().toISOString(),
-           subCommentId: [],
-         }
-
          const db = getFirestore();
-         const docRef = await addDoc(collection(db, 'subcomment'), commentInfo);
-         
-         const db2 = getFirestore();
-         const postRef = doc(db2, 'feeds', post.folderId);
+         const postRef = doc(db, 'feeds', post.folderId);
          
          const newCommentData = {
-           subCommentId: docRef.id,
            nick: user.userId,
            content: newComment,
            profileImg: user.profileImg,
            uid: user.uid,
            createdAt: new Date().toISOString(),
+           // subCommentId는 페르소나 댓글일 때만 추가됨
          }
+
          const docSnap = await getDoc(postRef);
-        if (docSnap.exists()) {
-          const currentData = docSnap.data();
-          const currentSubComments = currentData.subCommentId || [];
-          const newSubComments = [...currentSubComments, newCommentData];
+         if (docSnap.exists()) {
+           const currentData = docSnap.data();
+           const currentComments = currentData.subCommentId || [];
+           const newComments = [...currentComments, newCommentData];
 
-          // Firestore 업데이트
-          await updateDoc(postRef, { subCommentId: newSubComments });
-
-          // 로컬 상태 업데이트
-          setComments(prevComments => [...prevComments, newCommentData]);
-          setNewComment('');
-
-
-          await axios.post('http://localhost:8000/store-comment-interaction', {
-            uid: user.uid,
-            content: newComment,
-            interaction_type: 'comment'
-          });
-
-          console.log('댓글이 성공적으로 추가되었습니다.');
-        } else {
-          console.log('문서가 존재하지 않습니다.');
-        }
-
-        
+           await updateDoc(postRef, { subCommentId: newComments });
+           setComments(prevComments => [...prevComments, newCommentData]);
+           setNewComment('');
+           setCommentCount(prev => prev + 1);
+         }
        } catch (error) {
          console.error('댓글 추가 중 오류 발생:', error);
        }
@@ -260,6 +232,7 @@ const Post = ({post, refreshPosts}) => {
         addComment={addComment} 
         post={post} 
         setCommentCount={setCommentCount}
+        navigation={navigation}
       />
     </View>
   );
