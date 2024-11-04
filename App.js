@@ -35,7 +35,7 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
-
+import NewChat from './components/chat/NewChat';
 
 import UserVerificationStep0 from './components/auth/UserVerificationStep0';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
@@ -303,6 +303,7 @@ const App = () => {
                     headerShown: false
                   }}
               />
+              <Stack.Screen name="NewChat" component={NewChat} options={{ headerShown: false }} />
               <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
               <Stack.Screen name="Post" component={Post} />
               <Stack.Screen name="PersonaChat" component={PersonaChat} />

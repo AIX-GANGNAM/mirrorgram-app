@@ -7,12 +7,13 @@ import * as Google from 'expo-auth-session/providers/google';
 import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import app from '../../firebaseConfig';
 import * as Yup from 'yup';
-import { getFirestore, doc, getDoc  , setDoc} from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slice/userSlice.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UpdatePushToken from '../notification/UpdatePushToken';
 import NowPushToken from '../notification/NowPushToken';
+
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginSchema = Yup.object().shape({
@@ -26,51 +27,155 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isAutoLogin, setIsAutoLogin] = useState(false);
   const auth = getAuth(app);
   const db = getFirestore(app);
-
   const dispatch = useDispatch();
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
     clientId: '979781266861-eo6hbft87fqbt615k0a0aj94c287d7dc.apps.googleusercontent.com',
     redirectUri: 'https://auth.expo.io/@realyoon77/mirrorgram',
-  }); 
-
-  const [rememberMe, setRememberMe] = useState(false);
+  });
 
   useEffect(() => {
+    checkAutoLogin();
     loadSavedCredentials();
   }, []);
+
+  const checkAutoLogin = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      const userDataString = await AsyncStorage.getItem('userData');
+      const isAutoLoginEnabled = await AsyncStorage.getItem('isAutoLogin');
+      
+      if (isAutoLoginEnabled === 'true' && authToken && userDataString) {
+        const userData = JSON.parse(userDataString);
+        
+        // Firebase 토큰 유효성 검증
+        const auth = getAuth(app);
+        const currentUser = auth.currentUser;
+        
+        if (currentUser) {
+          dispatch(setUser(userData));
+          setIsAuthenticated(true);
+          navigation.navigate('BottomTab', { screen: 'Home' });
+        } else {
+          await AsyncStorage.multiRemove([
+            'authToken',
+            'userData',
+            'isAutoLogin'
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error('자동 로그인 확인 중 오류 발생:', error);
+      await AsyncStorage.multiRemove([
+        'authToken',
+        'userData',
+        'isAutoLogin'
+      ]);
+    }
+  };
 
   const loadSavedCredentials = async () => {
     try {
       const savedEmail = await AsyncStorage.getItem('savedEmail');
       const savedPassword = await AsyncStorage.getItem('savedPassword');
       const savedRememberMe = await AsyncStorage.getItem('rememberMe');
+      const isAutoLoginEnabled = await AsyncStorage.getItem('isAutoLogin');
       
+      // 로그인 정보 기억하기가 활성화되어 있으면 이메일과 비밀번호 모두 불러오기
       if (savedRememberMe === 'true' && savedEmail && savedPassword) {
         setEmail(savedEmail);
         setPassword(savedPassword);
         setRememberMe(true);
+      }
+
+      if (isAutoLoginEnabled === 'true') {
+        setIsAutoLogin(true);
+      } else {
+        await AsyncStorage.multiRemove([
+          'authToken',
+          'userData',
+          'isAutoLogin'
+        ]);
       }
     } catch (error) {
       console.error('저장된 로그인 정보를 불러오는데 실패했습니다:', error);
     }
   };
 
-  const saveCredentials = async () => {
+  const saveAuthData = async (user, userData) => {
     try {
+      const token = await user.getIdToken();
+      
+      // 로그인 정보 기억하기 처리
       if (rememberMe) {
-        await AsyncStorage.setItem('savedEmail', email);
-        await AsyncStorage.setItem('savedPassword', password);
-        await AsyncStorage.setItem('rememberMe', 'true');
+        await AsyncStorage.multiSet([
+          ['savedEmail', email],
+          ['savedPassword', password],
+          ['rememberMe', 'true']
+        ]);
       } else {
-        await AsyncStorage.removeItem('savedEmail');
-        await AsyncStorage.removeItem('savedPassword');
-        await AsyncStorage.removeItem('rememberMe');
+        await AsyncStorage.multiRemove([
+          'savedEmail',
+          'savedPassword',
+          'rememberMe'
+        ]);
+      }
+
+      // 자동 로그인 처리
+      if (isAutoLogin) {
+        await AsyncStorage.multiSet([
+          ['authToken', token],
+          ['userData', JSON.stringify(userData)],
+          ['isAutoLogin', 'true']
+        ]);
+      } else {
+        await AsyncStorage.multiRemove([
+          'authToken',
+          'userData',
+          'isAutoLogin'
+        ]);
       }
     } catch (error) {
-      console.error('로그인 정보 저장에 실패했습니다:', error);
+      console.error('인증 데이터 저장 중 오류 발생:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      
+      // 로그인 정보 기억하기를 제외한 나머지 데이터만 삭제
+      if (!rememberMe) {
+        await AsyncStorage.multiRemove([
+          'savedEmail',
+          'savedPassword',
+          'rememberMe'
+        ]);
+      }
+      
+      // 자동 로그인 관련 데이터는 항상 삭제
+      await AsyncStorage.multiRemove([
+        'authToken',
+        'userData',
+        'isAutoLogin'
+      ]);
+      
+      dispatch(setUser(null));
+      setIsAuthenticated(false);
+      
+      if (!rememberMe) {
+        setEmail('');
+        setPassword('');
+      }
+      setIsAutoLogin(false);
+      
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('로그아웃 중 오류 발생:', error);
     }
   };
 
@@ -104,32 +209,26 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   };
 
   const handleLogin = async () => {
-    console.log("handleLogin 실행");
     try {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
       const userRef = doc(db, 'users', user.uid);
       const userSnapshot = await getDoc(userRef);
       
-      await saveCredentials();
-    
-      // const updatedPushToken = await UpdatePushToken(user.uid);
-      // console.log("LoginForm > handleLogin > Push 토큰 업데이트 결과:", updatedPushToken);
-
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();
-        dispatch(setUser({ uid: user.uid, ...userData }));
+        const userDataWithId = { uid: user.uid, ...userData };
+        
+        await saveAuthData(user, userDataWithId);
+        dispatch(setUser(userDataWithId));
         setIsAuthenticated(true);
-        console.log("로그인 성공 : uid : ", user.uid);
         UpdatePushToken(user.uid);
         NowPushToken();
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
-        
         navigation.navigate('UserVerificationStep0');
       }
     } catch (error) {
-      console.error(error);
-      NowPushToken();
+      console.error('로그인 오류:', error);
       alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.');
     }
   };
@@ -143,20 +242,16 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         const userCredential = await signInWithCredential(auth, credential);
         const user = userCredential.user;
   
-        // Firestore에 사용자 데이터 추가 (가입 여부 확인 후)
         const userRef = doc(db, 'users', user.uid);
         const userSnapshot = await getDoc(userRef);
   
         if (!userSnapshot.exists()) {
-          // 사용자 문서가 없으면 새로 생성 (즉, 회원가입)
           await setDoc(userRef, {
             email: user.email,
             createdAt: new Date().toISOString(),
-            // 추가적인 사용자 정보가 필요하면 여기에 추가
           });
         }
   
-        // 스토어에 사용자 정보 설정
         dispatch(setUser({ uid: user.uid, email: user.email }));
         setIsAuthenticated(true);
         navigation.navigate('Home');
@@ -166,28 +261,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       alert('Google 로그인에 실패했습니다.');
     }
   };
-  
 
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const { id_token } = googleResponse.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(userCredential => {
-          // 사용자 정보를 이용해 추가적인 로직 처리
-          const user = userCredential.user;
-          setIsAuthenticated(true);
-          // 프로필 데이터 가져오기 및 스토어에 저장
-          fetchUserProfile(user.uid);
-          navigation.navigate('Home');
-        })
-        .catch(error => {
-          console.error('Google 로그인 오류:', error);
-          alert('Google 로그인에 실패했습니다.');
-        });
-    }
-  }, [googleResponse]);
-  
   const handleGithubSignIn = () => {
     alert('기능 개발 예정입니다 ㅠㅠ');
   };
@@ -230,15 +304,27 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.errorText}>{errors.password}</Text>
         }
 
-        <TouchableOpacity 
-          style={styles.rememberContainer}
-          onPress={() => setRememberMe(!rememberMe)}
-        >
-          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-            {rememberMe && <FontAwesome name="check" size={12} color="#fff" />}
-          </View>
-          <Text style={styles.rememberText}>로그인 정보 기억하기</Text>
-        </TouchableOpacity>
+        <View style={styles.checkboxesContainer}>
+          <TouchableOpacity 
+            style={styles.checkboxWrapper}
+            onPress={() => setRememberMe(!rememberMe)}
+          >
+            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+              {rememberMe && <FontAwesome name="check" size={12} color="#fff" />}
+            </View>
+            <Text style={styles.checkboxText}>로그인 정보 기억하기</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.checkboxWrapper}
+            onPress={() => setIsAutoLogin(!isAutoLogin)}
+          >
+            <View style={[styles.checkbox, isAutoLogin && styles.checkboxChecked]}>
+              {isAutoLogin && <FontAwesome name="check" size={12} color="#fff" />}
+            </View>
+            <Text style={styles.checkboxText}>자동 로그인</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={handleLogin}
@@ -280,6 +366,8 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
     </View>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -418,6 +506,19 @@ const styles = StyleSheet.create({
   rememberText: {
     fontSize: 14,
     color: '#657786',
+  },
+  checkboxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',  // 양쪽 끝으로 배치
+    alignItems: 'center',
+    marginBottom: 15,
+    width: '100%',
+    paddingHorizontal: 5,
+  },
+  
+  checkboxWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
