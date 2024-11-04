@@ -5,7 +5,7 @@ import { SEARCHDATA } from '../../data/search';
 const { height, width } = Dimensions.get('window');
 
 const SearchContent = (props) => {
-
+  console.log("SearchContent.js > 호출됨");
   return (
     <View>
       {SEARCHDATA.map((data, index) => {

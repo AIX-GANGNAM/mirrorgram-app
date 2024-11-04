@@ -6,6 +6,7 @@ import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
 
 const UserVerificationStep0 = () => {
+  console.log("UserVerificationStep0.js > 호출됨");
   const [selectedGender, setSelectedGender] = useState(null);
   const navigation = useNavigation();
 

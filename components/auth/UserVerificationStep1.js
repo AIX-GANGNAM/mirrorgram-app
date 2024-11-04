@@ -6,6 +6,7 @@ import { commonStyles } from './commonStyles';
 import { useRoute } from '@react-navigation/native';
 
 const UserVerificationStep1 = () => {
+  console.log("UserVerificationStep1.js > 호출됨");
   const [username, setUsername] = useState('');
   const navigation = useNavigation();
 

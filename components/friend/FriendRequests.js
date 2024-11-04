@@ -13,6 +13,8 @@ import {
   Platform
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+// Firebase 관련 기능 import - 중복 제거하고 하나로 통합
 import { 
   collection,
   query,
@@ -22,14 +24,11 @@ import {
   doc,
   addDoc,
   deleteDoc,
-  getDoc
+  getDoc,
+  getFirestore
 } from 'firebase/firestore';
-import { Ionicons } from '@expo/vector-icons';
-// Firebase 관련 기능 i m p o r t
-import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc ,firestore, getFirestore} from 'firebase/firestore';
-import { confirmPasswordReset, getAuth } from 'firebase/auth';
-import  sendNotificationToUser from '../notification/SendNotification';
-
+import { getAuth } from 'firebase/auth';
+import sendNotificationToUser from '../notification/SendNotification';
 
 const FriendRequests = ({ navigation }) => {  // navigation prop 추가
   console.log("FriendRequests.js 실행");

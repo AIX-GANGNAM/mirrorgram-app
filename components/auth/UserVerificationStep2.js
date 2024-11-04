@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
 
 const UserVerificationStep2 = () => {
+  console.log("UserVerificationStep2.js > 호출됨");
   const [name, setName] = useState('');
   const navigation = useNavigation();
   const route = useRoute();

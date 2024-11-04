@@ -3,6 +3,7 @@ import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, TouchableOp
 import { Ionicons } from '@expo/vector-icons';
 
 const Status = ({ route, navigation }) => {
+  console.log("home > Status.js > 호출됨");
   const { name } = route.params;
   const { image } = route.params;
 

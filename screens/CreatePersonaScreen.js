@@ -68,6 +68,7 @@ const generatePersonaImages = async (formData) => {
 // };
 
 export default function ReelsScreen() {
+  console.log("CreatePersonaScreen 실행")
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generatedPersonas, setGeneratedPersonas] = useState({

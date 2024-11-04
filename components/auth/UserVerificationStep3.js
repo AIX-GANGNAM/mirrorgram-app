@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
 
 const UserVerificationStep3 = () => {
+  console.log("UserVerificationStep3.js > 호출됨");
   const [birthdate, setBirthdate] = useState('');
   const navigation = useNavigation();
   const route = useRoute();

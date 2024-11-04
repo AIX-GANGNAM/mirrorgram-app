@@ -10,6 +10,7 @@ import { commonStyles } from './commonStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 const UserVerificationSummary = ({ setIsAuthenticated }) => {
+  console.log("UserVerificationSummary.js > 호출됨");
   const navigation = useNavigation();
   const route = useRoute();
   const { username, name, birthdate, phone, gender } = route.params;

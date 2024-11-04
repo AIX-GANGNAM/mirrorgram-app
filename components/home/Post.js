@@ -15,6 +15,7 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 
 const Post = ({post, refreshPosts}) => {
+  console.log("home > Post.js > 호출됨");
    // post가 undefined인 경우를 처리
    if (!post) {
      return null; // 또는 로딩 인디케이터나 에러 메시지를 표시할 수 있습니다.

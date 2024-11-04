@@ -5,6 +5,7 @@ import { getAuth } from 'firebase/auth';
 import moment from 'moment';
 
 const ActivityFeed = ({ navigation }) => {
+  console.log("ActivityFeed.js > 호출됨");
   const [activitySections, setActivitySections] = useState([]);
 
   useEffect(() => {
