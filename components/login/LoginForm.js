@@ -507,6 +507,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#657786',
   },
+  checkboxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',  // 양쪽 끝으로 배치
+    alignItems: 'center',
+    marginBottom: 15,
+    width: '100%',
+    paddingHorizontal: 5,
+  },
+  
+  checkboxWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
 
 export default LoginForm;
