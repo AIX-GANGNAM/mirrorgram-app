@@ -54,6 +54,13 @@ const Post = ({post, refreshPosts}) => {
        if (!post.userId) return;
 
        try {
+         // personaprofileImage가 있으면 그것을 사용
+         if (post.personaprofileImage) {
+           setUserProfileImg(post.personaprofileImage);
+           return;
+         }
+
+         // personaprofileImage가 없으면 users 컬렉션에서 프로필 이미지 가져오기
          const db = getFirestore();
          const userDoc = await getDoc(doc(db, 'users', post.userId));
          
@@ -66,7 +73,7 @@ const Post = ({post, refreshPosts}) => {
      };
 
      fetchUserProfile();
-   }, [post.userId]);
+   }, [post.userId, post.personaprofileImage]);
 
    const handleLike = async () => {
      try {
@@ -200,7 +207,7 @@ const Post = ({post, refreshPosts}) => {
               setShowFullCaption={setShowFullCaption} 
             />
 
-            {/* 이미지가 있을 경우에만 표시 */}
+            {/* 이미지가 있을 경우에만 ��시 */}
             {post.image && (
               <View style={styles.imageWrapper}>
                 <PostImage post={post} />

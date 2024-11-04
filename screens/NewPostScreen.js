@@ -31,13 +31,17 @@ const NewPostScreen = ({ navigation }) => {
         (docSnapshot) => {
           if (docSnapshot.exists()) {
             const userData = docSnapshot.data();
-            // setUserDataState(docSnapshot.data());
-            setPersonas([
-              { type: 'joy', title: userData.persona?.joy_title || '기쁨이', image: userData.persona?.joy },
-              { type: 'anger', title: userData.persona?.anger_title || '화남이', image: userData.persona?.anger },
-              { type: 'sadness', title: userData.persona?.sadness_title || '슬픔이', image: userData.persona?.sadness },
-              { type: 'fear', title: userData.persona?.fear_title || '걱정이', image: userData.persona?.fear }
-            ]);
+            if (userData.persona && Array.isArray(userData.persona)) {
+              const personaList = userData.persona
+                .filter(p => p.Name.toLowerCase() !== 'clone')
+                .map(p => ({
+                  type: p.Name.toLowerCase(),
+                  title: p.DPNAME || p.Name,
+                  image: p.IMG
+                }));
+              console.log('Persona List:', personaList);
+              setPersonas(personaList);
+            }
           }
         }
       );
