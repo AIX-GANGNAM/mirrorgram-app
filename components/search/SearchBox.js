@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 const { height, width } = Dimensions.get('window');
 
 const SearchBox = () => {
+  console.log("SearchBox.js > 호출됨");
   return (
     <View>
       <TouchableOpacity style={styles.searchContainer}>

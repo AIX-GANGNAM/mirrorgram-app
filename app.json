@@ -43,11 +43,16 @@
       }
     },
     "android": {  
+      
       "permissions": [
         "WAKE_LOCK",
         "NOTIFICATIONS",
         "BACKGROUND_FETCH",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "SYSTEM_ALERT_WINDOW",
+        "USE_FULL_SCREEN_INTENT",
+        "FOREGROUND_SERVICE",
+        "VIBRATE"
       ],
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

@@ -108,7 +108,7 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     }
 
     const response = await axios.post(
-      'http://192.168.0.229:8000/notification', 
+      'http://192.168.0.16:8000/notification', 
       requestData,
       {
         headers: {

@@ -8,6 +8,7 @@ import { USERS, PROFILE } from '../../data/users';
 import { useNavigation } from '@react-navigation/native';
 
 const Stories = () => {
+  console.log("home > Stories.js > 호출됨");
   const	navigation = useNavigation();
 
   return(

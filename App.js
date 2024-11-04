@@ -60,6 +60,7 @@ import { serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { doc, collection } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
+import NowPushToken from './components/notification/NowPushToken';
 
 
 Notifications.setNotificationHandler({
@@ -67,8 +68,6 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true ,
-    priority: 'high',  // 이 부분 추가
-    importance: 'high' // 이 부분 추가
   }),
 });
 
@@ -78,56 +77,22 @@ const App = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
   const notificationListener = useRef();
   const responseListener = useRef();
   
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            const userData = await AsyncStorage.getItem('user');
-            if (userData) {
-              setIsAuthenticated(true);
-            }
-          } else {
-            await AsyncStorage.removeItem('user');
-            setIsAuthenticated(false);
-          }
-          setLoading(false);
-        });
 
-        // 저장된 로그인 정보 확인
-        const savedUser = await AsyncStorage.getItem('user');
-        if (savedUser) {
-          setIsAuthenticated(true);
-        }
-
-        return () => unsubscribe();
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       registerForPushNotificationsAsync();
+      NowPushToken();
     };
     
     initializeApp();
     // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
       try {
-        // 알림 우선순위 설정 추가
-        notification.request.content.priority = 'high';
-        notification.request.content.importance = 'high'; 
         await saveNotification(notification);
         console.log("알림 저장 성공");
       } catch (error) {
@@ -152,10 +117,6 @@ const App = () => {
       const { content } = response.notification.request;
       console.log("알림 터치됨:", content.data.screenType);
       console.log("알림 터치됨:", content.data.URL);
-
-      // priority 설정 추가
-      content.priority = 'high';
-      content.importance = 'high';
 
       GoToScreen({response: content}); // 터치하면 해당 화면으로 이동
       
@@ -277,13 +238,7 @@ const App = () => {
       </Stack.Navigator>
     );
   };
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
+
   return(
     <Provider store={store}>
       <NavigationContainer ref={navigationRef}>
@@ -374,17 +329,34 @@ const App = () => {
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
 
+
+
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.HIGH,
+    
+    await Notifications.setNotificationChannelAsync('channel_high', {
+      // 알림 및 진동이 울림, 화면에 표시됨, 
+      name: 'channel_high',
+      importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       enableLights: true,
-    enableVibrate: true,
-    showBadge: true,
-    sound: 'default'
+      enableVibrate: true,
+      showBadge: true,
+      sound: 'default'
+    });
+
+    await Notifications.setNotificationChannelAsync('channel_low', {
+      // 알림 및 진동이 울리지 않음
+      name: 'channel_low',
+      importance: Notifications.AndroidImportance.LOW,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      enableLights: true,
+      enableVibrate: true,
+      showBadge: true,
+      sound: 'default'
     });
   }
 
@@ -392,6 +364,7 @@ async function registerForPushNotificationsAsync() {
     console.log("App.js > registerForPushNotificationsAsync > 디바이스 확인");
     console.log("실제 디바이스 인가?? : ",Device.isDevice);
     console.log("디바이스 이름 : ",Constants.deviceName);
+
 
     // 기존 푸시 알림 권한 상태를 확인
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
