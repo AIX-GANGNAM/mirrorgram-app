@@ -7,7 +7,7 @@ const Caption = ({post, showFullCaption, setShowFullCaption}) => {
     return(
      <View style={{marginLeft: 12, marginBottom: 5}}>
        <Text style={{color:'black'}}>
-         <Text style={{fontWeight:'800' , fontSize: 16}}>{post.nick} </Text>
+         {/* <Text style={{fontWeight:'800' , fontSize: 16}}>{post.nick} </Text> */}
          <Text>
            {showFullCaption ? post.caption : post.caption.slice(0, maxLength)}
            {isLongCaption && !showFullCaption && '... '}
