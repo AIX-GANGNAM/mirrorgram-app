@@ -25,7 +25,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
-// Firebase 관련 기능 import
+// Firebase 관련 기능 i m p o r t
 import { collection,query,where, getDocs,updateDoc,doc,addDoc,deleteDoc ,firestore, getFirestore} from 'firebase/firestore';
 import { confirmPasswordReset, getAuth } from 'firebase/auth';
 import  sendNotificationToUser from '../notification/SendNotification';
