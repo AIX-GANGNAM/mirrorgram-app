@@ -1,5 +1,5 @@
 import axios from 'axios';
-import firestore from '@react-native-firebase/firestore';
+// import firestore from '@react-native-firebase/firestore';
 
 const findProfileImageFromUid = async (uid) => {
   console.log("보내는 사람의 대표 이미지 찾기");
