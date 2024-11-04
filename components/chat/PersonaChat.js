@@ -31,6 +31,7 @@ import { createPersonaPairName, PERSONA_ORDER } from '../../utils/utils'; // 유
 import axios from 'axios';
 
 const PersonaChat = ({ route, navigation }) => {
+  console.log("PersonaChat.js > 호출됨");
   const { pairName: initialPairName, personas } = route.params; // pairName 예: "Fear_Joy"
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);

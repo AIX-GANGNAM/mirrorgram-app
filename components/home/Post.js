@@ -53,7 +53,12 @@ const Post = ({post, refreshPosts, navigation}) => {
        if (!post.userId) return;
 
        try {
-         const db = getFirestore();
+         // personaprofileImage가 있으면 그것을 사용
+         if (post.personaprofileImage) {
+           setUserProfileImg(post.personaprofileImage);
+           return;
+         }
+         
          const userDoc = await getDoc(doc(db, 'users', post.userId));
          
          if (userDoc.exists()) {
@@ -65,7 +70,7 @@ const Post = ({post, refreshPosts, navigation}) => {
      };
 
      fetchUserProfile();
-   }, [post.userId]);
+   }, [post.userId, post.personaprofileImage, db]);
 
    const handleLike = async () => {
      try {

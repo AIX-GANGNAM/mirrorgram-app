@@ -35,7 +35,7 @@ import Status from './components/home/Status';
 import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
-
+import NewChat from './components/chat/NewChat';
 
 import UserVerificationStep0 from './components/auth/UserVerificationStep0';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
@@ -59,6 +59,8 @@ import CreatePersonaPostScreen from './screens/CreatePersonaPostScreen';
 import { serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { doc, collection } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { navigationRef } from './utils/navigationRef';
+import NowPushToken from './components/notification/NowPushToken';
 
 
 Notifications.setNotificationHandler({
@@ -69,8 +71,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// NavigationContainer에 대한 ref 생성
-const navigationRef = createNavigationContainerRef();
+
 
 const App = () => {
   const Tab = createBottomTabNavigator();
@@ -78,30 +79,22 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
+  
+
+
 
   useEffect(() => {
     const initializeApp = async () => {
       registerForPushNotificationsAsync();
+      NowPushToken();
     };
     
     initializeApp();
-
-    const personaImages = {
-      "Disgust": "https://inabooth.io/_next/image?url=https%3A%2F%2Fd19bi7owzxc0m2.cloudfront.net%2Fprod%2Fcharacter_files%2F19dec92d-10be-4f5a-aad9-c68846c3d4b7.jpeg&w=3840&q=75",
-      "Joy": "https://img1.daumcdn.net/thumb/R1280x0/?fname=http://t1.daumcdn.net/brunch/service/user/gI8/image/nl4J4OCc7QyIoC8rBK8Fn1kYVCc.jpg",
-      "Sadness": "https://d3ihz389yobwks.cloudfront.net/1597427709625898634218810800.jpg",
-      "Anger": "https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/201506/28/htm_20150628083828504.jpg",
-      "Fear": "https://img.newspim.com/news/2017/01/31/1701311632536400.jpg",
-      // 다른 persona들에 대한 이미지 URL 추가
-    };
-
-
-
     // 알림 수신 시 실행되는 함수
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
       try {
         await saveNotification(notification);
-        console.log("알림 저장 공");
+        console.log("알림 저장 성공");
       } catch (error) {
         console.error("알림 저장 중 오류 발생:", error);
       }
@@ -119,36 +112,14 @@ const App = () => {
       console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
     });
 
-    const defaultImage = "https://example.com/default-image.jpg";
-
     // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const { content } = response.notification.request;
       console.log("알림 터치됨:", content.data.screenType);
-      const screenType = content.data.screenType;
+      console.log("알림 터치됨:", content.data.URL);
 
-      // navigationRef가 준비되었고 persona가 존재하는 경우에만 네비게이션 실행
-      if (navigationRef.isReady()) {
-        console.log("navigationRef.isReady() 참");
-        switch (screenType) {
-          case 'PLAYGROUND':
-            console.log("PLAYGROUND 케이스 실행");
-            navigationRef.navigate('PlayGround');
-            break;
-            case 'PLAYGROUND':
-              console.log("친구 리스트 케이스 실행");
-              navigationRef.navigate('FriendRequests');
-              break;
-          case 'NEW_POST':
-            navigationRef.navigate('BottomTab', {
-              screen: 'NewPost',
-            });
-            break;
-          default:
-            console.warn('알 수 없는 화면 타입:', screenType);
-            break;
-        }
-      }
+      GoToScreen({response: content}); // 터치하면 해당 화면으로 이동
+      
     });
 
     // 사용자 활동 상태 추적 추가
@@ -174,13 +145,6 @@ const App = () => {
           console.error('활동 상태 업데이트 실패:', error);
         }
       };
-
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
-    
-    };
 
       // 1분마다 활동 시간 업데이트
       const activityInterval = setInterval(updateActivity, 60000);
@@ -339,6 +303,7 @@ const App = () => {
                     headerShown: false
                   }}
               />
+              <Stack.Screen name="NewChat" component={NewChat} options={{ headerShown: false }} />
               <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
               <Stack.Screen name="Post" component={Post} />
               <Stack.Screen name="PersonaChat" component={PersonaChat} />
@@ -365,19 +330,42 @@ const App = () => {
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
 
+
+
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.HIGH,
+    
+    await Notifications.setNotificationChannelAsync('channel_high', {
+      // 알림 및 진동이 울림, 화면에 표시됨, 
+      name: 'channel_high',
+      importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      enableLights: true,
+      enableVibrate: true,
+      showBadge: true,
+      sound: 'default'
+    });
+
+    await Notifications.setNotificationChannelAsync('channel_low', {
+      // 알림 및 진동이 울리지 않음
+      name: 'channel_low',
+      importance: Notifications.AndroidImportance.LOW,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      enableLights: true,
+      enableVibrate: true,
+      showBadge: true,
+      sound: 'default'
     });
   }
 
   if (Device.isDevice) {
     console.log("App.js > registerForPushNotificationsAsync > 디바이스 확인");
-    console.log("실제 디��이스 인가?? : ",Device.isDevice);
+    console.log("실제 디바이스 인가?? : ",Device.isDevice);
     console.log("디바이스 이름 : ",Constants.deviceName);
+
 
     // 기존 푸시 알림 권한 상태를 확인
     const { status: existingStatus } = await Notifications.getPermissionsAsync();

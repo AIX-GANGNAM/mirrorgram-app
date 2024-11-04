@@ -60,7 +60,7 @@ const FriendHeader = ({ onTabChange, activeTab }) => {
           style={styles.notificationButton}
         >
           <View>
-            <Ionicons name="people-outline" size={24} color="#000" />
+            <Ionicons name="people-outline" size={34} color="#000" />
             {pendingRequests > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{pendingRequests}</Text>

@@ -14,6 +14,7 @@ import ProgressBar from './ProgressBar';
 import { commonStyles } from './commonStyles';
 
 const UserVerificationStep4 = () => {
+  console.log("UserVerificationStep4.js > 호출됨");
   const [phone, setPhone] = useState('');
   const navigation = useNavigation();
   const route = useRoute();

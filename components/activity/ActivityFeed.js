@@ -5,6 +5,7 @@ import { getAuth } from 'firebase/auth';
 import moment from 'moment';
 
 const ActivityFeed = ({ navigation }) => {
+  console.log("ActivityFeed.js > 호출됨");
   const [activitySections, setActivitySections] = useState([]);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ const ActivityFeed = ({ navigation }) => {
       }
 
       const userEmail = currentUser.email;
-      const pushTypes = ['friend', 'like', 'comment', 'follow'];
+      const pushTypes = ['friend', 'like', 'comment', 'PLAYGROUND'];
       let allNotifications = [];
 
       for (const pushType of pushTypes) {
@@ -100,11 +101,11 @@ const ActivityFeed = ({ navigation }) => {
     switch (pushType) {
       case 'friend':
         return `${whoSendMessage}님이 친구 요청을 보냈습니다.`;
-      case 'like':
-        return `${whoSendMessage}님이 회원님의 게시물을 좋아합니다.`;
-      case 'comment':
-        return `${whoSendMessage}님이 회원님의 게시물에 댓글을 남겼습니다.`;
-      case 'follow':
+      case 'FRIEND_REJECT':
+        return `${whoSendMessage}님이 친구 요청을 거절했습니다.`;
+      case 'FRIEND_ACCEPT':
+        return `${whoSendMessage}님이 친구 요청을 수락했습니다.`;
+      case 'PLAYGROUND':
         return `${whoSendMessage}님이 회원님을 팔로우하기 시작했습니다.`;
       default:
         return '새로운 알림이 있습니다.';

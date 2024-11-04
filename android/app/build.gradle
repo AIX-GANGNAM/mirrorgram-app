@@ -179,6 +179,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-database'
 
     implementation 'com.facebook.soloader:soloader:0.10.4+'
+    
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
