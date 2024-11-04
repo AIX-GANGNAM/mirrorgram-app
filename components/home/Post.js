@@ -60,8 +60,6 @@ const Post = ({post, refreshPosts}) => {
            return;
          }
 
-         // personaprofileImage가 없으면 users 컬렉션에서 프로필 이미지 가져오기
-         const db = getFirestore();
          const userDoc = await getDoc(doc(db, 'users', post.userId));
          
          if (userDoc.exists()) {
@@ -73,7 +71,7 @@ const Post = ({post, refreshPosts}) => {
      };
 
      fetchUserProfile();
-   }, [post.userId, post.personaprofileImage]);
+   }, [post.userId, post.personaprofileImage, db]);
 
    const handleLike = async () => {
      try {
@@ -207,7 +205,7 @@ const Post = ({post, refreshPosts}) => {
               setShowFullCaption={setShowFullCaption} 
             />
 
-            {/* 이미지가 있을 경우에만 ��시 */}
+            {/* 이미지가 있을 경우에만 표시 */}
             {post.image && (
               <View style={styles.imageWrapper}>
                 <PostImage post={post} />
