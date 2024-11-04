@@ -59,7 +59,9 @@ const Post = ({post, refreshPosts}) => {
            setUserProfileImg(post.personaprofileImage);
            return;
          }
-         
+
+         // personaprofileImage가 없으면 users 컬렉션에서 프로필 이미지 가져오기
+         const db = getFirestore();
          const userDoc = await getDoc(doc(db, 'users', post.userId));
          
          if (userDoc.exists()) {
