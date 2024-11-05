@@ -18,7 +18,7 @@ import { db, auth } from '../firebaseConfig';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { checkUserOnlineStatus } from '../utils/presenceSystem';
-
+// 네비게이션 프로필 친구 친구리스트 메시지 보내기 누르면 나오는곳
 const ChatUserScreen = ({ route, navigation }) => {
   const { 
     chatId, 

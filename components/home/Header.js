@@ -99,16 +99,16 @@ const Header = () => {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => navigation.navigate('Activity')}
-        >
-          <Ionicons name="heart-outline" size={26} color="#1A1A1A" />
-          {notificationCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{notificationCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        style={styles.iconButton}
+        onPress={() => navigation.navigate('Activity')}
+      >
+        <Ionicons name="notifications-outline" size={26} color="#1A1A1A" />
+        {notificationCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{notificationCount}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.iconButton}
