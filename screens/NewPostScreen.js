@@ -31,13 +31,17 @@ const NewPostScreen = ({ navigation }) => {
         (docSnapshot) => {
           if (docSnapshot.exists()) {
             const userData = docSnapshot.data();
-            // setUserDataState(docSnapshot.data());
-            setPersonas([
-              { type: 'joy', title: userData.persona?.joy_title || '기쁨이', image: userData.persona?.joy },
-              { type: 'anger', title: userData.persona?.anger_title || '화남이', image: userData.persona?.anger },
-              { type: 'sadness', title: userData.persona?.sadness_title || '슬픔이', image: userData.persona?.sadness },
-              { type: 'fear', title: userData.persona?.fear_title || '걱정이', image: userData.persona?.fear }
-            ]);
+            if (userData.persona && Array.isArray(userData.persona)) {
+              const personaList = userData.persona
+                .filter(p => p.Name.toLowerCase() !== 'clone')
+                .map(p => ({
+                  type: p.Name.toLowerCase(),
+                  title: p.DPNAME || p.Name,
+                  image: p.IMG
+                }));
+              console.log('Persona List:', personaList);
+              setPersonas(personaList);
+            }
           }
         }
       );
@@ -122,14 +126,14 @@ const NewPostScreen = ({ navigation }) => {
 
     try {
         // UUID 생성
-        const uuid = generateUUID(); // 피드에 대한 UUID 생성
+        const feedUuid = generateUUID(); // 피드에 대한 UUID 생성
   
         // userData state를 사용하여 페르소나 이미지 URL 접근
         // const personaImage = userDataState.persona?.[persona.type.toLowerCase()];
   
         // POST 요청으로 데이터 전달
         const response = await axios.post('http://10.0.2.2:8000/feedAutomatic', {
-          id: uuid, // 피드 uid
+          id: feedUuid, // 피드 uid
           parentNick: user.userId, // 부모 닉네임
           userId: user.uid, // 부모 uid,
         });
@@ -144,7 +148,7 @@ const NewPostScreen = ({ navigation }) => {
         console.log('피드 생성 결과:', response.data.message);
         // name=custom, dpname으로 한다
         // 피드 생성 알림 보내기(누구에게, 내가, 피드 uid, 화면 위치)
-        sendNotificationToUser(user.uid, user.uid, uuid, 'FEED_GENERATION');
+        sendNotificationToUser(user.uid, user.uid, 'FEED_GENERATION', feedUuid);
         //refreshPosts(); //(보류)
       clearInterval(progressInterval);
       setGenerationProgress(100);
@@ -238,6 +242,7 @@ const NewPostScreen = ({ navigation }) => {
       
       if (response.status === 200) {
         console.log('페르소나 피드 자동생성이 완료되었습니다.');
+        sendNotificationToUser(user.uid, user.uid, uuid, 'FEED_GENERATION');
         alert('페르소나 피드 자동생성이 완료되었습니다.');
       } else {
         console.error('피드 생성 중 문제가 발생했습니다.');

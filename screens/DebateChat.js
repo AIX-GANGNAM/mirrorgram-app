@@ -15,7 +15,7 @@ import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const DebateChat = ({ route, navigation }) => {
-  const { debateId } = route.params;
+  const { debateId, title = '토론', personaName = '' } = route?.params || {};
   const [messages, setMessages] = useState([]);
   const [debateInfo, setDebateInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,55 +24,58 @@ const DebateChat = ({ route, navigation }) => {
   const db = getFirestore();
   
   const user = useSelector(state => state.user.user);
-  // 페르소나 정보 업데이트
-  const personas = {
-    Joy: { 
-      name: '기쁨이', 
-      color: '#FFD93D', 
-      image: user.persona.joy 
-    },
-    Anger: { 
-      name: '화남이', 
-      color: '#FF6B6B', 
-      image: user.persona.anger 
-    },
-    Sadness: { 
-      name: '슬픔이', 
-      color: '#4DABF7', 
-      image: user.persona.sadness 
-    },
-    Fear: { 
-      name: '선비', 
-      color: '#748FFC', 
-      image: user.persona.serious 
-    },
-    Disgust: { 
-      name: '까칠이', 
-      color: '#69DB7C', 
-      image: user.persona.disgust 
-    },
-    Moderator: { 
-      name: '진행자', 
-      color: '#868E96',
-      image: null // 진행자는 기본 아이콘 사용
+  // personas 객체 수정
+  const getPersonaInfo = (speakerType) => {
+    // user.persona 배열에서 해당하는 페르소나 찾기
+    const personaData = user.persona.find(p => p.Name === speakerType);
+    
+    const defaultColors = {
+      Joy: '#FFD93D',
+      Anger: '#FF6B6B',
+      Sadness: '#4DABF7',
+      custom: '#5271FF',
+      clone: '#69DB7C',
+      Moderator: '#868E96'
+    };
+
+    if (!personaData) {
+      return {
+        name: '진행자',
+        color: defaultColors.Moderator,
+        image: null,
+        dpname: '진행자'
+      };
     }
+
+    return {
+      name: personaData.DPNAME,
+      color: defaultColors[speakerType],
+      image: personaData.IMG || null, // 이미지가 없을 경우 null
+      dpname: personaData.DPNAME
+    };
   };
 
-
-
   useEffect(() => {
+    console.log('DebateChat params:', route?.params);
     const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    if (!currentUser || !debateId) {
+      console.error('Required params missing:', { currentUser, debateId });
+      navigation.goBack();
+      return;
+    }
 
-    // 토론 정보 가져오기
+    // 토론 정보 가져오기 (personachat/{uid}/debates/{debateId})
     const debateRef = doc(db, 'personachat', currentUser.uid, 'debates', debateId);
     const unsubscribeDebate = onSnapshot(debateRef, (doc) => {
       if (doc.exists()) {
+        console.log('Debate data:', doc.data());
         setDebateInfo(doc.data());
+      } else {
+        console.error('No debate found:', debateId);
       }
     });
 
-    // 메시지 가져오기
+    // 메시지 가져오기 (personachat/{uid}/debates/{debateId}/messages)
     const messagesRef = collection(db, 'personachat', currentUser.uid, 'debates', debateId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
     
@@ -80,8 +83,13 @@ const DebateChat = ({ route, navigation }) => {
       const messageList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        speaker: doc.data().speaker,
+        speakerName: doc.data().speakerName,
+        text: doc.data().text,
+        messageType: doc.data().messageType,
         timestamp: doc.data().timestamp?.toDate()
       }));
+      console.log('Messages loaded:', messageList.length);
       setMessages(messageList);
       setLoading(false);
     });
@@ -109,7 +117,7 @@ const DebateChat = ({ route, navigation }) => {
 
   // renderMessage 함수 수정
   const renderMessage = ({ item }) => {
-    const persona = personas[item.speaker];
+    const personaInfo = getPersonaInfo(item.speaker);
     const isModeratorMessage = item.speaker === 'Moderator';
 
     if (isModeratorMessage) {
@@ -132,19 +140,21 @@ const DebateChat = ({ route, navigation }) => {
     return (
       <View style={styles.messageContainer}>
         <View style={styles.messageSender}>
-          <View style={[styles.personaIcon, { backgroundColor: persona.color }]}>
-            {persona.image ? (
+          <View style={[styles.personaIcon, { backgroundColor: personaInfo.color }]}>
+            {personaInfo.image ? (
               <Image 
-                source={{ uri: persona.image }} 
+                source={{ uri: personaInfo.image }} 
                 style={styles.personaImage}
               />
             ) : (
-              <Text style={styles.personaEmoji}>🎯</Text>
+              <Text style={styles.personaEmoji}>
+                {item.speaker === 'custom' ? '👤' : '🎭'}
+              </Text>
             )}
           </View>
-          <Text style={styles.senderName}>{persona.name}</Text>
+          <Text style={styles.senderName}>{personaInfo.dpname}</Text>
         </View>
-        <View style={[styles.messageBubble, { borderLeftColor: persona.color }]}>
+        <View style={[styles.messageBubble, { borderLeftColor: personaInfo.color }]}>
           <Text style={styles.messageText}>{item.text}</Text>
           {item.messageType === 'analysis' && (
             <View style={styles.analysisTag}>
@@ -185,10 +195,10 @@ const DebateChat = ({ route, navigation }) => {
           <Text style={styles.resultTitle}>토론 결과</Text>
           <View style={styles.resultContent}>
             <Text style={styles.resultWinner}>
-              최종 선택: {personas[debateInfo.finalSender]?.name}
+              최종 선택: {getPersonaInfo(debateInfo.selectedPersona)?.name || '알 수 없음'}
             </Text>
-            <Text style={styles.resultMessage}>{debateInfo.finalMessage}</Text>
-            <Text style={styles.resultReason}>{debateInfo.selectionReason}</Text>
+            <Text style={styles.resultMessage}>{debateInfo.finalComment}</Text>
+            <Text style={styles.resultReason}>{debateInfo.reason}</Text>
           </View>
         </View>
       )}

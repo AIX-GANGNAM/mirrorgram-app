@@ -135,9 +135,9 @@ const ChatUserScreen = ({ route, navigation }) => {
             }
             else {
               console.log("서버로 보내는 데이터 전송 성공:", response);
-              targetUserUid, fromUid, URL, inputScreenType
-              sendNotificationToUser(currentUser.uid,"clone" , chatId, "ChatUserScreen"); // 이건 나에게 보내기
-              sendNotificationToUser(recipientId,currentUser.uid, chatId, "ChatUserScreen"); // 이건 상대방에게 보내기
+              // 알림 보내기 (누구에게, 내가, 어떤 화면, 화면의 정확한 위치)
+              sendNotificationToUser(currentUser.uid,"clone", "ChatUserScreen", chatId); // 이건 나에게 보내기
+              sendNotificationToUser(recipientId,currentUser.uid, "ChatUserScreen", chatId); // 이건 상대방에게 보내기
             }
         }
 

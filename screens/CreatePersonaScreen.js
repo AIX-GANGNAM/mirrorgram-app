@@ -1,4 +1,4 @@
-import { useState, useRef ,useCallback } from 'react';
+import { useState, useRef ,useCallback, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated, PanResponder, ScrollView, TextInput, SafeAreaView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Alert } from 'react-native';
 import { getAuth } from 'firebase/auth';
-
+import { useNavigation } from '@react-navigation/native';
 // 이미지 생성 API 호출
 const generatePersonaImages = async (formData) => {
   try {
@@ -44,31 +44,30 @@ const generatePersonaImages = async (formData) => {
 };
 
 // 성격 생성 API 호출
-// const generatePersonaDetails = async (customPersona) => {
-//   try {
-//     const auth = getAuth();
-//     const user = auth.currentUser;
+const generatePersonaDetails = async (customPersona) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
     
-//     if (!user) {
-//       throw new Error('사용자 인증 정보가 없습니다.');
-//     }
+    if (!user) {
+      throw new Error('사용자 인증 정보가 없습니다.');
+    }
 
-//     const response = await axios.post(`http://10.0.2.2:8000/generate-personality`, {
-//       uid: user.uid,
-//       name: customPersona.name,
-//       personality: customPersona.personality,
-//       speechStyle: customPersona.speechStyle
-//     });
-//     return response.data.details;
-//   } catch (error) {
-//     console.error('Error generating persona details:', error);
-//     Alert.alert("오류", "페르소나 성격 생성 중 오류가 발생했습니다.");
-//     throw error;
-//   }
-// };
+    const response = await axios.post('http://localhost:8000/generate-personality', {
+      uid: user.uid,
+      name: customPersona.name,
+      personality: customPersona.personality,
+      speechStyle: customPersona.speechStyle
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error generating persona details:', error);
+    throw error;
+  }
+};
 
-export default function ReelsScreen() {
-  console.log("CreatePersonaScreen 실행")
+export default function CreatePersonaScreen() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generatedPersonas, setGeneratedPersonas] = useState({
@@ -87,9 +86,9 @@ export default function ReelsScreen() {
   });
   const [customModalVisible, setCustomModalVisible] = useState(false);
   const [customPersona, setCustomPersona] = useState({
-    name: '',
-    personality: '',
-    speechStyle: ''
+    name: personaDetails.custom.name || '',
+    personality: personaDetails.custom.personality || '',
+    speechStyle: personaDetails.custom.speechStyle || ''
   });
   const [selectedPersonaType, setSelectedPersonaType] = useState(null);
   const [selectModalVisible, setSelectModalVisible] = useState(false);
@@ -102,7 +101,7 @@ export default function ReelsScreen() {
     anger: {
       name: '화남이',
       personality: '정의감이 강하고 자신의 의견을 분명히 표현하는 성격입니다.',
-      speechStyle: '강렬하고 직설적인 말투, 감정을 숨기지 않고 표현합니다!',
+      speechStyle: '강렬하 직설적인 말투, 감정을 숨기지 않고 표현합니다!',
     },
     sadness: {
       name: '슬픔이',
@@ -110,6 +109,50 @@ export default function ReelsScreen() {
       speechStyle: '부드럽고 조용한 말투로 진솔하게 대화해요..ㅠㅠ',
     }
   });
+
+  const navigation = useNavigation();
+  // 단계 관리를 위한 state 추가
+  const [currentStep, setCurrentStep] = useState(1); // 1: 페르소나 선택, 2: 이미지 생성
+  const [progress, setProgress] = useState(0); // 프로그레스 바를 위한 상태
+
+  // 프로그레스 바 애니메이션을 위한 ref
+  const progressAnimation = useRef(new Animated.Value(0)).current;
+
+  // 프로그레스 바 업데이트 함수
+  const updateProgress = useCallback((value) => {
+    Animated.timing(progressAnimation, {
+      toValue: value,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+    setProgress(value);
+  }, []);
+
+  // 다음 단계로 이동
+  const handleNext = useCallback(() => {
+    // 나만의 페르소나 입��값 확인
+    if (!personaDetails.custom.name || 
+        !personaDetails.custom.personality || 
+        !personaDetails.custom.speechStyle) {
+      Alert.alert(
+        "입력 필요",
+        "나만의 페르소나의 이름, 성격, 말투를 모두 입력해주세요.",
+        [{ text: "확인" }]
+      );
+      return;
+    }
+
+    setCurrentStep(2);
+    updateProgress(0.5);
+  }, [personaDetails.custom]);
+
+  // 이전 단계로 이동
+  const handleBack = useCallback(() => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+      updateProgress(0);
+    }
+  }, [currentStep]);
 
   const pickImage = async () => {
     // 권한 요청
@@ -153,89 +196,53 @@ export default function ReelsScreen() {
 
   // handleGeneratePersonas 함수 수정
   const handleGeneratePersonas = async (skipImage) => {
-
     if (!personaDetails.custom.name) {
       Alert.alert("알림", "페르소나 정보를 입력해주세요.");
       return;
     }
 
-    const formData = new FormData();
+    setLoading(true);
+
+    try {
+      // 1. 성격 생성 API 호출
+      await generatePersonaDetails(personaDetails.custom);
+
+      // 2. 이미지 생성 API 호출
+      const formData = new FormData();
       formData.append('customPersona', JSON.stringify({
         name: personaDetails.custom.name,
         personality: personaDetails.custom.personality,
         speechStyle: personaDetails.custom.speechStyle
       }));
 
-
-try{
-
-
-    if(skipImage){
-      console.log('이미지 없이 생성')
-
-      
-
-      const generatedImages = await generatePersonaImages(formData);
-
-      console.log('generatedImages', generatedImages)
-
-
-      setGeneratedPersonas(generatedImages);
-
-
-    }else{
-      
-
+      if (!skipImage) {
         formData.append('image', {
           uri: image,
           type: 'image/jpeg',
           name: 'image.jpg'
         });
+      }
 
-        const generatedImages = await generatePersonaImages(formData);
+      await generatePersonaImages(formData);
 
-        console.log('generatedImages', generatedImages)
+      // 3. 생성 완료 후 홈으로 이동
+      Alert.alert(
+        "생성 완료",
+        "페르소나가 생성되었습니다. 잠시 후 확인하실 수 있습니다.",
+        [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate('BottomTab', { screen: 'Home' })
+          }
+        ]
+      );
 
-        setGeneratedPersonas(generatedImages);
-
-
-    }
-  }
-    
-    // try {
-    //   // 커스텀 페르소나 정보가 없는 경우 알림
-      
-
-    //   // 1. 이미지 생성 API 호출 (사진 선택을 건너뛰지 않은 경우에만)
-    //   if (!skipImage) {
-    //     const formData = new FormData();
-    //     formData.append('image', {
-    //       uri: image,
-    //       type: 'image/jpeg',
-    //       name: 'image.jpg'
-    //     });
-
-    //     formData.append('uid', user.uid);
-        
-    //     formData.append('customPersona', JSON.stringify({
-    //       name: personaDetails.custom.name,
-    //       personality: personaDetails.custom.personality,
-    //       speechStyle: personaDetails.custom.speechStyle
-    //     }));
-
-        
-    //   }
-
-    //   // 2. 성격 생성 API 호출
-    //   // const generatedDetails = await generatePersonaDetails(personaDetails.custom);
-    //   // setPersonaDetails(prev => ({
-    //   //   ...prev,
-    //   //   ...generatedDetails
-    //   // }));
-          
-    catch (error) {
+    } catch (error) {
       console.error('Error in handleGeneratePersonas:', error);
-      Alert.alert("오류", "페르소나 이미지 생성중 오류");
+      Alert.alert(
+        "오류",
+        "페르소나 생성 중 오류가 발생했습니다. 다시 시도해주세요."
+      );
     } finally {
       setLoading(false);
     }
@@ -244,43 +251,45 @@ try{
   const renderPersonaCard = (type) => {
     const persona = generatedPersonas[type];
     const details = personaDetails[type];
+    
+    // 나만의 페르소나 카드
+    if (type === 'custom') {
+      return (
+        <TouchableOpacity 
+          style={styles.personaCard}
+          onPress={() => setCustomModalVisible(true)}
+        >
+          <View style={styles.emptyPersona}>
+            <Icon name="add-circle-outline" size={40} color="#5271FF" />
+            <Text style={[styles.personaName, { color: '#5271FF' }]}>
+              나만의 페르소나
+            </Text>
+            {personaDetails.custom.name && (
+              <Text style={styles.customPersonaInfo}>{personaDetails.custom.name}</Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      );
+    }
 
-    console.log('persona', persona)
-    
-    
+    // 기본 페르소나 카드 (기쁨이, 화남이, 슬픔이)
     return (
       <TouchableOpacity 
         style={styles.personaCard}
         onPress={() => handlePersonaCardPress(type)}
-        disabled={type === 'clone'}
       >
-        {persona ? (
-          <>
-            <Image source={{ uri: persona['image_url'] }} style={styles.personaImage} />
-            <Text style={styles.personaName}>{details.name}</Text>
-            {details.personality && (
-              <Text style={styles.personaDetail} numberOfLines={1}>
-                {details.personality}
-              </Text>
-            )}
-          </>
-        ) : type === 'custom' ? (
-          <View style={styles.customPersonaPlaceholder}>
-            <Icon name="add-circle-outline" size={40} color="#5271FF" />
-            <Text style={styles.customText}>나만의 페르소나</Text>
-          </View>
-        ) : (
-          <View style={styles.emptyPersona}>
-            {/* 여기다가 넣어야한다 */}
-            <Icon name="person-outline" size={40} color="#CCCCCC" />
-            <Text style={styles.emptyPersonaText}>
-              {type === 'joy' ? '기쁨이' :
-               type === 'anger' ? '화남이' :
-               type === 'sadness' ? '슬픔이' :
-               type === 'clone' ? '나의 분신' : ''}
-            </Text>
-          </View>
-        )}
+        <View style={styles.personaImageContainer}>
+          {persona?.image_url ? (
+            <Image source={{ uri: persona.image_url }} style={styles.personaImage} />
+          ) : (
+            <View style={styles.defaultPersonaImage}>
+              {type === 'joy' && <Image source={require('../assets/persona/joy.png')} style={styles.personaImage} />}
+              {type === 'anger' && <Image source={require('../assets/persona/anger.png')} style={styles.personaImage} />}
+              {type === 'sadness' && <Image source={require('../assets/persona/sadness.png')} style={styles.personaImage} />}
+            </View>
+          )}
+        </View>
+        <Text style={styles.personaName}>{details.name}</Text>
       </TouchableOpacity>
     );
   };
@@ -288,7 +297,7 @@ try{
   const handlePersonaCardPress = (type) => {
     if (type === 'custom') {
       setCustomModalVisible(true);
-    } else if (type !== 'clone' && personaCharacteristics[type]) {
+    } else {
       setSelectedPersonaType(type);
       setSelectModalVisible(true);
     }
@@ -345,7 +354,7 @@ try{
     );
   };
 
-  // 커스텀 모달 제출 핸들러
+  // 커스텀 모달 제출 핸들러 수정
   const handleCustomSubmit = () => {
     const { name, personality, speechStyle } = customPersona;
     
@@ -357,20 +366,26 @@ try{
     setPersonaDetails(prev => ({
       ...prev,
       custom: {
-        name: name,
-        personality: personality,
-        speechStyle: speechStyle
+        name: name.trim(),
+        personality: personality.trim(),
+        speechStyle: speechStyle.trim()
       }
     }));
     
-    // 모달 닫고 입력값 초기화
+    // 모달만 닫기 (입력값은 유지)
     setCustomModalVisible(false);
-    setCustomPersona({
-      name: '',
-      personality: '',
-      speechStyle: ''
-    });
   };
+
+  // 모달이 열릴 때 기존 값을 불러오도록 수정
+  useEffect(() => {
+    if (customModalVisible) {
+      setCustomPersona({
+        name: personaDetails.custom.name || '',
+        personality: personaDetails.custom.personality || '',
+        speechStyle: personaDetails.custom.speechStyle || ''
+      });
+    }
+  }, [customModalVisible]);
 
   // 커스텀 모달 렌더링 함수
   const renderCustomModal = () => {
@@ -383,6 +398,7 @@ try{
       >
         <View style={styles.modalOverlay}>
           <View style={styles.customModalView}>
+            {/* 모달 헤더 */}
             <View style={styles.modalHeader}>
               <TouchableOpacity 
                 onPress={() => setCustomModalVisible(false)}
@@ -390,7 +406,7 @@ try{
               >
                 <Icon name="close-outline" size={24} color="#666" />
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>커스텀 페르소나</Text>
+              <Text style={styles.modalTitle}>나만의 페르소나 만들기</Text>
               <TouchableOpacity 
                 onPress={handleCustomSubmit}
                 style={styles.modalSaveButton}
@@ -399,23 +415,34 @@ try{
               </TouchableOpacity>
             </View>
 
+            {/* 모달 컨텐츠 */}
             <ScrollView style={styles.modalContent}>
+              {/* 이름 입력 섹션 */}
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>이름</Text>
+                <View style={styles.inputLabelContainer}>
+                  <Icon name="person-outline" size={20} color="#5271FF" />
+                  <Text style={styles.inputLabel}>페르소나 이름</Text>
+                </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="페르소나의 이름을 입력하세요"
+                  placeholder="예) 귀여운 토끼"
+                  placeholderTextColor="#999"
                   value={customPersona.name}
                   onChangeText={(text) => setCustomPersona(prev => ({...prev, name: text}))}
                   maxLength={10}
                 />
               </View>
 
+              {/* 성격 입력 섹션 */}
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>성격</Text>
+                <View style={styles.inputLabelContainer}>
+                  <Icon name="heart-outline" size={20} color="#5271FF" />
+                  <Text style={styles.inputLabel}>성격</Text>
+                </View>
                 <TextInput
                   style={[styles.input, styles.multilineInput]}
-                  placeholder="페르소나의 성격을 자세히 설명해주세요"
+                  placeholder="밝고 긍정적이며, 다정다감한 성격이에요"
+                  placeholderTextColor="#999"
                   value={customPersona.personality}
                   onChangeText={(text) => setCustomPersona(prev => ({...prev, personality: text}))}
                   multiline
@@ -423,11 +450,16 @@ try{
                 />
               </View>
 
+              {/* 말투 입력 섹션 */}
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>말투</Text>
+                <View style={styles.inputLabelContainer}>
+                  <Icon name="chatbubble-outline" size={20} color="#5271FF" />
+                  <Text style={styles.inputLabel}>말투</Text>
+                </View>
                 <TextInput
                   style={[styles.input, styles.multilineInput]}
-                  placeholder="페르소나의 특징적인 말투를 설명해주세요"
+                  placeholder="귀엽고 애교있는 말투로 대화해요~"
+                  placeholderTextColor="#999"
                   value={customPersona.speechStyle}
                   onChangeText={(text) => setCustomPersona(prev => ({...prev, speechStyle: text}))}
                   multiline
@@ -441,92 +473,137 @@ try{
     );
   };
 
+  // 로딩 상태 표시를 위한 컴포넌트 추가
+  const LoadingOverlay = () => (
+    loading && (
+      <View style={styles.loadingOverlay}>
+        <ActivityIndicator size="large" color="#5271FF" />
+        <Text style={styles.loadingText}>페르소나 생성 중...</Text>
+      </View>
+    )
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.contentContainer}>
-          {/* 상단 헤더 */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>AI 페르소나</Text>
-          </View>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        {currentStep === 2 && (
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Icon name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+        )}
+        <Text style={styles.headerTitle}>
+          {currentStep === 1 ? '페르소나 선택' : '페르소나 생성'}
+        </Text>
+      </View>
+      
+      {/* 프로그레스 바 */}
+      <View style={styles.progressContainer}>
+        <Animated.View 
+          style={[
+            styles.progressBar,
+            {
+              width: progressAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', '100%']
+              })
+            }
+          ]} 
+        />
+      </View>
 
-          {/* 이미지 선택 및 생성 섹션 */}
-          <View style={styles.imageSection}>
-            <View style={styles.guideContainer}>
-              <Text style={styles.guideTitle}>나만의 귀여운 페르소나 만들기</Text>
-              <Text style={styles.guideText}>얼굴 사진을 넣으면 AI가 당신과 닮은{'\n'}다양한 페르소나를 생성해드려요!</Text>
+      {/* 단계 1: 페르소나 시 */}
+      {currentStep === 1 && (
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>나의 페르소나</Text>
+            <Text style={styles.stepDescription}>
+              AI가 당신을 위한 4가지 페르소나를 생성했어요{'\n'}
+              각 페르소나를 클릭하면 자세한 설명을 볼 수 있어요
+            </Text>
+            
+            <View style={styles.personaGrid}>
+              {renderPersonaCard('joy')}
+              {renderPersonaCard('anger')}
+              {renderPersonaCard('sadness')}
+              {renderPersonaCard('custom')}
             </View>
 
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                (!personaDetails.custom.name || 
+                 !personaDetails.custom.personality || 
+                 !personaDetails.custom.speechStyle) && 
+                styles.nextButtonDisabled
+              ]}
+              onPress={handleNext}
+              disabled={!personaDetails.custom.name || 
+                       !personaDetails.custom.personality || 
+                       !personaDetails.custom.speechStyle}
+            >
+              <Text style={styles.nextButtonText}>페르소나 이미지 생성하기</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* 단계 2: 이미지 생성 */}
+      {currentStep === 2 && (
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>페르소나 이미지 생성</Text>
+            <Text style={styles.stepDescription}>
+              사진으로 더 비슷한 페르소나를 만들거나{'\n'}
+              사진 없이 AI가 생성한 이미지를 사용할 수 있어요
+            </Text>
+
             <TouchableOpacity 
-              style={styles.imageContainer} 
+              style={styles.imagePickerContainer} 
               onPress={pickImage}
             >
               {image ? (
                 <Image source={{ uri: image }} style={styles.selectedImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
-                  <Icon name="camera-outline" size={32} color="#666" />
+                  <Icon name="camera-outline" size={40} color="#666" />
                   <Text style={styles.placeholderText}>얼굴 사진 선택하기</Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.generateButton, 
-                  (!image || !personaDetails.custom.name) && styles.generateButtonDisabled
-                ]} 
+            <View style={styles.generateButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.generateButton, !image && styles.generateButtonDisabled]}
                 onPress={() => handleGeneratePersonas(false)}
-                disabled={!image || !personaDetails.custom.name || loading}
+                disabled={!image || loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <>
-                    <Icon 
-                      name="sparkles-outline" 
-                      size={20} 
-                      color="#FFFFFF" 
-                      style={styles.generateIcon} 
-                    />
-                    <Text style={styles.generateText}>
-                      사진으로 AI 페르소나 생성
-                    </Text>
-                  </>
+                  <Text style={styles.generateButtonText}>
+                    사진으로 생성하기
+                  </Text>
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[
-                  styles.skipButton,
-                  !personaDetails.custom.name && styles.generateButtonDisabled
-                ]} 
+              <TouchableOpacity
+                style={styles.skipButton}
                 onPress={() => handleGeneratePersonas(true)}
-                disabled={!personaDetails.custom.name || loading}
+                disabled={loading}
               >
                 <Text style={styles.skipButtonText}>
-                  사진 없이 페르소나 생성
+                  사진 없이 생성하기
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
+        </ScrollView>
+      )}
 
-          {/* 페르소나 섹션 */}
-          <View style={styles.personaSection}>
-            <Text style={styles.sectionTitle}>나의 페르소나</Text>
-            <View style={styles.personaGrid}>
-              {renderPersonaCard('joy')}
-              {renderPersonaCard('anger')}
-              {renderPersonaCard('sadness')}
-              {renderPersonaCard('custom')}
-              {renderPersonaCard('clone')}
-            </View>
-          </View>
-        </View>
-      </ScrollView>
       {renderPersonaSelectModal()}
       {renderCustomModal()}
+      <LoadingOverlay />
     </SafeAreaView>
   );
 }
@@ -539,162 +616,112 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  contentContainer: {
-    padding: 16,
-  },
   header: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#DBDBDB',
-    marginBottom: 20,
+    borderBottomColor: '#EFEFEF',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#262626',
+    textAlign: 'center',
   },
-  imageSection: {
-    alignItems: 'center',
-    gap: 24,
-    marginBottom: 32,
+  progressContainer: {
+    height: 3,
+    backgroundColor: '#EFEFEF',
+    width: '100%',
   },
-  guideContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#5271FF',
   },
-  guideTitle: {
-    fontSize: 20,
+  stepContainer: {
+    padding: 20,
+  },
+  stepTitle: {
+    fontSize: 24,
     fontWeight: '700',
     color: '#262626',
     marginBottom: 8,
   },
-  guideText: {
+  stepDescription: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: '#666666',
+    marginBottom: 24,
     lineHeight: 20,
-  },
-  imageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    backgroundColor: '#FAFAFA',
-    borderWidth: 1,
-    borderColor: '#0095F6',
-    borderStyle: 'dashed',
-  },
-  selectedImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  placeholderText: {
-    fontSize: 13,
-    color: '#666',
     textAlign: 'center',
-  },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0095F6',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: '100%',
-    maxWidth: 300,
-  },
-  generateButtonDisabled: {
-    backgroundColor: '#B2DFFC',
-  },
-  generateIcon: {
-    marginRight: 8,
-  },
-  generateText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  personaSection: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#262626',
-    marginBottom: 16,
   },
   personaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
+    padding: 16,
   },
   personaCard: {
-    width: '47%',
+    width: '48%',
     aspectRatio: 1,
-    borderRadius: 15,
+    marginBottom: 16,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  personaImageContainer: {
+    width: '100%',
+    height: '80%',
+    backgroundColor: '#F8F9FA',
   },
   personaImage: {
-    width: '80%',
-    height: '80%',
-    borderRadius: 50,
-    marginBottom: 8,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  defaultPersonaImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
   },
   personaName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
-    marginTop: 8,
+    color: '#262626',
     textAlign: 'center',
-  },
-  personaDetail: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  customPersonaPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  customText: {
     marginTop: 8,
-    color: '#5271FF',
-    fontSize: 14,
   },
   emptyPersona: {
-    width: '80%',
-    height: '80%',
-    borderRadius: 50,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
-    padding: 8,
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
   },
-  emptyPersonaText: {
-    marginTop: 8,
-    fontSize: 14,
+  customPersonaInfo: {
+    fontSize: 12,
     color: '#666666',
-    fontWeight: '500',
+    marginTop: 4,
+  },
+  nextButton: {
+    backgroundColor: '#5271FF',
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 24,
+    marginHorizontal: 16,
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -705,41 +732,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    maxHeight: '80%',
-  },
-  modalContent: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  modalImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
+    padding: 20,
+    maxHeight: '70%',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DBDBDB',
-  },
-  modalCloseButton: {
-    padding: 4,
-    width: 40,
-    alignItems: 'center',
-  },
-  modalHeaderRight: {
-    width: 40, // 좌우 균형을 맞추기 위한 빈 공간
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#262626',
+  },
+  modalHeaderRight: {
+    width: 40,
   },
   characteristicContainer: {
     padding: 20,
@@ -771,195 +779,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
-  },
-  modalTextContainer: {
-    width: '80%',
-    height: '30%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#262626',
-  },
-  dropdownContainer: {
-    width: '80%',
-    marginBottom: 20,
-    zIndex: 1000,
-  },
-  dropdownButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 5,
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#262626',
-
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: '150%', // 버튼 바로 아래에 위치
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 5,
+  // 이미지 생성 단계 스타일
+  imagePickerContainer: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginVertical: 32,
+    borderRadius: 100,
+    overflow: 'hidden',
+    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#DBDBDB',
-    marginTop: 5,
+    borderColor: '#EFEFEF',
   },
-  dropdownItem: {
-    padding: 10,
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#262626',
-  },
-  disabledButton: {
-    backgroundColor: '#A0A0A0',
-  },
-  personaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    padding: 20,
-  },
-  personaCard: {
-    width: '45%',
-    aspectRatio: 1,
-    marginBottom: 20,
-    borderRadius: 15,
-    backgroundColor: '#fff',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  imagePlaceholder: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  personaImage: {
-    width: '80%',
-    height: '80%',
-    borderRadius: 75,
+  placeholderText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666666',
   },
-  personaName: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  customPersonaPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  customText: {
-    marginTop: 10,
-    color: '#5271FF',
-    fontSize: 16,
+  generateButtonsContainer: {
+    paddingHorizontal: 16,
+    gap: 12,
   },
   generateButton: {
     backgroundColor: '#5271FF',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    width: '80%',
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
   },
-  customModalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    height: '70%',
+  generateButtonDisabled: {
+    backgroundColor: '#CCCCCC',
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+  generateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  input: {
+  skipButton: {
+    backgroundColor: '#F8F9FA',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    borderColor: '#EFEFEF',
+  },
+  skipButtonText: {
+    color: '#666666',
     fontSize: 16,
+    fontWeight: '600',
   },
-  multilineInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    marginHorizontal: 5,
-  },
-  cancelButton: {
-    backgroundColor: '#f0f0f0',
-  },
-  confirmButton: {
-    backgroundColor: '#5271FF',
-  },
-  cancelButtonText: {
-    color: '#666',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  confirmButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  characteristicContainer: {
-    padding: 20,
-  },
-  characteristicSection: {
-    marginBottom: 20,
-  },
-  characteristicTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  characteristicText: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    top: 16,
+    zIndex: 1,
   },
   customModalView: {
     backgroundColor: 'white',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    height: '80%',
+    height: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -967,86 +855,75 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#DBDBDB',
+    borderBottomColor: '#EFEFEF',
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#262626',
   },
   modalCloseButton: {
-    padding: 4,
+    padding: 8,
   },
   modalSaveButton: {
-    padding: 4,
+    backgroundColor: '#5271FF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   modalSaveText: {
-    color: '#0095F6',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
   modalContent: {
-    padding: 16,
+    padding: 20,
   },
   inputSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#262626',
+  inputLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#DBDBDB',
-    borderRadius: 8,
-    padding: 12,
+  inputLabel: {
     fontSize: 16,
-    backgroundColor: '#FAFAFA',
+    fontWeight: '600',
+    color: '#262626',
+    marginLeft: 8,
+  },
+  input: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#262626',
   },
   multilineInput: {
     height: 100,
     textAlignVertical: 'top',
   },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 20,
+  nextButtonDisabled: {
+    backgroundColor: '#CCCCCC',
   },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    backgroundColor: '#5271FF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  skipButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E1E8ED',
   },
-  generateButtonDisabled: {
-    backgroundColor: '#E8E8E8',
-  },
-  generateText: {
+  loadingText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-  },
-  skipButtonText: {
-    color: '#666666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  generateIcon: {
-    marginRight: 4,
+    marginTop: 16,
   },
 });
 

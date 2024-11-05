@@ -1,38 +1,42 @@
 import axios from 'axios';
-import { firestore } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';  // 정확한 경로로 수정해주세요
 
 const findProfileImageFromUid = async (uid) => {
   console.log("보내는 사람의 대표 이미지 찾기");
-  const userDoc = await firestore().collection('users').doc(uid).get();
-  const profileImage = userDoc.data().profileImage;
-  if(profileImage === undefined){
+  const userDocRef = doc(db, 'users', uid);
+  const userDoc = await getDoc(userDocRef);
+  const profileImage = userDoc.data()?.profileImage;
+  if(!profileImage){
     return 'https://example.com/default-image.jpg'; // 기본 이미지
   }
-  return profileImage
+  console.log('findProfileImageFromUid > profileImage : ', profileImage);
+  return profileImage;
 }
 
-const findUserDisplayNameFromUid = async (uid) => {  
-  console.log('findUserNameFromUid > uid : ', uid);
-  if(uid === 'System'){
+const findUserDisplayNameFromUid = async (fromUid ) => {  
+  console.log('findUserDisplayNameFromUid > fromUid : ', fromUid);
+  if(fromUid === 'System'){
     return '시스템';
   }
-  if(uid === 'clone'){
+  if(fromUid === 'clone'){
     return 'MyBot';
   }
 
   try {
-    const userDoc = await firestore().collection('users').doc(uid).get();
-    console.log('findUserNameFromUid > userDoc : ', userDoc);
+    const userDocRef = doc(db, 'users', fromUid);
+    const userDoc = await getDoc(userDocRef);
+    console.log('findUserDisplayNameFromUid > userDoc : ', userDoc);
     
-    if (userDoc.exists) {
+    if (userDoc.exists()) {
       const userData = userDoc.data();
-      const DisplayName=userData.displayName;
-      console.log('findUserNameFromUid > DisplayName : ', DisplayName);
-      return DisplayName;
+      const displayName = userData.displayName || '알 수 없는 사용자';
+      console.log('findUserDisplayNameFromUid > displayName : ', displayName);
+      return displayName;
     }
     return '알 수 없는 사용자';
   } catch (error) {
-    console.error('Error fetching user email:', error);
+    console.error('Error fetching user displayName:', error);
     return '알 수 없는 사용자';
   }
 };
@@ -75,17 +79,19 @@ const SCREEN_TYPES = {
 
 // 각 pushType에 대한 URL이 있어야 이동을 한다
 // 특정 유저에게 알림 보내기
-const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenType) => {
+const sendNotificationToUser = async (targetUserUid, fromUid, inputScreenType, URL) => {
+  console.log('sendNotificationToUser > targetUserUid : ', targetUserUid);
+  console.log('sendNotificationToUser > fromUid : ', fromUid);
   try {
     const whoSendMessage = await findUserDisplayNameFromUid(fromUid); // 내가 상대방에게 알람을 보내는데, 상대방에게 표시되는 내 이름
-    const profileImage = await findProfileImageFromUid(fromUid); // 내가 상대방에게 알람을 보내는데, 상대방에게 표시되는 내 이미지
+    const profileImage = await findProfileImageFromUid(fromUid); // 
     console.log('sendNotificationToUser > whoSendMessage : ', whoSendMessage);
 
     if (!targetUserUid || !whoSendMessage) {
       throw new Error('Required user information is missing');
     }
 
-    const screenType = SCREEN_TYPES[inputScreenType.toUpperCase()];
+    const screenType = SCREEN_TYPES[inputScreenType];
     console.log('sendNotificationToUser > screenType : ', screenType);
     if (!screenType) {
       throw new Error(`잘못된 화면 타입입니다 : ${inputScreenType}`);
@@ -95,7 +101,7 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     const requestData = {
       targetUid: targetUserUid,
       fromUid: fromUid,
-      whoSendMessage: whoSendMessage,
+      whoSendMessage: "MyBot",
       profileImage: profileImage,
       message: screenType.getMessage({ userName: whoSendMessage }),
       screenType: screenType.type,
@@ -111,7 +117,8 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
         throw new Error(`Missing required field: ${field}`);
       }
     }
-
+    console.log('targetUserUid : ', targetUserUid);
+    console.log('fromUid : ', fromUid);
     const response = await axios.post(
       'http://192.168.0.229:8000/notification', 
       requestData,

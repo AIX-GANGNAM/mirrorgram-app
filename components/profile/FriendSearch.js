@@ -149,7 +149,7 @@ const FriendSearch = () => {
         status: 'pending',
         timestamp: new Date().toISOString()
       });
-      const reponse=sendNotificationToUser(userId, currentUser.uid, '', 'FRIEND_REQUEST');
+      const reponse=sendNotificationToUser(userId, currentUser.uid, 'FriendRequest', '');
       console.log('친구요청 알람결과 > reponse : ', reponse);
       Alert.alert('성공', '친구 요청을 보냈습니다.');
     } catch (error) {

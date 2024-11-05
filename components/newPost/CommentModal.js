@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons'; // Ionicons import 추가
 import RecursiveComment from './RecursiveComment';
 import { sendNotification } from '../notification/SendNotification';
 
-const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
+const CommentModal = ({ visible, setVisible, post, navigation }) => {
     const user = useSelector(state => state.user.user);
     const db = getFirestore();
     const [comments, setComments] = useState([]);
@@ -72,7 +72,7 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
         }
   
         await updateDoc(postRef, { comments: updatedComments });
-        sendNotification(targetUserUid, URL, pushType); // 알림 보내기 (누구에게 보내는지, , 어떤 타입인지)
+        sendNotification(targetUserUid, URL, pushType); // 알림 보내기 (누구에게 보내는지, , 어떤 타인지)
         setComments(updatedComments);
         setCommentCount(updatedComments.length); // 여기서 댓글 수를 업데이트합니다
         setNewComment('');
@@ -131,12 +131,33 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
       }
     };
   
+    const handleDebateNavigate = (commentId, content, personaName) => {
+      console.log('Modal closing and navigating to debate:', commentId);
+      
+      // 모달을 먼저 닫고
+      setVisible(false);
+      
+      // requestAnimationFrame을 사용하여 모달이 닫히는 것을 보장
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          navigation.navigate('DebateChat', {
+            debateId: commentId,
+            title: content,
+            personaName: personaName
+          });
+        }, 300);
+      });
+    };
+  
     return (
       <Modal
         animationType="slide"
         transparent={false}
         visible={visible}
         onRequestClose={() => setVisible(false)}
+        onDismiss={() => {
+          console.log('Modal fully closed');
+        }}
       >
         <View style={styles.modalContainer}>
           {/* 헤더 */}
@@ -220,6 +241,8 @@ const CommentModal = ({ visible, setVisible, post, setCommentCount }) => {
                 setReplyTo={setReplyTo}
                 setReplyToUser={setReplyToUser}
                 user={user}
+                navigation={navigation}
+                onDebatePress={handleDebateNavigate}
               />
             ))}
           </ScrollView>
@@ -417,6 +440,37 @@ const styles = StyleSheet.create({
   },
   postButtonTextDisabled: {
     opacity: 0.5,
+  },
+  personaComment: {
+    backgroundColor: '#F0F7FF', // 페르소��� 댓글 배경색 구분
+    borderLeftWidth: 3,
+    borderLeftColor: '#0095F6',
+  },
+  personaBadge: {
+    backgroundColor: '#0095F6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  personaBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  debateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5FE',
+    padding: 8,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  debateButtonText: {
+    color: '#0095F6',
+    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 

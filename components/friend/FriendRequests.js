@@ -13,6 +13,7 @@ import {
   Platform
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
+// Firebase 관련 기능 import - 중 복 제거 하고 하나로 통합
 import { 
   collection,
   query,
@@ -23,13 +24,10 @@ import {
   addDoc,
   deleteDoc,
   getDoc,
-  firestore, getFirestore
+  getFirestore
 } from 'firebase/firestore';
-import { Ionicons } from '@expo/vector-icons';
-// Firebase 관련 기능 import
-import { confirmPasswordReset, getAuth } from 'firebase/auth';
-import  sendNotificationToUser from '../notification/SendNotification';
-
+import { getAuth } from 'firebase/auth';
+import sendNotificationToUser from '../notification/SendNotification';
 
 const FriendRequests = ({ navigation }) => {  // navigation prop 추가
   console.log("FriendRequests.js 실행");
@@ -97,7 +95,7 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
         createdAt: new Date().toISOString()
       });
       // 친구 요청 수락 알림 보내기 (누구에게, 내가, 자세한 화면 위치, 화면 위치)
-      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FRIEND_ACCEPT');
+      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FriendAccept');
 
       // 양방향 친구 관계 생성 (요청 보낸 사용자 -> 현재 사용자)
 
@@ -133,7 +131,7 @@ const FriendRequests = ({ navigation }) => {  // navigation prop 추가
       console.log("친구 요청 거절 처리 시작");
       console.log("request.fromId : ", request.fromId);
       // 친구 요청 거절 알림 보내기 (누구에게, 내가, 자세한 화면 위치, 화면 위치)
-      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FRIEND_REJECT');
+      sendNotificationToUser(request.fromId, auth.currentUser.uid, '', 'FriendReject');
       // 친구 요청 문서 삭제
       await deleteDoc(doc(db, 'friendRequests', request.id));
       setRequests(prevRequests => 

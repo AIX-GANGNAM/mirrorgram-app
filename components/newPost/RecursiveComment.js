@@ -1,19 +1,64 @@
 import React from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const RecursiveComment = ({ comment, handleLike, toggleReplies, expandedComments, setReplyTo, setReplyToUser, user }) => {
+const RecursiveComment = ({ 
+  comment, 
+  handleLike, 
+  toggleReplies, 
+  expandedComments, 
+  setReplyTo, 
+  setReplyToUser, 
+  user,
+  onDebatePress,
+  navigation
+}) => {
   const isLiked = comment.likes && comment.likes.includes(user.uid);
   const likeCount = comment.likes ? comment.likes.length : 0;
   const replyCount = comment.replies ? comment.replies.length : 0;
+  
+  const isPersonaComment = comment.userId && comment.userId.includes('_');
+  
+  const getPersonaName = () => {
+    if (!isPersonaComment) return '';
+    return comment.userId.split('_')[1];
+  };
+
+  const handleDebatePress = () => {
+    if (isPersonaComment) {
+      console.log('Calling onDebatePress with ID:', comment.debateId);
+      onDebatePress(comment.debateId, comment.content, getPersonaName());
+    }
+  };
+
+  const getTimeAgo = (createdAt) => {
+    if (!createdAt) return '';
+    
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+    
+    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    
+    return created.toLocaleDateString();
+  };
 
   return (
     <View style={styles.commentItem}>
-      <View style={styles.commentContainer}>
+      <View style={[
+        styles.commentContainer,
+        isPersonaComment && styles.personaCommentContainer
+      ]}>
         {/* 왼쪽 프로필 컬럼 */}
         <View style={styles.leftColumn}>
           <Image
-            style={styles.commentAvatar}
+            style={[
+              styles.commentAvatar,
+              isPersonaComment && styles.personaAvatar
+            ]}
             source={comment.profileImg ? { uri: comment.profileImg } : require('../../assets/no-profile.png')}
           />
           {(comment.replies && comment.replies.length > 0) && (
@@ -25,10 +70,27 @@ const RecursiveComment = ({ comment, handleLike, toggleReplies, expandedComments
         <View style={styles.rightColumn}>
           <View style={styles.commentHeader}>
             <Text style={styles.commentUser}>{comment.nick}</Text>
-            <Text style={styles.commentTime}>· 2시간</Text>
+            {isPersonaComment && (
+              <View style={styles.personaBadge}>
+                <Text style={styles.personaBadgeText}>{getPersonaName()}</Text>
+              </View>
+            )}
+            <Text style={styles.commentTime}>
+              · {getTimeAgo(comment.createdAt)}
+            </Text>
           </View>
 
           <Text style={styles.commentText}>{comment.content}</Text>
+
+          {isPersonaComment && (
+            <TouchableOpacity 
+              style={styles.debateButton}
+              onPress={handleDebatePress}
+            >
+              <Ionicons name="chatbubbles-outline" size={16} color="#0095F6" />
+              <Text style={styles.debateButtonText}>토론 보기</Text>
+            </TouchableOpacity>
+          )}
 
           {/* 인터랙션 버튼 */}
           <View style={styles.interactionBar}>
@@ -92,6 +154,8 @@ const RecursiveComment = ({ comment, handleLike, toggleReplies, expandedComments
                   setReplyTo={setReplyTo}
                   setReplyToUser={setReplyToUser}
                   user={user}
+                  onDebatePress={onDebatePress}
+                  navigation={navigation}
                 />
               ))}
             </View>
@@ -179,6 +243,45 @@ const styles = StyleSheet.create({
   },
   repliesContainer: {
     marginTop: 4,
+  },
+  personaCommentContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0095F6',
+    padding: 8,
+  },
+  personaAvatar: {
+    borderWidth: 2,
+    borderColor: '#0095F6',
+  },
+  personaBadge: {
+    backgroundColor: '#0095F6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  personaBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  debateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5FE',
+    padding: 8,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  debateButtonText: {
+    color: '#0095F6',
+    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 
