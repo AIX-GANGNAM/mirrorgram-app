@@ -235,12 +235,12 @@ const FriendSearch = () => {
                 style={styles.addButton}
                 onPress={() => handleAddFriend(item.id)}
               >
-                <Text style={styles.addButtonText}>팔로우</Text>
+                <Text style={styles.addButtonText}>친구 신청</Text>
               </TouchableOpacity>
             )}
             {item.isFriend && (
               <View style={styles.friendBadge}>
-                <Text style={styles.friendBadgeText}>팔로잉</Text>
+                <Text style={styles.friendBadgeText}>친구</Text>
               </View>
             )}
           </TouchableOpacity>

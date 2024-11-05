@@ -18,10 +18,12 @@ import { db, auth } from '../firebaseConfig';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { checkUserOnlineStatus } from '../utils/presenceSystem';
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const ChatUserScreen = ({ route, navigation }) => {
-  const { 
-    chatId, 
+  console.log("ChatUserScreen 호출"); // 실제 회원 <-> 실제 회원 // if 사용자가 
+   const { 
+    chatId, // 채팅방 고유
     recipientId, 
     recipientName = 'Unknown User',
     profileImg 
@@ -101,7 +103,8 @@ const ChatUserScreen = ({ route, navigation }) => {
         if (isRecipientOnline) {
             // 사용자가 온라인인 경우 - Firestore에 직접 저장
             const messagesRef = collection(db, `chat/${chatId}/messages`);
-            await addDoc(messagesRef, messageData);
+            const response =await addDoc(messagesRef, messageData);
+            console.log("온라인 일 때, firevase에 대화 저장 후 반환 값:", response);
 
             // 채팅방 정보 업데이트
             const chatRef = doc(db, 'chat', chatId);
@@ -129,6 +132,12 @@ const ChatUserScreen = ({ route, navigation }) => {
             
             if (response.status !== 200) {
                 throw new Error('메시지 전송 실패');
+            }
+            else {
+              console.log("서버로 보내는 데이터 전송 성공:", response);
+              targetUserUid, fromUid, URL, inputScreenType
+              sendNotificationToUser(currentUser.uid,"clone" , chatId, "ChatUserScreen"); // 이건 나에게 보내기
+              sendNotificationToUser(recipientId,currentUser.uid, chatId, "ChatUserScreen"); // 이건 상대방에게 보내기
             }
         }
 

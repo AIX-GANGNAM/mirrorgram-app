@@ -7,11 +7,11 @@ const saveNotification = async (notification) => {
   const {content} = notification.request;
   console.log("saveNotification > content : ", content);  
  
-  let pushType;
+  let screenType;
   try {
-    // pushType 추출
-    pushType = content.data.screenType;
-    console.log("saveNotification > pushType : ", pushType);
+    // screenType 추출
+    screenType = content.data.screenType;
+    console.log("saveNotification > screenType : ", screenType);
 
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -23,19 +23,19 @@ const saveNotification = async (notification) => {
     console.log("saveNotification > userEmail : ", userEmail);
 
     // 키 생성 (이메일_알림유형)
-    const storageKey = `${userEmail}_${pushType}`; 
+    const storageKey = `${userEmail}_${screenType}`; 
 
     // 기존 알림 목록 가져오기
     const existingNotifications = await AsyncStorage.getItem(storageKey);
     let notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
-    console.log(`기존 ${pushType} 알림 목록:`, notifications);
+    console.log(`기존 ${screenType} 알림 목록:`, notifications);
 
     // 새 알림 추가
     notifications.push({
       ...notification,
       receivedAt: new Date().toISOString() // 알림 수신 시간 추가
     });
-    console.log(`새 ${pushType} 알림 추가 후:`, notifications);
+    console.log(`새 ${screenType} 알림 추가 후:`, notifications);
 
     // 최대 50개의 알림만 유지
     if (notifications.length > 50) {
@@ -45,9 +45,9 @@ const saveNotification = async (notification) => {
     // 업데이트된 알림 목록 저장
     await AsyncStorage.setItem(storageKey, JSON.stringify(notifications));
 
-    console.log(`${pushType} 알림이 로컬에 저장되었습니다`);
+    console.log(`${screenType} 알림이 로컬에 저장되었습니다`);
   } catch (error) {
-    console.error(`알림 로컬 저장 실패 (타입: ${pushType || '알 수 없음'}):`, error);
+    console.error(`알림 로컬 저장 실패 (타입: ${screenType || '알 수 없음'}):`, error);
   }
 }
 

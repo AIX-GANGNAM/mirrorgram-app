@@ -1,5 +1,5 @@
 import axios from 'axios';
-import firestore from '@react-native-firebase/firestore';
+import { firestore } from 'firebase/firestore';
 
 const findProfileImageFromUid = async (uid) => {
   console.log("보내는 사람의 대표 이미지 찾기");
@@ -11,13 +11,13 @@ const findProfileImageFromUid = async (uid) => {
   return profileImage
 }
 
-const findUserNameFromUid = async (uid) => {
+const findUserDisplayNameFromUid = async (uid) => {  
   console.log('findUserNameFromUid > uid : ', uid);
   if(uid === 'System'){
     return '시스템';
   }
-  else if(uid === 'Joy' || uid === 'Anger'){
-    return uid;  
+  if(uid === 'clone'){
+    return 'MyBot';
   }
 
   try {
@@ -26,8 +26,9 @@ const findUserNameFromUid = async (uid) => {
     
     if (userDoc.exists) {
       const userData = userDoc.data();
-      const email = userData.email || '';
-      return email.split('@')[0];  // 이메일의 @ 앞부분만 반환
+      const DisplayName=userData.displayName;
+      console.log('findUserNameFromUid > DisplayName : ', DisplayName);
+      return DisplayName;
     }
     return '알 수 없는 사용자';
   } catch (error) {
@@ -38,42 +39,46 @@ const findUserNameFromUid = async (uid) => {
 
 // 알림 타입별 메시지 포맷 정의
 const SCREEN_TYPES = {
-  PLAYGROUND: {
-    type: 'PLAYGROUND',
+  Playground: {
+    type: 'Playground',
     getMessage: (data) => `이미지 생성을 완료했습니다.`
   },
-  LIKE: {
-    type: 'LIKE',
+  Like: {
+    type: 'Like',
     getMessage: (data) => `${data.userName}님이 회원님의 게시물을 좋아합니다.`
   },
-  FRIEND_REQUEST: {
-    type: 'FRIEND_REQUEST',
+  FriendRequest: {
+    type: 'FriendRequest',
     getMessage: (data) => `${data.userName}님이 친구 요청을 보냈습니다.`
   },
-  FRIEND_ACCEPT: {
-    type: 'FRIEND_ACCEPT',
+  FriendAccept: {
+    type: 'FriendAccept',
     getMessage: (data) => `${data.userName}님이 친구 요청을 수락했습니다.`
   },
-  FRIEND_REJECT: {
-    type: 'FRIEND_REJECT',
+  FriendReject: {
+    type: 'FriendReject',
     getMessage: (data) => `${data.userName}님이 친구 요청을 거절했습니다.`
   },
-  PERSONA_CHAT: {
-    type: 'PERSONA_CHAT',
+  PersonaChat: {
+    type: 'PersonaChat',
     getMessage: (data) => `${data.userName}님이 새로운 메시지를 보냈습니다: ${data.message}`
   },
-  POST_COMMENT: {
-    type: 'POST_COMMENT',
+  PostComment: {
+    type: 'PostComment',
     getMessage: (data) => `${data.userName}님이 회원님의 게시물에 댓글을 남겼습니다.`
   },
+  ChatUserScreen: {
+    type: 'ChatUserScreen',
+    getMessage: (data) => `${data.userName}님이 새로운 메시지를 보냈습니다: ${data.message}`
+  }
 };
 
 // 각 pushType에 대한 URL이 있어야 이동을 한다
 // 특정 유저에게 알림 보내기
 const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenType) => {
   try {
-    const whoSendMessage = await findUserNameFromUid(fromUid);
-    const profileImage = await findProfileImageFromUid(fromUid);
+    const whoSendMessage = await findUserDisplayNameFromUid(fromUid); // 내가 상대방에게 알람을 보내는데, 상대방에게 표시되는 내 이름
+    const profileImage = await findProfileImageFromUid(fromUid); // 내가 상대방에게 알람을 보내는데, 상대방에게 표시되는 내 이미지
     console.log('sendNotificationToUser > whoSendMessage : ', whoSendMessage);
 
     if (!targetUserUid || !whoSendMessage) {
@@ -90,7 +95,7 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     const requestData = {
       targetUid: targetUserUid,
       fromUid: fromUid,
-      whoSendMessage: "MyBot",
+      whoSendMessage: whoSendMessage,
       profileImage: profileImage,
       message: screenType.getMessage({ userName: whoSendMessage }),
       screenType: screenType.type,
@@ -108,7 +113,7 @@ const sendNotificationToUser = async (targetUserUid, fromUid, URL, inputScreenTy
     }
 
     const response = await axios.post(
-      'http://192.168.0.16:8000/notification', 
+      'http://192.168.0.229:8000/notification', 
       requestData,
       {
         headers: {
