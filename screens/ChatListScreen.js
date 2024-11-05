@@ -242,14 +242,14 @@ const GroupChats = ({ navigation }) => {
 
   // Redux에서 사용자 정보 가져오기
   const user = useSelector(state => state.user.user);
-  const personas = ['Anger', 'Disgust', 'Joy', 'Sadness', 'Fear'];
-  const highlights = [
-    { id: 1, displayName: '기쁨이', persona: 'Joy', image: user.persona.JOY },
-    { id: 2, displayName: '화남이', persona: 'Anger', image: user.persona.ANGER },
-    { id: 3, displayName: '까칠이', persona: 'Disgust', image: user.persona.DISGUST },
-    { id: 4, displayName: '슬픔이', persona: 'Sadness', image: user.persona.SADNESS },
-    { id: 5, displayName: '선비', persona: 'Fear', image: user.persona.SERIOUS },
-  ];
+  const personas = ['Joy', 'Anger', 'Sadness', 'custom', 'clone'];
+  const highlights = user?.persona?.map((p, index) => ({
+    id: index + 1,
+    displayName: p.DPNAME,
+    persona: p.Name,
+    image: p.IMG
+  })) || [];
+  console.log('Mapped highlights:', highlights);
 
   useEffect(() => {
     const currentUser = auth.currentUser;

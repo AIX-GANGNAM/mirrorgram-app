@@ -142,7 +142,7 @@ const App = () => {
           }));
           
         } catch (error) {
-          console.error('활동 상태 업데이트 실패:', error);
+          // console.error('활동 상태 업데이트 실패:', error);
         }
       };
 

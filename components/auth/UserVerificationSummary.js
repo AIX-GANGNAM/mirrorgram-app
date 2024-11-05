@@ -45,6 +45,7 @@ const UserVerificationSummary = ({ setIsAuthenticated }) => {
         await setDoc(userRef, profileData, { merge: true });
         dispatch(setUser({ uid: user.uid, ...profileData }));
         setIsAuthenticated(true);
+        navigation.navigate('CreatePersona');
       }
     } catch (error) {
       console.error('프로필 저장 중 오류 발생:', error);
