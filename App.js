@@ -7,9 +7,9 @@ import 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { Ionicons } from '@expo/vector-icons'; // 중복 제거 완료
+import { Ionicons } from '@expo/vector-icons';
 import { TextInput } from 'react-native';
-import { getAuth, signOut } from 'firebase/auth'; // Firebase 인증 가져오기
+import { getAuth, signOut } from 'firebase/auth';
 import saveNotification from './components/notification/SaveNotification';
 import { setupBackgroundTask } from './components/notification/BackgroundTask';
 import PersonaChat from './components/chat/PersonaChat';
@@ -36,21 +36,21 @@ import SignupForm from './components/signup/SignupForm';
 import ForgotPassword from './components/login/ForgotPassword';
 import UserVerification from './components/auth/UserVerification.js';
 import NewChat from './components/chat/NewChat';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { setUser } from './store/slice/userSlice';
 import UserVerificationStep0 from './components/auth/UserVerificationStep0';
 import UserVerificationStep1 from './components/auth/UserVerificationStep1.js';
 import UserVerificationStep2 from './components/auth/UserVerificationStep2.js';
 import UserVerificationStep3 from './components/auth/UserVerificationStep3.js';
 import UserVerificationStep4 from './components/auth/UserVerificationStep4.js';
 import UserVerificationSummary from './components/auth/UserVerificationSummary.js';
-
 import UserInfoStep1 from './components/auth/extra/UserInfoStep1.js';
 import UserInfoStep2 from './components/auth/extra/UserInfoStep2.js';
 import UserInfoStep3 from './components/auth/extra/UserInfoStep3.js';
 import UserInfoStep4 from './components/auth/extra/UserInfoStep4.js';
 import FriendRequests from './components/friend/FriendRequests';
 import DebateChat from './screens/DebateChat';
-
 import PersonaProfile from './components/persona/PersonaProfile';
 import { Provider } from 'react-redux';
 import store from './store';
@@ -61,27 +61,52 @@ import { doc, collection } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
-
-
+import UpdatePushToken from './components/notification/UpdatePushToken';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: true ,
+    shouldSetBadge: true,
   }),
 });
 
-
+const AppWrapper = () => {
+  return (
+    <Provider store={store}>
+      <App />
+    </Provider>
+  );
+};
 
 const App = () => {
+  const dispatch = useDispatch();
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
-  
 
+  useEffect(() => {
+    const checkAutoLogin = async () => {
+      try {
+        const autoLogin = await AsyncStorage.getItem('autoLogin');
+        const userToken = await AsyncStorage.getItem('userToken');
+        const userData = await AsyncStorage.getItem('userData');
 
+        if (autoLogin === 'true' && userToken && userData) {
+          const parsedUserData = JSON.parse(userData);
+          dispatch(setUser(parsedUserData));
+          setIsAuthenticated(true);
+          UpdatePushToken(userToken);
+          NowPushToken();
+        }
+      } catch (error) {
+        console.error('자동 로그인 체크 중 오류 발생:', error);
+      }
+    };
+
+    checkAutoLogin();
+  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -90,93 +115,91 @@ const App = () => {
     };
     
     initializeApp();
-    // 알림 수신 시 실행되는 함수
+
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
       try {
         await saveNotification(notification);
         console.log("알림 저장 성공");
+        console.log("알림 수신 : ", notification);
+      
+        const {content}  = notification.request;
+        console.log("알림수신 : content : ", content);
+        console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
+        console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
+        console.log("알림수신 : content.data.URL : ", content.data.URL);
+        console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
+        console.log("알림수신 : content.body : ", content.body);      
+        console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
+        console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
+        console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
       } catch (error) {
         console.error("알림 저장 중 오류 발생:", error);
       }
-      console.log("알림 수신 : ", notification);
-      
-      const {content}  = notification.request;
-      console.log("알림수신 : content : ", content);
-      console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
-      console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
-      console.log("알림수신 : content.data.URL : ", content.data.URL);
-      console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
-      console.log("알림수신 : content.body : ", content.body);      
-      console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
-      console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
-      console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
     });
 
     // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const { content } = response.notification.request;
-      console.log("알림 터치됨:", content.data.screenType);
-      console.log("알림 터치됨:", content.data.URL);
-
-      GoToScreen({response: content}); // 터치하면 해당 화면으로 이동
-      
+      GoToScreen({response: content});
     });
 
-    // 사용자 활동 상태 추적 추가
-    const auth = getAuth();
-    if (auth.currentUser) {
-      const updateActivity = async () => {
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const timestamp = serverTimestamp();
+   
+      const auth = getAuth();
+      if (auth.currentUser) {
+        const updateActivity = async () => {
+          try {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userDoc = await getDoc(userRef); // userDoc을 가져옵니다.
+            const userData = userDoc.data(); // Firestore에서 현재 userData를 가져옵니다.
+            
+            const timestamp = serverTimestamp();
+            
+            await updateDoc(userRef, {
+              lastActivity: timestamp
+            });
           
-          // Firestore에는 serverTimestamp 저장
-          await updateDoc(userRef, {
-            lastActivity: timestamp
-          });
           
-          // Redux store에는 일반 숫자로 저장
           dispatch(setUser({
             ...userData,
             lastActivity: Date.now()
           }));
-          
         } catch (error) {
           console.error('활동 상태 업데이트 실패:', error);
         }
       };
-
       // 1분마다 활동 시간 업데이트
       const activityInterval = setInterval(updateActivity, 60000);
-      
-      // 초기 활동 시간 설정
+      //초기 활동 시간 설정
       updateActivity();
 
-      // 클린업에 interval 정리 추가
+
+            // 클린업에 interval 정리 추가
+
       return () => {
         clearInterval(activityInterval);
         Notifications.removeNotificationSubscription(notificationListener.current);
         Notifications.removeNotificationSubscription(responseListener.current);
       };
     }
-
   }, []);
-
-
+// 로그아웃 처리 함수를 MainTabs 내부로 이동
   const MainTabs = () => {
     const auth = getAuth();
-
-    // 로그아웃 처리 함수를 MainTabs 내부로 이동
-    const handleLogout = () => {
-      signOut(auth)
-        .then(() => {
-          Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
-          setIsAuthenticated(false);
-        })
-        .catch((error) => {
-          console.error('로그아웃 에러:', error);
-          Alert.alert('로그아웃 실패', '다시 시도해 주세요.');
-        });
+    
+    const handleLogout = async () => {
+      try {
+        await signOut(auth);
+        await AsyncStorage.multiRemove([
+          'autoLogin',
+          'userToken',
+          'userData'
+        ]);
+        Alert.alert('로그아웃 성공', '로그인 화면으로 이동합니다.');
+        setIsAuthenticated(false);
+      } catch (error) {
+        console.error('로그아웃 에러:', error);
+        Alert.alert('로그아웃 실패', '다시 시도해 주세요.');
+      }
     };
 
     return (
@@ -239,103 +262,95 @@ const App = () => {
     );
   };
 
-  return(
-    <Provider store={store}>
-      <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
+  return (
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {!isAuthenticated ? (
+          <>
+            <Stack.Screen name="Login">
+              {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+            </Stack.Screen>
+            <Stack.Screen name="Signup" component={SignupForm} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
+            <Stack.Screen name="UserVerification" component={UserVerification} />
+            <Stack.Screen name="UserVerificationStep0" component={UserVerificationStep0} />
+            <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} />
+            <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} />
+            <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} />
+            <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} />
+            <Stack.Screen name="UserVerificationSummary">
+              {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
+            </Stack.Screen>
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="BottomTab" component={BottomTabScreen} />
+            <Stack.Screen name="Activity" component={ActivityScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen
+              name="FriendProfile"
+              component={FriendProfileScreen}
+              options={({ route }) => ({
+                title: route.params.name,
+                headerShown: true
+              })}
+            />
+            <Stack.Screen name="FriendRequests" component={FriendRequests} options={{ title: "친구 요청" }} />
+            <Stack.Screen name="FriendHeader" component={FriendScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Status" component={Status} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
+            <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
+            <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
+            <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
+            <Stack.Screen
+              name="ChatList"
+              component={ChatListScreen}
+              options={{
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen
+              name="ChatUser"
+              component={ChatUserScreen}
+              options={{
+                headerShown: false
+              }}
+            />
+            <Stack.Screen name="NewChat" component={NewChat} options={{ headerShown: false }} />
+            <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
+            <Stack.Screen name="Post" component={Post} />
+            <Stack.Screen name="PersonaChat" component={PersonaChat} />
+            <Stack.Screen name="DebateChat" component={DebateChat} />
+            <Stack.Screen name="PostDetail" component={PostDetail} />
+          </>
+        )}
+        <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
+        <Stack.Screen 
+          name="CreatePersonaPost" 
+          component={CreatePersonaPostScreen}
+          options={{
+            headerShown: true,
+            title: '페르소나 피드 자동 생성',
+            headerTitleAlign: 'center',
           }}
-        >
-          {!isAuthenticated ? (
-            // 인증되지 않은 상태의 스크린들
-            <>
-              <Stack.Screen name="Login">
-                {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
-              </Stack.Screen>
-              <Stack.Screen name="Signup" component={SignupForm} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: '비밀번호 찾기' }} />
-              <Stack.Screen name="UserVerification" component={UserVerification} />
-              <Stack.Screen name="UserVerificationStep0" component={UserVerificationStep0} />
-              <Stack.Screen name="UserVerificationStep1" component={UserVerificationStep1} />
-              <Stack.Screen name="UserVerificationStep2" component={UserVerificationStep2} />
-              <Stack.Screen name="UserVerificationStep3" component={UserVerificationStep3} />
-              <Stack.Screen name="UserVerificationStep4" component={UserVerificationStep4} />
-              <Stack.Screen name="UserVerificationSummary">
-                {props => <UserVerificationSummary {...props} setIsAuthenticated={setIsAuthenticated} />}
-              </Stack.Screen>
-            </>
-          ) : (
-            // 인증된 상태의 스크린들
-            <>
-              <Stack.Screen name="BottomTab" component={BottomTabScreen} />
-              <Stack.Screen name="Activity" component={ActivityScreen} />
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen
-                  name="FriendProfile"
-                  component={FriendProfileScreen}
-                  options={({ route }) => ({
-                    title: route.params.name,
-                    headerShown: true
-                  })}
-              />
-              
-              <Stack.Screen name="FriendRequests" component={FriendRequests} options={{ title: "친구 요청" }} />
-              <Stack.Screen name="FriendHeader" component={FriendScreen} options={{ headerShown: false, }} />
-              <Stack.Screen name="Status" component={Status} />
-              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-              <Stack.Screen name="Chat" component={ChatScreen} />
-              <Stack.Screen name="UserInfoStep1" component={UserInfoStep1} />
-              <Stack.Screen name="UserInfoStep2" component={UserInfoStep2} />
-              <Stack.Screen name="UserInfoStep3" component={UserInfoStep3} />
-              <Stack.Screen name="UserInfoStep4" component={UserInfoStep4} />
-              <Stack.Screen
-                  name="ChatList"
-                  component={ChatListScreen}
-                  options={{
-                    headerShown: true,
-                  }}
-              />
-              <Stack.Screen
-                  name="ChatUser"
-                  component={ChatUserScreen}
-                  options={{
-                    headerShown: false
-                  }}
-              />
-              <Stack.Screen name="NewChat" component={NewChat} options={{ headerShown: false }} />
-              <Stack.Screen name="CreatePersona" component={CreatePersonaScreen} />
-              <Stack.Screen name="Post" component={Post} />
-              <Stack.Screen name="PersonaChat" component={PersonaChat} />
-              <Stack.Screen name="DebateChat" component={DebateChat} />
-              <Stack.Screen name="PostDetail" component={PostDetail} />
-            </>
-          )}
-          <Stack.Screen name="PersonaProfile" component={PersonaProfile} options={{ headerShown: true }} />
-          <Stack.Screen 
-                name="CreatePersonaPost" 
-                component={CreatePersonaPostScreen}
-                options={{
-                  headerShown: true,
-                  title: '페르소나 피드 자동 생성',
-                  headerTitleAlign: 'center',
-                }}
-              />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </Provider>
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-}
+};
 
 async function registerForPushNotificationsAsync() {
   console.log("registerForPushNotificationsAsync 함수 실행");
 
-
-
   if (Platform.OS === 'android') {
-    
     await Notifications.setNotificationChannelAsync('channel_high', {
-      // 알림 및 진동이 울림, 화면에 표시됨, 
+            // 알림 및 진동이 울림, 화면에 표시됨, 
       name: 'channel_high',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
@@ -348,7 +363,8 @@ async function registerForPushNotificationsAsync() {
     });
 
     await Notifications.setNotificationChannelAsync('channel_low', {
-      // 알림 및 진동이 울리지 않음
+            // 알림 및 진동이 울리지 않음
+
       name: 'channel_low',
       importance: Notifications.AndroidImportance.LOW,
       vibrationPattern: [0, 250, 250, 250],
@@ -371,21 +387,19 @@ async function registerForPushNotificationsAsync() {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
-    // 기존 권한이 허용되지 않았을 경우, 권한 요청
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status; // 사용자가 선택한 권한 상태로 업데이트
+      finalStatus = status;
     }
 
-    // 권한이 여전히 허용되지 않았다면 알림을 띄우고 함수 종료
+       // 권한이 여전히 허용되지 않았다면 알림을 띄우고 함수 종료
+
     if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!'); // 사용자에게 권한 허용이 안됐음을 알림
-      return; // 함수 종료
+      alert('Failed to get push token for push notification!');
+      return;
     }
   } else {
-    // 물리 디바이스가 아닌 경우, 사용자에게 림
     alert('실제 단말기를 사용해주세요');
-
   }
 }
 const styles = StyleSheet.create({
@@ -412,5 +426,4 @@ const styles = StyleSheet.create({
     borderColor: '#00ccbb',
   },
 });
-
-export default App;
+export default AppWrapper;
