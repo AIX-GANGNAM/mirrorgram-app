@@ -62,6 +62,7 @@ import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
 import UpdatePushToken from './components/notification/UpdatePushToken';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -213,7 +214,7 @@ const App = () => {
               iconName = focused ? 'calendar' : 'calendar-outline';
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
-            } else if (route.name === 'PlayGround') {
+            } else if (route.name === 'Village') {
               iconName = focused ? 'body' : 'body-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
@@ -228,7 +229,7 @@ const App = () => {
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Calender" component={CalenderScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
-        <Tab.Screen name="PlayGround" component={ReelsScreen} />
+        <Tab.Screen name="Village" component={ReelsScreen} />
         <Tab.Screen name="Profile">
           {props => (
             <ProfileScreen 
