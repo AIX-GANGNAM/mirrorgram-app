@@ -202,6 +202,7 @@ const ChatUserScreen = ({ route, navigation }) => {
           )}
           <Text style={[
             styles.messageText,
+            isAIMessage ? styles.aiMessageText : 
             item.senderId === currentUser.uid ? styles.userMessageText : styles.otherMessageText
           ]}>
             {item.text}
@@ -382,6 +383,9 @@ const styles = StyleSheet.create({
   },
   aiMessage: {
     backgroundColor: '#E8F5E9',
+  },
+  aiMessageText: {
+    color: '#000',
   },
   aiLabel: {
     fontSize: 10,

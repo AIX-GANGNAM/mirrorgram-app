@@ -179,7 +179,7 @@ const App = () => {
             lastActivity: Date.now()
           }));
         } catch (error) {
-          console.error('활동 상태 업데이트 실패:', error);
+          // console.error('활동 상태 업데이트 실패:', error);
         }
       };
       // 1분마다 활동 시간 업데이트
