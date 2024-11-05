@@ -29,6 +29,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(false);
   const auth = getAuth(app);
   const db = getFirestore(app);
   const dispatch = useDispatch();
@@ -68,6 +69,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
     try {
       console.log('인증 데이터 저장 시작');
       
+      // 로그인 정보 기억하기
       if (rememberMe) {
         await AsyncStorage.multiSet([
           ['savedEmail', email],
@@ -75,18 +77,22 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           ['rememberMe', 'true']
         ]);
         console.log('로그인 정보 저장됨');
-      } else {
-        await AsyncStorage.multiRemove([
-          'savedEmail',
-          'savedPassword',
-          'rememberMe'
+      }
+  
+      // 자동 로그인 정보 저장
+      if (autoLogin) {
+        await AsyncStorage.multiSet([
+          ['autoLogin', 'true'],
+          ['userToken', user.uid],
+          ['userData', JSON.stringify(userData)]
         ]);
-        console.log('로그인 정보 삭제됨');
+        console.log('자동 로그인 정보 저장됨');
       }
     } catch (error) {
       console.error('인증 데이터 저장 중 오류 발생:', error);
     }
   };
+  
 
   // 로그아웃 처리
   const handleLogout = async () => {
@@ -94,6 +100,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       console.log('로그아웃 시작');
       await auth.signOut();
       
+      // 로그인 정보 기억하기 해제 시에만 삭제
       if (!rememberMe) {
         await AsyncStorage.multiRemove([
           'savedEmail',
@@ -102,16 +109,20 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         ]);
       }
       
+      // 자동 로그인 정보는 항상 삭제
+      await AsyncStorage.multiRemove([
+        'autoLogin',
+        'userToken',
+        'userData'
+      ]);
+      
       dispatch(setUser(null));
       setIsAuthenticated(false);
       
-      if (!rememberMe) {
-        setEmail('');
-        setPassword('');
-        setRememberMe(false);
-      }
-      
-      navigation.navigate('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     } catch (error) {
       console.error('로그아웃 중 오류 발생:', error);
     }
@@ -268,25 +279,42 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text style={styles.errorText}>{errors.password}</Text>
         }
 
+        <View style={styles.checkboxContainer}>
+        {/* 왼쪽 체크박스 */}
         <TouchableOpacity 
-          style={styles.checkboxWrapper}
-          onPress={() => setRememberMe(!rememberMe)}
+        style={styles.checkboxWrapper}
+        onPress={() => setRememberMe(!rememberMe)}
         >
-          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-            {rememberMe && <FontAwesome name="check" size={12} color="#fff" />}
-          </View>
-          <Text style={styles.checkboxText}>로그인 정보 기억하기</Text>
+        <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+          {rememberMe && <FontAwesome name="check" size={12} color="#fff" />}
+        </View>
+        <Text style={styles.checkboxText}>로그인 정보 기억하기</Text>
         </TouchableOpacity>
+
+        {/* 오른쪽 체크박스 */}
+        <TouchableOpacity 
+        style={styles.checkboxWrapper}
+        onPress={() => setAutoLogin(!autoLogin)}
+        >
+        <View style={[styles.checkbox, autoLogin && styles.checkboxChecked]}>
+          {autoLogin && <FontAwesome name="check" size={12} color="#fff" />}
+        </View>
+        <Text style={styles.checkboxText}>자동 로그인</Text>
+        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={handleLogin}
           style={[styles.button, !isFormValid && styles.disabledButton]}
           disabled={!isFormValid}
-        >
-          <Text style={styles.buttonText}>로그인</Text>
-        </TouchableOpacity>
+            >
+              <Text style={styles.buttonText}>로그인</Text>
+            </TouchableOpacity>
 
-        <View style={styles.divider}>
+            {/* 자동 로그인 체크박스 추가 */}
+        
+
+            <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>또는</Text>
           <View style={styles.dividerLine} />
@@ -449,6 +477,12 @@ const styles = StyleSheet.create({
   checkboxText: {
     fontSize: 14,
     color: '#657786',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    marginHorizontal: 5,
   },
   checkboxWrapper: {
     flexDirection: 'row',
