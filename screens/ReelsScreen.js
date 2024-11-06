@@ -324,7 +324,7 @@ export default function ReelsScreen() {
     } else {
       return (
         <View style={styles.villageContainer}>
-          <Village />
+          <VillageV2 />
         </View>
       );
     }

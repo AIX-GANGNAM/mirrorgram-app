@@ -609,6 +609,8 @@ export default function Village() {
     if (activeTab==='chat'){
       try {
         // exit 메시지 전송
+
+
         await axios.post('http://10.0.2.2:1919/chat/user', {
           param: JSON.stringify({
             uid: auth.currentUser.uid,
@@ -703,7 +705,10 @@ export default function Village() {
       });
 
       // AI 응답 요청
-      const response = await axios.post('http://10.0.2.2:1919/chat/user', {
+
+      // http://110.11.192.148:1919/chat/user
+      // http://10.0.2.2:1919/chat/user
+      const response = await axios.post('http://110.11.192.148:1919/chat/user', {
         param: JSON.stringify({
           uid: auth.currentUser.uid,
           message: chatInput,
