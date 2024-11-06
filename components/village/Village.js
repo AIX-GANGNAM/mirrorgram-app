@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Animated, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+
+
 
     // 맵 매트릭스 정의
     const mapMatrix = [
@@ -53,14 +59,14 @@ const TILE_COLORS = {
     2: '물 구역',
     3: '절벽',
     4: '특별 구역',
-    5: '이벤트 구역',
+    5: '이벤트 역',
     // 필요한 만큼 추가
   };
 
 export default function Village() {
 
 
-
+  const auth = getAuth();
   
   const [characters, setCharacters] = useState([
     {
@@ -318,7 +324,7 @@ export default function Village() {
     );
   };
 
-  // 스케줄 데이터 타입 정의
+  // 스케줄 이터 타입 정의
   const scheduleData = [
     {'type': 'activity', 'activity': '명상과 간단한 스트레칭', 'location': [1, 2], 'duration': 30, 'zone': 'Joy_home'}, 
     {'type': 'activity', 'activity': '아침 식사를 하며 하루의 계획 세우기', 'location': [1, 2], 'duration': 30, 'zone': 'Joy_home'}, 
@@ -336,12 +342,12 @@ export default function Village() {
     {'type': 'activity', 'activity': '친구들과의 영상 통화나 소셜 미디어 소통', 'location': [10, 3], 'duration': 60, 'zone': 'Discussion Room'}, 
     {'type': 'movement', 'path': [[10, 3], [11, 3], [12, 3], [13, 3], [13, 4], [13, 5], [13, 6], [12, 6], [11, 6], [10, 6], [9, 6], [8, 6], [8, 5], [8, 4], [8, 3], [7, 3], [6, 3], [5, 3], [4, 3], [3, 3], [2, 3]], 'start_zone': 'Discussion Room', 'end_zone': 'Joy_home', 'duration': 20}, 
     {'type': 'activity', 'activity': '편안한 음악을 듣거나 명상하며 하루 마무리', 'location': [2, 3], 'duration': 60, 'zone': 'Joy_home'}, 
-    {'type': 'activity', 'activity': '취침 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
+    {'type': 'activity', 'activity': '취 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
 ]
   // 시간 스케일 조정 (120분의 1)
   const TIME_SCALE = 1/120;
 
-  // 스케줄 실행을 위한 상태 추가
+  // 스케줄 실행 위한 상태 추가
   const [currentScheduleIndex, setCurrentScheduleIndex] = useState(0);
   const [isScheduleRunning, setIsScheduleRunning] = useState(false);
   const [currentPathIndex, setCurrentPathIndex] = useState(0);
@@ -422,6 +428,85 @@ export default function Village() {
     }
   }, [currentPathIndex, isScheduleRunning]);
 
+  // 상태와 애니메이션 값 설정
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const animation = useRef(new Animated.Value(0)).current;
+
+  // 메뉴 토글 함수 수정
+  const toggleMenu = () => {
+    const toValue = isMenuOpen ? 0 : 1;
+    
+    Animated.spring(animation, {
+      toValue,
+      useNativeDriver: true,
+      friction: 5,
+      tension: 40,
+      duration: 300
+    }).start();
+    
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // 버튼 데이터 정의
+  // const menuButtons = [
+  //   { icon: 'map', onPress: () => console.log('지도') },
+  //   { icon: 'person', onPress: () => console.log('프로필') },
+  //   { icon: 'settings', onPress: () => console.log('설정') },
+  //   { icon: 'notifications', onPress: () => console.log('알림') },
+  //   { icon: 'menu', onPress: () => console.log('메뉴') },
+  // ];
+
+  const [personaImage, setPersonaImage] = useState(null);
+
+  useEffect(() => {
+    const fetchPersonaImage = async () => {
+      try {
+        const db = getFirestore();
+        const user_doc = collection(db, 'users');
+        const result = await getDoc(doc(user_doc, auth.currentUser.uid));
+        const personaData = result.data().persona;
+        
+        const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/mirrorgram-20713.appspot.com/o/%E2%80%94Pngtree%E2%80%94default%20avatar_5408436.png?alt=media&token=36f0736a-17cb-444f-8fe1-1bca085b28e2'; // 기본 이미지 URL
+        
+        const imageMap = personaData.reduce((acc, item) => {
+          acc[item.Name] = item.IMG || defaultImage; // IMG가 없으면 기본 이미지 사용
+          return acc;
+        }, {});
+        
+        console.log('이미지 데이터 확인 ', imageMap);
+        setPersonaImage(imageMap);
+      } catch (error) {
+        console.error('페르소나 이미지 가져오기 실패:', error);
+      }
+    };
+
+    fetchPersonaImage();
+  }, []);
+
+
+
+  const menuButtons = [
+    {
+      image: { uri: personaImage?.clone },
+      onPress: () => console.log('분신')
+    },
+    {
+      image: { uri: personaImage?.Joy },
+      onPress: () => console.log('Joy')
+    },
+    {
+      image: { uri: personaImage?.Anger },
+      onPress: () => console.log('Anger')
+    },
+    {
+      image: { uri: personaImage?.Sadness },
+      onPress: () => console.log('Sadness')
+    },
+    {
+      image: { uri: personaImage?.custom },
+      onPress: () => console.log('Custom')
+    }
+  ];
   return (
     <View style={styles.container}>
       {/* 배경 맵 */}
@@ -461,7 +546,7 @@ export default function Village() {
       ))}
       
       {/* 방향키 컨트롤러 */}
-      <View style={styles.controls}>
+      {/* <View style={styles.controls}>
         <TouchableOpacity style={styles.button} onPress={() => handleMove('up')}>
           <Text>↑</Text>
         </TouchableOpacity>
@@ -476,7 +561,7 @@ export default function Village() {
             <Text>→</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
       {/* <MatrixOverlay /> */}
       
       <TouchableOpacity 
@@ -488,6 +573,74 @@ export default function Village() {
           {isScheduleRunning ? '실행 중...' : '일과 시작'}
         </Text>
       </TouchableOpacity>
+
+      {/* 메뉴 버튼들 */}
+      {menuButtons.map((button, index) => {
+        const offsetX = (index + 1) * 60;
+        
+        return (
+          <Animated.View
+            key={index}
+            style={[
+              styles.floatingButton,
+              styles.menuButton,
+              {
+                transform: [
+                  {
+                    translateX: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, offsetX]
+                    })
+                  },
+                  {
+                    scale: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1]
+                    })
+                  }
+                ],
+                opacity: animation
+              }
+            ]}
+          >
+            <TouchableOpacity 
+              onPress={button.onPress}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Image 
+                source={button.image}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  borderRadius: 28,
+                  resizeMode: 'cover'
+                }}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+
+      {/* 메인 버튼 */}
+      <Animated.View
+        style={[
+          styles.floatingButton,
+          {
+            transform: [
+              {
+                rotate: animation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '45deg']
+                })
+              }
+            ]
+          }
+        ]}
+      >
+        <TouchableOpacity onPress={toggleMenu}>
+          <Icon name="add" size={24} color="white" />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
@@ -588,4 +741,29 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    zIndex: 1,
+  },
+
+  menuButton: {
+    backgroundColor: '#FFFFFF',
+    zIndex: 0,
+  }
 });
