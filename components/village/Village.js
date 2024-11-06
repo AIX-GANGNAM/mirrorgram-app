@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, Animated, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, Image, Animated, TouchableOpacity, Text, StyleSheet, Modal, Dimensions, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
@@ -30,11 +30,10 @@ import { getAuth } from 'firebase/auth';
         [1, 0, 0,10,10, 8,10,10, 0, 9, 8, 9, 9, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0,11,11, 8,11, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0,11,11,11,11, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0,11,11,11,11, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11, 8,11, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        // ... 맵에 맞게 계속 정의
       ];
       
       // 타일 크기 정의
@@ -59,7 +58,7 @@ const TILE_COLORS = {
     2: '물 구역',
     3: '절벽',
     4: '특별 구역',
-    5: '이벤트 역',
+    5: '이벤트 구역',
     // 필요한 만큼 추가
   };
 
@@ -72,12 +71,47 @@ export default function Village() {
     {
       id: 1,
       position: new Animated.ValueXY({ 
-        x: Tile_WIDTH,  // 첫 번째 이동 가능한 타일 위치
-        y: Tile_HEIGHT
+        x: Tile_WIDTH * 2,
+        y: Tile_HEIGHT * 3
       }),
-      image: require('../../assets/character1.png'),
+      image: require('../../assets/character/yellow.png'),
+    },
+    {
+      id: 2,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 10,
+        y: Tile_HEIGHT * 3
+      }),
+      image: require('../../assets/character/red.png'),
+    },
+    {
+      id: 3,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 5,
+        y: Tile_HEIGHT * 7
+      }),
+      image: require('../../assets/character/blue.png'),
+    },
+    {
+      id: 4,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 8,
+        y: Tile_HEIGHT * 12
+      }),
+      image: require('../../assets/character/jelda.png'),
+    },
+    {
+      id: 5,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 9,
+        y: Tile_HEIGHT * 16
+      }),
+      image: require('../../assets/character/black.png'),
     }
   ]);
+  
+  // 모달 관련 상태
+  
 
   const moveDistance = {
     x: Tile_WIDTH,
@@ -212,7 +246,7 @@ export default function Village() {
         console.log("Discussion Room에 진입했습니다.");
         // navigation.navigate('DiscussionRoom');
       } else if (x === 8) {
-        // Fear's Home 출입구
+        // Fear's Home 출입
         console.log("Fear's Home에 진입했습니다.");
         // navigation.navigate('FearHome');
       }
@@ -389,7 +423,7 @@ export default function Village() {
       // 다음 위치로 이동
       setTimeout(() => {
         setCurrentPathIndex(currentPathIndex + 1);
-      }, 300); // 이동 애니메이션 시간
+      }, 300); // 이동 니메이션 시간
     } else {
       // 경로 이동 완료
       setCurrentPathIndex(0);
@@ -488,25 +522,105 @@ export default function Village() {
   const menuButtons = [
     {
       image: { uri: personaImage?.clone },
-      onPress: () => console.log('분신')
+      onPress: () => handlePersonaPress('clone'),
+      type: 'clone'
     },
     {
       image: { uri: personaImage?.Joy },
-      onPress: () => console.log('Joy')
+      onPress: () => handlePersonaPress('Joy'),
+      type: 'Joy'
     },
     {
       image: { uri: personaImage?.Anger },
-      onPress: () => console.log('Anger')
+      onPress: () => handlePersonaPress('Anger'),
+      type: 'Anger'
     },
     {
       image: { uri: personaImage?.Sadness },
-      onPress: () => console.log('Sadness')
+      onPress: () => handlePersonaPress('Sadness'),
+      type: 'Sadness'
     },
     {
       image: { uri: personaImage?.custom },
-      onPress: () => console.log('Custom')
+      onPress: () => handlePersonaPress('custom'),
+      type: 'custom'
     }
   ];
+
+  // 모달 관련 상태 추가
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState(null);
+
+  // 페르소나 정보 데이터 추가
+  const personaInfo = {
+    clone: {
+      name: "분신",
+      description: "당신의 또 다른 모습",
+      traits: ["적응력", "다면성", "유연성"],
+      specialty: "상황에 따른 역할 전환"
+    },
+    Joy: {
+      name: "기쁨",
+      description: "긍정적 에너지의 원천",
+      traits: ["낙관성", "열정", "친근함"],
+      specialty: "즐거운 순간 만들기"
+    },
+    Anger: {
+      name: "분노",
+      description: "정의와 변화의 동력",
+      traits: ["결단력", "추진력", "정직함"],
+      specialty: "부당한 상황 개선하기"
+    },
+    Sadness: {
+      name: "슬픔",
+      description: "공감과 치유의 매개체",
+      traits: ["공감능력", "섬세함", "이해심"],
+      specialty: "깊은 감정 이해하기"
+    },
+    custom: {
+      name: "사용자 정의",
+      description: "나만의 특별한 페르소나",
+      traits: ["창의성", "독창성", "자유로움"],
+      specialty: "새로운 관점 제시하기"
+    }
+  };
+
+  // 페르소나 선택 핸들러 추가
+  const handlePersonaPress = (type) => {
+    setSelectedPersona(personaInfo[type]);
+    setModalVisible(true);
+  };
+
+  // 모달 닫기 핸들러 추가
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedPersona(null);
+  };
+
+  // 화면 크기 가져오기
+  const { width, height } = Dimensions.get('window');
+
+  // 상단에 상태 추가
+  const [activeTab, setActiveTab] = useState('log'); // 'log' 또는 'chat'
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+
+  // 채팅 전송 함수
+  const handleSendMessage = () => {
+    if (chatInput.trim()) {
+      setChatMessages([
+        ...chatMessages,
+        {
+          id: Date.now(),
+          text: chatInput,
+          sender: 'user',
+          timestamp: new Date().toLocaleTimeString()
+        }
+      ]);
+      setChatInput('');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* 배경 맵 */}
@@ -523,25 +637,25 @@ export default function Village() {
             styles.character,
             { 
               transform: character.position.getTranslateTransform(),
-              width: spriteConfig.frameWidth,  // 한 프레임의 너비
-              height: spriteConfig.frameHeight, // 한 프레임의 높이
-              overflow: 'hidden',  // 중요: 프레임 밖의 부분을 잘라냄
+              width: spriteConfig.frameWidth,
+              height: spriteConfig.frameHeight,
+              overflow: 'hidden',
               position: 'absolute'
             }
           ]}
         >
           <Image
-  source={require('../../assets/character/purple.png')}
-  style={{
-    width: spriteConfig.frameWidth * 10,
-    height: spriteConfig.frameHeight * 8,
-    position: 'absolute',
-    left: -spriteConfig.frameWidth * currentFrame,
-    top: -spriteConfig.frameHeight * spriteConfig.animations[
-      isMoving ? direction : `${direction}_idle`
-    ].row,
-  }}
-/>
+            source={character.image}
+            style={{
+              width: spriteConfig.frameWidth * 10,
+              height: spriteConfig.frameHeight * 8,
+              position: 'absolute',
+              left: -spriteConfig.frameWidth * currentFrame,
+              top: -spriteConfig.frameHeight * spriteConfig.animations[
+                isMoving ? direction : `${direction}_idle`
+              ].row,
+            }}
+          />
         </Animated.View>
       ))}
       
@@ -641,6 +755,117 @@ export default function Village() {
           <Icon name="add" size={24} color="white" />
         </TouchableOpacity>
       </Animated.View>
+
+      {/* 페르소나 모달 추가 */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={handleCloseModal}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+            
+            {/* 탭 버튼 */}
+            <View style={styles.tabButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'log' && styles.activeTabButton
+                ]}
+                onPress={() => setActiveTab('log')}
+              >
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === 'log' && styles.activeTabButtonText
+                ]}>로그</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'chat' && styles.activeTabButton
+                ]}
+                onPress={() => setActiveTab('chat')}
+              >
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === 'chat' && styles.activeTabButtonText
+                ]}>채팅</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 탭 컨텐츠 */}
+            {activeTab === 'log' ? (
+              // 로그 탭 컨텐츠
+              <View style={styles.tabContent}>
+                {selectedPersona && (
+                  <View style={styles.personaInfo}>
+                    <Text style={styles.personaName}>{selectedPersona.name}</Text>
+                    <Text style={styles.personaDescription}>
+                      {selectedPersona.description}
+                    </Text>
+                    
+                    <View style={styles.traitsContainer}>
+                      <Text style={styles.sectionTitle}>특성</Text>
+                      {selectedPersona.traits.map((trait, index) => (
+                        <View key={index} style={styles.traitItem}>
+                          <Text style={styles.traitText}>• {trait}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    
+                    <View style={styles.specialtyContainer}>
+                      <Text style={styles.sectionTitle}>전문 분야</Text>
+                      <Text style={styles.specialtyText}>
+                        {selectedPersona.specialty}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : (
+              // 채팅 탭 컨텐츠
+              <View style={styles.tabContent}>
+                <ScrollView style={styles.chatContainer}>
+                  {chatMessages.map(message => (
+                    <View 
+                      key={message.id} 
+                      style={[
+                        styles.messageContainer,
+                        message.sender === 'user' ? styles.userMessage : styles.botMessage
+                      ]}
+                    >
+                      <Text style={styles.messageText}>{message.text}</Text>
+                      <Text style={styles.messageTime}>{message.timestamp}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+                <View style={styles.chatInputContainer}>
+                  <TextInput
+                    style={styles.chatInput}
+                    value={chatInput}
+                    onChangeText={setChatInput}
+                    placeholder="메시지를 입력하세요..."
+                    placeholderTextColor="#999"
+                  />
+                  <TouchableOpacity 
+                    style={styles.sendButton}
+                    onPress={handleSendMessage}
+                  >
+                    <Text style={styles.sendButtonText}>전송</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -684,7 +909,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1,  // 맵 위에 표시되도록
+    zIndex: 1,  // 맵 위에 표되도록
   },
   matrixRow: {
     flexDirection: 'row',
@@ -765,5 +990,173 @@ const styles = StyleSheet.create({
   menuButton: {
     backgroundColor: '#FFFFFF',
     zIndex: 0,
-  }
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    height: '70%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 10,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 15,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  personaInfo: {
+    width: '100%',
+    height: '100%',
+    paddingTop: 40,
+  },
+  personaName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  personaDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#444',
+    marginBottom: 10,
+  },
+  traitsContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  traitItem: {
+    marginVertical: 5,
+  },
+  traitText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  specialtyContainer: {
+    width: '100%',
+  },
+  specialtyText: {
+    fontSize: 16,
+    color: '#555',
+    lineHeight: 22,
+  },
+  tabButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 15,
+    marginTop: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  activeTabButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#4A90E2',
+  },
+  tabButtonText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  activeTabButtonText: {
+    color: '#4A90E2',
+    fontWeight: 'bold',
+  },
+  tabContent: {
+    flex: 1,
+    width: '100%',
+  },
+  chatContainer: {
+    flex: 1,
+    width: '100%',
+    marginBottom: 10,
+  },
+  messageContainer: {
+    padding: 10,
+    marginVertical: 5,
+    maxWidth: '80%',
+    borderRadius: 10,
+  },
+  userMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#4A90E2',
+  },
+  botMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#f0f0f0',
+  },
+  messageText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  messageTime: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 5,
+  },
+  chatInputContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  chatInput: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: '#4A90E2',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
