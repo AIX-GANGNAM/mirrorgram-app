@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Animated, TouchableOpacity, Text, StyleSheet, Modal, Dimensions, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDoc, doc, addDoc, serverTimestamp, orderBy, setDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+
 
 
 
@@ -110,7 +113,7 @@ export default function Village() {
     }
   ]);
   
-  // 모달 관련 상태
+  // 모달 관 상태
   
 
   const moveDistance = {
@@ -431,7 +434,7 @@ export default function Village() {
     }
   };
 
-  // 다음 스케줄로 이동
+  // 음 스케줄로 이동
   const moveToNextSchedule = () => {
     if (currentScheduleIndex < scheduleData.length - 1) {
       setCurrentScheduleIndex(currentScheduleIndex + 1);
@@ -551,33 +554,38 @@ export default function Village() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState(null);
 
-  // 페르소나 정보 데이터 추가
+  // 페르소나 정보 데터 추가
   const personaInfo = {
     clone: {
+      type: 'clone',
       name: "분신",
       description: "당신의 또 다른 모습",
       traits: ["적응력", "다면성", "유연성"],
       specialty: "상황에 따른 역할 전환"
     },
     Joy: {
+      type: 'Joy',
       name: "기쁨",
       description: "긍정적 에너지의 원천",
       traits: ["낙관성", "열정", "친근함"],
       specialty: "즐거운 순간 만들기"
     },
     Anger: {
+      type: 'Anger',
       name: "분노",
       description: "정의와 변화의 동력",
       traits: ["결단력", "추진력", "정직함"],
       specialty: "부당한 상황 개선하기"
     },
     Sadness: {
+      type: 'Sadness',
       name: "슬픔",
       description: "공감과 치유의 매개체",
       traits: ["공감능력", "섬세함", "이해심"],
       specialty: "깊은 감정 이해하기"
     },
     custom: {
+      type: 'custom',
       name: "사용자 정의",
       description: "나만의 특별한 페르소나",
       traits: ["창의성", "독창성", "자유로움"],
@@ -592,9 +600,30 @@ export default function Village() {
   };
 
   // 모달 닫기 핸들러 추가
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
     setModalVisible(false);
     setSelectedPersona(null);
+
+    setChatInput('');
+
+    if (activeTab==='chat'){
+      try {
+        // exit 메시지 전송
+        await axios.post('http://10.0.2.2:1919/chat/user', {
+          param: JSON.stringify({
+            uid: auth.currentUser.uid,
+            message: 'exit',
+            persona: selectedPersona.type
+          })
+        });
+        
+        // 모달 닫기
+        
+      } catch (error) {
+        console.error('채팅 종료 메시지 전송 실패:', error);
+        
+      }
+    }
   };
 
   // 화면 크기 가져오기
@@ -605,21 +634,100 @@ export default function Village() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
 
-  // 채팅 전송 함수
-  const handleSendMessage = () => {
-    if (chatInput.trim()) {
-      setChatMessages([
-        ...chatMessages,
-        {
-          id: Date.now(),
-          text: chatInput,
-          sender: 'user',
-          timestamp: new Date().toLocaleTimeString()
-        }
-      ]);
+  // 상단에 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false);
+
+  // useEffect로 실시간 채팅 리스너 설정
+  useEffect(() => {
+    if (selectedPersona) {
+      try {
+        const db = getFirestore();
+        const chatPath = `village/chat/users/${auth.currentUser.uid}/personas/${selectedPersona.type}/messages`;
+        const chatRef = collection(db, chatPath);
+        
+        // 초기 경로 구조 생성
+        const initializeChat = async () => {
+          const userDocRef = doc(db, 'village/chat/users', auth.currentUser.uid);
+          const personaDocRef = doc(db, `village/chat/users/${auth.currentUser.uid}/personas`, selectedPersona.type);
+          
+          try {
+            await setDoc(userDocRef, { initialized: true }, { merge: true });
+            await setDoc(personaDocRef, { 
+              type: selectedPersona.type,
+              initialized: true 
+            }, { merge: true });
+          } catch (error) {
+            console.log("초기화 중 오류:", error);
+          }
+        };
+        
+        initializeChat();
+
+        // 실시간 리스너 설정
+        const q = query(chatRef, orderBy('timestamp', 'asc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate().toLocaleTimeString()
+          }));
+          setChatMessages(messages);
+        }, (error) => {
+          console.log("채팅 로드 중 오류:", error);
+          setChatMessages([]);
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("채팅 초기화 오류:", error);
+        setChatMessages([]);
+      }
+    }
+  }, [selectedPersona]);
+
+  // 메시지 전송 함수
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+
+    try {
+      setIsLoading(true);
+      const db = getFirestore();
+      const chatPath = `village/chat/users/${auth.currentUser.uid}/personas/${selectedPersona.type}/messages`;
+      const messagesRef = collection(db, chatPath);
+      
+      // 사용자 메시지 저장
+      await addDoc(messagesRef, {
+        message: chatInput,
+        timestamp: serverTimestamp(),
+        sender: 'user'
+      });
+
+      // AI 응답 요청
+      const response = await axios.post('http://10.0.2.2:1919/chat/user', {
+        param: JSON.stringify({
+          uid: auth.currentUser.uid,
+          message: chatInput,
+          persona: selectedPersona.type
+        })
+      });
+
+      // AI 응답 저장
+      await addDoc(messagesRef, {
+        message: response.data.message,
+        timestamp: serverTimestamp(),
+        sender: 'bot'
+      });
+
       setChatInput('');
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // 컴포넌트 상단에 ref 추가
+  const scrollViewRef = useRef();
 
   return (
     <View style={styles.container}>
@@ -765,14 +873,28 @@ export default function Village() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={handleCloseModal}
-            >
-              <Text style={styles.closeButtonText}>×</Text>
-            </TouchableOpacity>
-            
-            {/* 탭 버튼 */}
+            {/* 상단 헤더 추가 */}
+            <View style={styles.modalHeader}>
+              {selectedPersona && (
+                <>
+                  <Image 
+                    source={menuButtons.find(btn => btn.type === selectedPersona.type)?.image}
+                    style={styles.selectedPersonaImage}
+                  />
+                  <Text style={styles.selectedPersonaName}>
+                    {selectedPersona.name}
+                  </Text>
+                </>
+              )}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleCloseModal}
+              >
+                <Ionicons name="close-sharp" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* 기존 탭 버튼들 */}
             <View style={styles.tabButtons}>
               <TouchableOpacity
                 style={[
@@ -802,7 +924,7 @@ export default function Village() {
 
             {/* 탭 컨텐츠 */}
             {activeTab === 'log' ? (
-              // 로그 탭 컨텐츠
+              // 로그 탭 컨츠
               <View style={styles.tabContent}>
                 {selectedPersona && (
                   <View style={styles.personaInfo}>
@@ -832,7 +954,11 @@ export default function Village() {
             ) : (
               // 채팅 탭 컨텐츠
               <View style={styles.tabContent}>
-                <ScrollView style={styles.chatContainer}>
+                <ScrollView 
+                  style={styles.chatContainer}
+                  ref={scrollViewRef}
+                  onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                >
                   {chatMessages.map(message => (
                     <View 
                       key={message.id} 
@@ -841,10 +967,27 @@ export default function Village() {
                         message.sender === 'user' ? styles.userMessage : styles.botMessage
                       ]}
                     >
-                      <Text style={styles.messageText}>{message.text}</Text>
-                      <Text style={styles.messageTime}>{message.timestamp}</Text>
+                      <View style={[
+                        styles.messageBubble,
+                        message.sender === 'user' ? styles.userBubble : styles.botBubble
+                      ]}>
+                        <Text style={[
+                          styles.messageText,
+                          message.sender === 'user' ? styles.userMessageText : styles.botMessageText
+                        ]}>
+                          {message.message}
+                        </Text>
+                      </View>
+                      <Text style={styles.messageTime}>
+                        {message.timestamp}
+                      </Text>
                     </View>
                   ))}
+                  {isLoading && (
+                    <View style={styles.loadingContainer}>
+                      <Text style={styles.loadingText}>...</Text>
+                    </View>
+                  )}
                 </ScrollView>
                 <View style={styles.chatInputContainer}>
                   <TextInput
@@ -1110,27 +1253,45 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   messageContainer: {
-    padding: 10,
-    marginVertical: 5,
+    marginVertical: 4,
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  messageBubble: {
     maxWidth: '80%',
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 20,
   },
   userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#4A90E2',
+    alignItems: 'flex-end',
   },
   botMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f0f0f0',
+    alignItems: 'flex-start',
+  },
+  userBubble: {
+    backgroundColor: '#007AFF',
+    borderTopRightRadius: 4,
+    marginLeft: 'auto',
+  },
+  botBubble: {
+    backgroundColor: '#E9ECEF',
+    borderTopLeftRadius: 4,
+    marginRight: 'auto',
   },
   messageText: {
-    color: '#fff',
     fontSize: 16,
+    lineHeight: 20,
+  },
+  userMessageText: {
+    color: '#FFFFFF',
+  },
+  botMessageText: {
+    color: '#000000',
   },
   messageTime: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 5,
+    color: '#000000',
+    marginTop: 4,
   },
   chatInputContainer: {
     flexDirection: 'row',
@@ -1158,5 +1319,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    marginBottom: 10,
+  },
+  selectedPersonaImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  selectedPersonaName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: 16,
+    alignItems: 'flex-start',
+  },
+  loadingText: {
+    fontSize: 24,
+    color: '#666666',
+    marginLeft: 16,
   },
 });
