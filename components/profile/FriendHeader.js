@@ -56,18 +56,18 @@ const FriendHeader = ({ onTabChange, activeTab }) => {
         </View>
         
         <TouchableOpacity 
-          onPress={() => navigation.navigate('FriendRequests')} 
-          style={styles.notificationButton}
-        >
-          <View>
-            <Ionicons name="people-outline" size={34} color="#000" />
-            {pendingRequests > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{pendingRequests}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
+  onPress={() => navigation.navigate('FriendRequests')} 
+  style={styles.notificationButton}
+>
+  <View>
+    <Ionicons name="notifications-outline" size={34} color="#000" />
+    {pendingRequests > 0 && (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{pendingRequests}</Text>
+      </View>
+    )}
+  </View>
+</TouchableOpacity>
       </View>
 
       <View style={styles.tabContainer}>
