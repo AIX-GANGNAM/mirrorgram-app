@@ -15,6 +15,7 @@ import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const DebateChat = ({ route, navigation }) => {
+  console.log('DebateChat 실행');
   const { debateId, title = '토론', personaName = '' } = route?.params || {};
   const [messages, setMessages] = useState([]);
   const [debateInfo, setDebateInfo] = useState(null);

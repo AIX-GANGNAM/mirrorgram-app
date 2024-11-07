@@ -23,6 +23,7 @@ import sendNotificationToUser from '../components/notification/SendNotification'
 
 // 네비게이션 프로필 친구 친구리스트 메시지 보내기 누르면 나오는곳
 const ChatUserScreen = ({ route, navigation }) => {
+  console.log('ChatUserScreen 실행');
   console.log("ChatUserScreen 호출"); // 실제 회원 <-> 실제 회원 // if 사용자가 
    const { 
     chatId, // 채팅방 고유
@@ -107,6 +108,8 @@ const ChatUserScreen = ({ route, navigation }) => {
             const messagesRef = collection(db, `chat/${chatId}/messages`);
             const response =await addDoc(messagesRef, messageData);
             console.log("온라인 일 때, firevase에 대화 저장 후 반환 값:", response);
+            const sendNotificationResponse = sendNotificationToUser(recipientId, currentUser.uid, 'ChatUserScreen', chatId);
+            console.log('sendNotificationResponse : ', sendNotificationResponse);
 
             // 채팅방 정보 업데이트
             const chatRef = doc(db, 'chat', chatId);

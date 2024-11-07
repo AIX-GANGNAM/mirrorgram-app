@@ -5,6 +5,7 @@ import FriendsList from '../components/profile/FriendsList';
 import FriendSearch from '../components/profile/FriendSearch';
 
 const FriendScreen = () => {
+  console.log('FriendScreen 실행');
   const [activeTab, setActiveTab] = useState('friends');
 
   const handleTabChange = (tab) => {

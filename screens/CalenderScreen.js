@@ -10,6 +10,7 @@ import axios from 'axios'; // axios 추가
 import { useSelector } from 'react-redux'; // redux useSelector 추가
 
 const CalendarScreen = () => {
+  console.log('CalendarScreen 실행');
   const [schedule, setSchedule] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', time: new Date() });

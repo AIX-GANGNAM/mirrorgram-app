@@ -62,6 +62,7 @@ const ChatListScreen = ({ navigation }) => {
 };
 
 const PersonalChats = ({ navigation }) => {
+  console.log('PersonalChats 실행');
   const [chats, setChats] = useState([]);
   const [search, setSearch] = useState('');
   const [highlights, setHighlights] = useState([]);

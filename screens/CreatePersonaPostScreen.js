@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const CreatePersonaPostScreen = ({ route, navigation }) => {
+  console.log('CreatePersonaPostScreen 실행');
   const { persona, id, parentNick, userId } = route.params;
   const [trendingKeywords, setTrendingKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,8 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
         userId: userId,
         title : persona.title
       });
+      const sendNotificationResponse = sendNotificationToUser(userId, persona.type, 'FeedGeneration', response.data.uuid);
+      console.log('sendNotificationResponse : ', sendNotificationResponse);
       
     //   navigation.navigate('PostPreview', { 
     //     postData: response.data,

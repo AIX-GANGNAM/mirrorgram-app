@@ -12,6 +12,7 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
+  console.log('ChatScreen 실행');
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');

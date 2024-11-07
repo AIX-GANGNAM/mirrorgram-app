@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useSelector } from 'react-redux';
+import { sendNotificationToUser } from '../notification/SendNotification';
 
 const PostDetail = ({ route }) => {
   console.log("PostDetail.js > 호출됨");
@@ -110,9 +111,12 @@ const PostDetail = ({ route }) => {
       }
 
       // Firestore 업데이트
-      await updateDoc(postRef, {
+      const firebaseUpdateResponse = await updateDoc(postRef, {
         likes: updatedLikes
       });
+      console.log('firebaseUpdateResponse : ', firebaseUpdateResponse);
+      const sendNotificationResponse = sendNotificationToUser(post.userId, currentUser.uid, 'Like', post.id);
+      console.log('sendNotificationResponse : ', sendNotificationResponse);
 
       // 상태 업데이트
       setIsLiked(!isLiked);
