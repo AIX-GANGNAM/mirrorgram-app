@@ -132,8 +132,10 @@ const NewPostScreen = ({ navigation }) => {
         // const personaImage = userDataState.persona?.[persona.type.toLowerCase()];
   
         // POST 요청으로 데이터 전달
+
         const response = await axios.post('http://10.0.2.2:8000/feedAutomatic', {
           id: feedUuid, // 피드 uid
+
           parentNick: user.userId, // 부모 닉네임
           userId: user.uid, // 부모 uid,
         });

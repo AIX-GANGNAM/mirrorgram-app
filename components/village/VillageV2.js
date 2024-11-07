@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Animated, TouchableOpacity, Text, StyleSheet, Modal, Dimensions, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { collection, query, where, onSnapshot, getDoc, doc, addDoc, serverTimestamp, orderBy, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDoc, doc, addDoc, serverTimestamp, orderBy, setDoc, getDocs } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 
 
 
@@ -13,29 +14,27 @@ import axios from 'axios';
     // 맵 매트릭스 정의
     const mapMatrix = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 2, 2, 2, 0, 0, 0, 0, 3, 3, 3, 3, 0, 1],
-        [1, 0, 2, 2, 2, 0, 0, 0, 0, 3, 3, 3, 3, 0, 1],
-        [1, 0, 2, 8, 2, 0, 0, 0, 0, 3, 8, 3, 3, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 0, 1],
-        [1, 0, 0, 0, 5, 5, 5, 5, 0, 0, 4, 4, 4, 0, 1],
-        [1, 0, 0, 0, 5, 5, 5, 5, 0, 0, 4, 4, 4, 0, 1],
-        [1, 0, 0, 0, 5, 8, 5, 5, 0, 0, 8, 4, 4, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
-        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
-        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
-        [1, 0, 6, 8, 8, 6, 0, 0, 7, 8, 7, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 0, 1],
-        [1, 0, 0,10,10,10,10,10, 0, 9, 9, 9, 9, 0, 1],
-        [1, 0, 0,10,10,10,10,10, 0, 9, 9, 9, 9, 0, 1],
-        [1, 0, 0,10,10, 8,10,10, 0, 9, 8, 9, 9, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11, 8,11, 0, 1],
-        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
-        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       ];
       
@@ -45,28 +44,39 @@ import axios from 'axios';
       // 맵 타일 타입에 따른 색상 정의
 const TILE_COLORS = {
     0: 'rgba(0, 255, 0, 0.2)',    // 이동 가능 구역 (초록색)
-    1: 'rgba(255, 0, 0, 0.3)',    // 이동 불가 구역 (빨간색)
-    2: 'rgba(0, 0, 255, 0.3)',    // 물 구역 (파란색)
-    3: 'cyan', // 입구 구역 (회색)
-    4: 'rgba(255, 255, 0, 0.3)',   // 특별 구역 (노란색)
-    5: 'rgba(255, 0, 255, 0.3)',   // 이벤트 구역 (보라색)
-    8: 'black'
-    // 필요한 만큼 추가
-  };
+    1: 'rgba(255, 0, 0, 0.3)',    // 이동 불가 구역 (벽)
+    2: 'rgba(0, 0, 255, 0.3)',    // Joy's Home
+    3: 'rgba(0, 255, 255, 0.3)',  // Anger's Home
+    4: 'rgba(255, 255, 0, 0.3)',  // Sadness's Home
+    5: 'rgba(255, 0, 255, 0.3)',  // Fear's Home
+    6: 'rgba(128, 0, 128, 0.3)',  // Shopping Center
+    7: 'rgba(0, 128, 128, 0.3)',  // Discussion Room
+    8: 'rgba(0, 0, 0, 0.3)',      // 출입구
+    9: 'rgba(128, 128, 0, 0.3)',  // Cafe
+    10: 'rgba(0, 128, 0, 0.3)',   // Cinema
+    11: 'rgba(128, 0, 0, 0.3)',   // Restaurant
+};
   
   // 타일 타입별 설명
   const TILE_DESCRIPTIONS = {
     0: '이동 가능',
-    1: '이동 불가',
-    2: '물 구역',
-    3: '절벽',
-    4: '특별 구역',
-    5: '이벤트 구역',
-    // 필요한 만큼 추가
+    1: '이동 불가 (벽)',
+    2: "Joy's Home",
+    3: "Anger's Home",
+    4: "Sadness's Home",
+    5: "Fear's Home",
+    6: 'Shopping Center',
+    7: 'Discussion Room',
+    8: '출입구',
+    9: 'Cafe',
+    10: 'Cinema',
+    11: 'Restaurant',
   };
 
 export default function Village() {
 
+
+    const user = useSelector(state => state.user);
 
   const auth = getAuth();
   
@@ -157,44 +167,43 @@ export default function Village() {
 
   const handleMove = (moveDirection) => {
     const character = characters[0];
-    const currentX = character.position.x._value;
-    const currentY = character.position.y._value;
     
-    const matrixX = Math.floor(currentX / Tile_WIDTH);
-    const matrixY = Math.floor(currentY / Tile_HEIGHT);
+    // 현재 매트릭스 좌표 계산 (정확한 타일 위치)
+    const matrixX = Math.round(character.position.x._value / Tile_WIDTH);
+    const matrixY = Math.round(character.position.y._value / Tile_HEIGHT);
     
-    let newX = currentX;
-    let newY = currentY;
     let targetX = matrixX;
     let targetY = matrixY;
-    let canMove = false;
 
+    // 이동할 타일 위치 계산
     switch (moveDirection) {
       case 'up':
-        newY = currentY - moveDistance.y;
         targetY = matrixY - 1;
         break;
       case 'down':
-        newY = currentY + moveDistance.y;
         targetY = matrixY + 1;
         break;
       case 'left':
-        newX = currentX - moveDistance.x;
         targetX = matrixX - 1;
         break;
       case 'right':
-        newX = currentX + moveDistance.x;
         targetX = matrixX + 1;
         break;
     }
 
-    canMove = checkCollision(targetX, targetY);
-
-    if (canMove) {
+    // 이동 가능 여부 확인
+    if (checkCollision(targetX, targetY)) {
       setDirection(moveDirection);
       setIsMoving(true);
-      moveCharacter(character.id, newX, newY);
+      
+      // 정확한 픽셀 위치로 변환하여 이동
+      moveCharacter(
+        character.id, 
+        targetX * Tile_WIDTH,  // 정확한 타일의 x 좌표
+        targetY * Tile_HEIGHT  // 정확한 타일의 y 좌표
+      );
 
+      // 출입구 체크
       if (checkEntrance(targetX, targetY)) {
         setTimeout(() => {
           handleEnterBuilding(targetX, targetY);
@@ -216,57 +225,65 @@ export default function Village() {
     }
     
     const tileType = mapMatrix[y][x];
-    // 0은 이동 가능, 8은 출입구
-    return tileType === 0 || tileType === 8;
+    // 이동 가능한 타일 목록 확장
+    const walkableTiles = [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // 1(벽)을 제외한 모든 타일
+    return walkableTiles.includes(tileType);
   };
 
   // 건물 진입 처리 함수 수정
   const handleEnterBuilding = (x, y) => {
-    // 각 출입구의 위치와 해당하는 건물 확인
-    if (y === 3) {
-      if (x === 3) {
-        // Joy's Home 출입구
-        console.log("Joy's Home에 진입했습니다.");
-        // navigation.navigate('JoyHome');
-      } else if (x === 10) {
-        // Anger's Home 출입구
-        console.log("Anger's Home에 진입했습니다.");
-        // navigation.navigate('AngerHome');
-      }
-    } else if (y === 7) {
-      if (x === 5) {
-        // Sadness's Home 출입구
-        console.log("Sadness's Home에 진입했습니다.");
-        // navigation.navigate('SadnessHome');
-      } else if (x === 9) {
-        // Shopping Center 출입구
-        console.log("Shopping Center에 진입했습니다.");
-        // navigation.navigate('ShoppingCenter');
-      }
-    } else if (y === 12) {
-      if (x === 3) {
-        // Discussion Room 출입구
-        console.log("Discussion Room에 진입했습니다.");
-        // navigation.navigate('DiscussionRoom');
-      } else if (x === 8) {
-        // Fear's Home 출입
-        console.log("Fear's Home에 진입했습니다.");
-        // navigation.navigate('FearHome');
-      }
-    } else if (y === 16) {
-      if (x === 5) {
-        // Cafe 출입구
-        console.log("Cafe에 진입했습니다.");
-        // navigation.navigate('Cafe');
-      } else if (x === 9) {
-        // 영화관 출입구
-        console.log("영화관에 진입했습니다.");
-        // navigation.navigate('Cinema');
-      }
-    } else if (y === 18 && x === 10) {
-      // Restaurant 출입구
-      console.log("Restaurant에 진입했습니다.");
-      // navigation.navigate('Restaurant');
+    const character = characters[0];
+    
+    // 출구 위치 매핑
+    const exitPoints = {
+      // Joy's Home
+      '2,3': { exitX: 3, exitY: 4 },
+      '3,4': { exitX: 2, exitY: 3 },
+      
+      // Anger's Home
+      '10,3': { exitX: 10, exitY: 4 },
+      '10,4': { exitX: 10, exitY: 3 },
+      
+      // Sadness's Home
+      '5,7': { exitX: 5, exitY: 8 },
+      '5,8': { exitX: 5, exitY: 7 },
+      
+      // Fear's Home
+      '8,12': { exitX: 8, exitY: 13 },
+      '8,13': { exitX: 8, exitY: 12 },
+      
+      // Shopping Center
+      '9,7': { exitX: 9, exitY: 8 },
+      '9,8': { exitX: 9, exitY: 7 },
+      
+      // Discussion Room
+      '3,12': { exitX: 3, exitY: 13 },
+      '3,13': { exitX: 3, exitY: 12 },
+      
+      // Cafe
+      '5,16': { exitX: 5, exitY: 17 },
+      '5,17': { exitX: 5, exitY: 16 },
+      
+      // Cinema
+      '9,16': { exitX: 9, exitY: 17 },
+      '9,17': { exitX: 9, exitY: 16 },
+      
+      // Restaurant
+      '10,18': { exitX: 10, exitY: 19 },
+      '10,19': { exitX: 10, exitY: 18 },
+    };
+
+    const currentKey = `${x},${y}`;
+    const exitPoint = exitPoints[currentKey];
+
+    if (exitPoint) {
+      // 출구 위치로 캐릭터 이동
+      moveCharacter(character.id, 
+        exitPoint.exitX * Tile_WIDTH, 
+        exitPoint.exitY * Tile_HEIGHT
+      );
+      
+      console.log(`캐릭터가 ${x},${y}에서 ${exitPoint.exitX},${exitPoint.exitY}로 이동했습니다.`);
     }
   };
 
@@ -322,17 +339,17 @@ export default function Village() {
     return false;
   };
 
-  // 캐릭터 이동 로직 수정
-  const moveCharacter = (characterId, newX, newY) => {
-    Animated.timing(characters.find(c => c.id === characterId).position, {
-      toValue: { 
-        x: Math.round(newX / Tile_WIDTH) * Tile_WIDTH, 
-        y: Math.round(newY / Tile_HEIGHT) * Tile_HEIGHT
-      },
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
+  // 캐릭터 동 함수 수정
+//   const moveCharacter = (characterId, targetX, targetY) => {
+//     Animated.timing(characters.find(c => c.id === characterId).position, {
+//       toValue: { 
+//         x: targetX,  // 정확한 타일의 x 좌표
+//         y: targetY   // 정확한 타일의 y 좌표
+//       },
+//       duration: 300,
+//       useNativeDriver: false,
+//     }).start();
+//   };
 
   // 맵 컴포넌트 내부에 추가
   const MatrixOverlay = () => {
@@ -379,7 +396,7 @@ export default function Village() {
     {'type': 'activity', 'activity': '친구들과의 영상 통화나 소셜 미디어 소통', 'location': [10, 3], 'duration': 60, 'zone': 'Discussion Room'}, 
     {'type': 'movement', 'path': [[10, 3], [11, 3], [12, 3], [13, 3], [13, 4], [13, 5], [13, 6], [12, 6], [11, 6], [10, 6], [9, 6], [8, 6], [8, 5], [8, 4], [8, 3], [7, 3], [6, 3], [5, 3], [4, 3], [3, 3], [2, 3]], 'start_zone': 'Discussion Room', 'end_zone': 'Joy_home', 'duration': 20}, 
     {'type': 'activity', 'activity': '편안한 음악을 듣거나 명상하며 하루 마무리', 'location': [2, 3], 'duration': 60, 'zone': 'Joy_home'}, 
-    {'type': 'activity', 'activity': '취 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
+    {'type': 'activity', 'activity': '취침 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
 ]
   // 시간 스케일 조정 (120분의 1)
   const TIME_SCALE = 1/120;
@@ -405,34 +422,34 @@ export default function Village() {
   };
 
   // 경로를 따라 이동하는 함수
-  const moveAlongPath = async () => {
-    const schedule = scheduleData[currentScheduleIndex];
-    const path = schedule.path;
+//   const moveAlongPath = async () => {
+//     const schedule = scheduleData[currentScheduleIndex];
+//     const path = schedule.path;
     
-    if (currentPathIndex < path.length - 1) {
-      const currentPos = path[currentPathIndex];
-      const nextPos = path[currentPathIndex + 1];
+//     if (currentPathIndex < path.length - 1) {
+//       const currentPos = path[currentPathIndex];
+//       const nextPos = path[currentPathIndex + 1];
       
-      // 이동 방향 결정
-      let moveDirection;
-      if (nextPos[0] > currentPos[0]) moveDirection = 'right';
-      else if (nextPos[0] < currentPos[0]) moveDirection = 'left';
-      else if (nextPos[1] > currentPos[1]) moveDirection = 'down';
-      else if (nextPos[1] < currentPos[1]) moveDirection = 'up';
+//       // 이동 방향 결정
+//       let moveDirection;
+//       if (nextPos[0] > currentPos[0]) moveDirection = 'right';
+//       else if (nextPos[0] < currentPos[0]) moveDirection = 'left';
+//       else if (nextPos[1] > currentPos[1]) moveDirection = 'down';
+//       else if (nextPos[1] < currentPos[1]) moveDirection = 'up';
       
-      // 이동 실행
-      handleMove(moveDirection);
+//       // 이동 실행
+//       handleMove(moveDirection);
       
-      // 다음 위치로 이동
-      setTimeout(() => {
-        setCurrentPathIndex(currentPathIndex + 1);
-      }, 300); // 이동 니메이션 시간
-    } else {
-      // 경로 이동 완료
-      setCurrentPathIndex(0);
-      moveToNextSchedule();
-    }
-  };
+//       // 다음 위치로 이동
+//       setTimeout(() => {
+//         setCurrentPathIndex(currentPathIndex + 1);
+//       }, 300); // 이동 니메이션 시간
+//     } else {
+//       // 경로 이동 완료
+//       setCurrentPathIndex(0);
+//       moveToNextSchedule();
+//     }
+//   };
 
   // 음 스케줄로 이동
   const moveToNextSchedule = () => {
@@ -510,7 +527,6 @@ export default function Village() {
           return acc;
         }, {});
         
-        console.log('이미지 데이터 확인 ', imageMap);
         setPersonaImage(imageMap);
       } catch (error) {
         console.error('페르소나 이미지 가져오기 실패:', error);
@@ -611,6 +627,8 @@ export default function Village() {
         // exit 메시지 전송
 
 
+        // http://110.11.192.148:1919/chat/user
+      // http://10.0.2.2:1919/chat/user
         await axios.post('http://10.0.2.2:1919/chat/user', {
           param: JSON.stringify({
             uid: auth.currentUser.uid,
@@ -706,9 +724,10 @@ export default function Village() {
 
       // AI 응답 요청
 
+
       // http://110.11.192.148:1919/chat/user
       // http://10.0.2.2:1919/chat/user
-      const response = await axios.post('http://110.11.192.148:1919/chat/user', {
+      const response = await axios.post('http://10.0.2.2:1919/chat/user', {
         param: JSON.stringify({
           uid: auth.currentUser.uid,
           message: chatInput,
@@ -734,6 +753,164 @@ export default function Village() {
   // 컴포넌트 상단에 ref 추가
   const scrollViewRef = useRef();
 
+  // 캐릭터별 스케줄 상태 관리
+  const [characterSchedules, setCharacterSchedules] = useState({
+    Joy: { currentIndex: 0, isRunning: false, data: [] },
+    Anger: { currentIndex: 0, isRunning: false, data: [] },
+    Sadness: { currentIndex: 0, isRunning: false, data: [] }
+  });
+
+  // 오늘 날짜 구하기
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0].replace(/-/g, '');
+  };
+
+  // Firestore에서 스케줄 가져오기 및 실시간 업데이트 설정
+  useEffect(() => {
+    const fetchAndSetupSchedule = async () => {
+      try {
+        console.log("fetchAndSetupSchedule 시작", auth.currentUser?.uid);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        console.log("날짜 범위:", today, tomorrow);
+
+        const schedulesRef = collection(db, 'village', 'schedule', 'schedules');
+        const q = query(
+          schedulesRef,
+          where('uid', '==', auth.currentUser.uid),
+          where('date', '>=', today),
+          where('date', '<', tomorrow),
+        );
+
+        // 먼저 현재 데이터 확인
+        const initialSnapshot = await getDocs(q);
+        console.log("초기 데이터 존재 여부:", !initialSnapshot.empty);
+
+        // 실시간 업데이트 리스너 설정
+        const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+          console.log("스냅샷 업데이트 발생");
+          
+          if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+            console.log("Firestore 데이터:", data);
+
+            try {
+              const parsedSchedule = JSON.parse(data.schedule);
+              console.log("파싱된 스케줄:", parsedSchedule);
+              
+              // 캐릭터별 스케줄 데이터 구성
+              const newSchedules = {};
+              parsedSchedule.forEach(characterData => {
+                newSchedules[characterData.name] = {
+                  currentIndex: 0,
+                  isRunning: false,
+                  data: characterData.daily_schedule,
+                  wakeUpTime: characterData.wake_up_time
+                };
+              });
+              
+              console.log("새로운 스케줄 데이터:", newSchedules);
+              setCharacterSchedules(newSchedules);
+            } catch (parseError) {
+              console.error("스케줄 파싱 에러:", parseError);
+            }
+          } else {
+            console.log("스케줄 없음, 새로 생성 요청");
+            try {
+              const response = await axios.post('http://10.0.2.2:1919/start', {
+                uid: auth.currentUser.uid,
+                profile: {
+                  mbti: user.mbti
+                }
+              });
+              console.log("새 스케줄 생성 응답:", response.data);
+            } catch (axiosError) {
+              console.error("스케줄 생성 요청 실패:", axiosError);
+            }
+          }
+        }, (error) => {
+          console.error("스케줄 감시 중 에러 발생:", error);
+        });
+
+        return () => {
+          console.log("리스너 정리");
+          unsubscribe();
+        };
+      } catch (error) {
+        console.error("스케줄 가져오기 실패:", error, error.stack);
+      }
+    };
+
+    if (user?.uid) {
+      fetchAndSetupSchedule();
+    } else {
+      console.log("사용자 UID 없음");
+    }
+  }, [user?.uid]);
+
+  // characterSchedules가 변경될 때마다 실행되는 useEffect 추가
+  useEffect(() => {
+    console.log("characterSchedules 변경됨:", characterSchedules);
+  }, [characterSchedules]);
+
+  // 스케줄 실행 함수 수정
+  const executeCharacterSchedule = async (characterName) => {
+    const schedule = characterSchedules[characterName];
+    const currentTask = schedule.data[schedule.currentIndex];
+    
+    if (!currentTask) return;
+
+    if (currentTask.type === 'activity') {
+      console.log(`${characterName}: ${currentTask.activity} 수행 중`);
+      await new Promise(resolve => setTimeout(resolve, currentTask.duration * TIME_SCALE * 1000));
+      moveToNextTask(characterName);
+    } else if (currentTask.type === 'movement') {
+      await moveAlongPath(characterName, currentTask.path);
+    }
+  };
+
+  // 다음 태스크로 이동
+  const moveToNextTask = (characterName) => {
+    setCharacterSchedules(prev => ({
+      ...prev,
+      [characterName]: {
+        ...prev[characterName],
+        currentIndex: prev[characterName].currentIndex + 1
+      }
+    }));
+  };
+
+  // 모든 캐릭터의 스케줄 시작
+  const startAllSchedules = () => {
+    setCharacterSchedules(prev => {
+      const newSchedules = {};
+      Object.keys(prev).forEach(characterName => {
+        newSchedules[characterName] = {
+          ...prev[characterName],
+          isRunning: true,
+          currentIndex: 0
+        };
+      });
+      return newSchedules;
+    });
+  };
+
+  // useEffect로 스케줄 실행 감시
+  useEffect(() => {
+    Object.entries(characterSchedules).forEach(([characterName, schedule]) => {
+      if (schedule.isRunning && schedule.data.length > schedule.currentIndex) {
+        executeCharacterSchedule(characterName);
+      }
+    });
+  }, [characterSchedules]);
+
+  // 시작 버튼 컴포넌트
   return (
     <View style={styles.container}>
       {/* 배경 맵 */}
@@ -771,9 +948,10 @@ export default function Village() {
           />
         </Animated.View>
       ))}
+      {/* <MatrixOverlay /> */}
       
       {/* 방향키 컨트롤러 */}
-      {/* <View style={styles.controls}>
+      <View style={styles.controls}>
         <TouchableOpacity style={styles.button} onPress={() => handleMove('up')}>
           <Text>↑</Text>
         </TouchableOpacity>
@@ -788,16 +966,18 @@ export default function Village() {
             <Text>→</Text>
           </TouchableOpacity>
         </View>
-      </View> */}
-      {/* <MatrixOverlay /> */}
+      </View>
+      
       
       <TouchableOpacity 
         style={styles.startButton}
-        onPress={startSchedule}
-        disabled={isScheduleRunning}
+        onPress={startAllSchedules}
+        disabled={Object.values(characterSchedules).some(s => s.isRunning)}
       >
         <Text style={styles.startButtonText}>
-          {isScheduleRunning ? '실행 중...' : '일과 시작'}
+          {Object.values(characterSchedules).some(s => s.isRunning) 
+            ? '실행 중...' 
+            : '일과 시작'}
         </Text>
       </TouchableOpacity>
 
@@ -1037,6 +1217,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 50,
     alignSelf: 'center',
+    zIndex: 5,
   },
   horizontalControls: {
     flexDirection: 'row',
