@@ -649,9 +649,10 @@ export default function Village() {
       try {
         // exit 메시지 전송
 
+        // http://221.148.97.237:1919/chat/user
         // http://110.11.192.148:1919/chat/user
         // http://10.0.2.2:1919/chat/user
-        await axios.post("http://10.0.2.2:1919/chat/user", {
+        await axios.post("http://221.148.97.237:1919/chat/user", {
           param: JSON.stringify({
             uid: auth.currentUser.uid,
             message: "exit",
@@ -760,9 +761,10 @@ export default function Village() {
 
       // AI 응답 요청
 
+      // http://221.148.97.237:1919/chat/user
       // http://110.11.192.148:1919/chat/user
       // http://10.0.2.2:1919/chat/user
-      const response = await axios.post("http://10.0.2.2:1919/chat/user", {
+      const response = await axios.post("http://221.148.97.237:1919/chat/user", {
         param: JSON.stringify({
           uid: auth.currentUser.uid,
           message: chatInput,
