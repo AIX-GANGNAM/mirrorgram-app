@@ -8,6 +8,7 @@ import ProfileGallery from '../components/profile/ProfileGallery';
 
 // ProfileScreen.js
 const ProfileScreen = ({ setIsAuthenticated }) => {
+  console.log('ProfileScreen 실행');
   const user = useSelector((state) => state.user.user);
 
   return (

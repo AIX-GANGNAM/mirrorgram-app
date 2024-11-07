@@ -62,13 +62,8 @@ import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
 import UpdatePushToken from './components/notification/UpdatePushToken';
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+import { AppState } from 'react-native';
+
 
 const AppWrapper = () => {
   return (
@@ -78,6 +73,22 @@ const AppWrapper = () => {
   );
 };
 
+const configureNotificationHandler = (isAppActive) => {
+  Notifications.setNotificationHandler({
+    handleNotification: async (notification) => {
+      const screenType = notification.request.content.data?.screenType;
+      const isPlayGround = screenType === 'PlayGround';
+      const isCompletedGeneratePersona = screenType === 'CompletedGeneratePersona';
+
+      return {
+        shouldShowAlert: isPlayGround || isCompletedGeneratePersona || !isAppActive,  // PlayGround 화면이거나 앱이 비활성 상태일 때만 알림 표시
+        shouldPlaySound: isPlayGround || isCompletedGeneratePersona || !isAppActive,  // PlayGround 화면이거나 앱이 비활성 상태일 때만 소리 재생
+        shouldSetBadge: true,
+      };
+    },
+  });
+}; 
+
 const App = () => {
   const dispatch = useDispatch();
   const Tab = createBottomTabNavigator();
@@ -85,6 +96,8 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(false);
 
   useEffect(() => {
     const checkInitialNotification = async () => {
@@ -122,35 +135,35 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      appState.current = nextAppState;
+      setAppStateVisible(nextAppState);
+
+      const isActive = nextAppState === 'active';
+      configureNotificationHandler(isActive);
+    });
+
     const initializeApp = async () => {
-      registerForPushNotificationsAsync();
-      NowPushToken();
+      await registerForPushNotificationsAsync();
     };
-    
     initializeApp();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
-      try {
-        await saveNotification(notification);
-        console.log("알림 저장 성공");
-        console.log("알림 수신 : ", notification);
+      const { content } = notification.request;
       
-        const {content}  = notification.request;
-        console.log("알림수신 : content : ", content);
-        console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
-        console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
-        console.log("알림수신 : content.data.URL : ", content.data.URL);
-        console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
-        console.log("알림수신 : content.body : ", content.body);      
-        console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
-        console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
-        console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
-      } catch (error) {
-        console.error("알림 저장 중 오류 발생:", error);
-      }
+      console.log("알림수신 : content : ", content);
+      console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
+      console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
+      console.log("알림수신 : content.data.URL : ", content.data.URL);
+      console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
+      console.log("알림수신 : content.body : ", content.body);      
+      console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
+      console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
+      console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);     
+      await saveNotification(notification);
+
     });
 
-    // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
       setTimeout(() => {
         const { content } = response.notification.request;
@@ -228,7 +241,7 @@ const App = () => {
               iconName = focused ? 'calendar' : 'calendar-outline';
             } else if (route.name === 'NewPost') {
               iconName = focused ? 'add-circle' : 'add-circle-outline';
-            } else if (route.name === 'PlayGround') {
+            } else if (route.name === 'Village') {
               iconName = focused ? 'body' : 'body-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
@@ -243,7 +256,7 @@ const App = () => {
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Calender" component={CalenderScreen} />
         <Tab.Screen name="NewPost" component={NewPostScreen} />
-        <Tab.Screen name="PlayGround" component={ReelsScreen} />
+        <Tab.Screen name="Village" component={ReelsScreen} />
         <Tab.Screen name="Profile">
           {props => (
             <ProfileScreen 

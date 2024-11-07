@@ -10,6 +10,7 @@ import axios from 'axios'; // Axios import 추가
 import { Alert } from 'react-native'; // Alert 모듈을 올바르게 import
 
 const NewPostScreen = ({ navigation }) => {
+  console.log('NewPostScreen 실행');
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -148,7 +149,7 @@ const NewPostScreen = ({ navigation }) => {
         console.log('피드 생성 결과:', response.data.message);
         // name=custom, dpname으로 한다
         // 피드 생성 알림 보내기(누구에게, 내가, 피드 uid, 화면 위치)
-        sendNotificationToUser(user.uid, user.uid, 'FEED_GENERATION', feedUuid);
+        sendNotificationToUser(user.uid, user.uid, 'FeedGeneration', feedUuid);
         //refreshPosts(); //(보류)
       clearInterval(progressInterval);
       setGenerationProgress(100);

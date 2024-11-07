@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const CreatePersonaPostScreen = ({ route, navigation }) => {
   const { persona, id, parentNick, userId } = route.params;
@@ -64,6 +65,8 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
         userId: userId,
         title : persona.title
       });
+      const sendNotificationResponse = sendNotificationToUser(userId, persona.type, 'FeedGeneration', response.data.uuid);
+      console.log('sendNotificationResponse : ', sendNotificationResponse);
       
     //   navigation.navigate('PostPreview', { 
     //     postData: response.data,

@@ -78,7 +78,16 @@ if(navigationRef.isReady() ){
         });
       }
       break;
-
+    case 'FeedGeneration':
+      console.log("피드 생성 알림 처리");
+      navigate('PostDetail', {
+        postId: URL
+      });
+      break;
+    case 'CompletedGeneratePersona':
+      console.log("페르소나 생성 완료 알림 처리");
+      navigate('home');
+      break;
     default:
       console.log('알 수 없는 알림 타입:', type);
     }
