@@ -100,6 +100,7 @@ const TILE_DESCRIPTIONS = {
 };
 
 export default function Village() {
+  // 여기는 바로바로 대화가 가능하기 때문에, 알람, 알림, notificaiton은 안한다.
   const user = useSelector((state) => state.user.user);
 
   const auth = getAuth();

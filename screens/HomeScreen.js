@@ -9,6 +9,7 @@ import ProfileHighlights from '../components/profile/ProfileHighlights';
 import Post from '../components/home/Post';
 
 const HomeScreen = () => {
+  console.log('HomeScreen 실행');
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);

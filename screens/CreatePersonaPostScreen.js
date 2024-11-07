@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import sendNotificationToUser from '../components/notification/SendNotification';
 
 const CreatePersonaPostScreen = ({ route, navigation }) => {
+  console.log('CreatePersonaPostScreen 실행');
   const { persona, id, parentNick, userId } = route.params;
   const [trendingKeywords, setTrendingKeywords] = useState([]);
   const [loading, setLoading] = useState(true);

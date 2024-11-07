@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import sendNotificationToUser from '../components/notification/SendNotification';
 // 이미지 생성 API 호출
 const generatePersonaImages = async (formData) => {
+  console.log('generatePersonaImages 실행');
   try {
     const auth = getAuth();
     const user = auth.currentUser;

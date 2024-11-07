@@ -9,6 +9,7 @@ import ProfileGallery from '../components/profile/ProfileGallery';
 import ProfileHighlights from '../components/profile/ProfileHighlights';
 
 const FriendProfileScreen = ({ route }) => {
+  console.log('FriendProfileScreen 실행');
   const [userData, setUserData] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
   const navigation = useNavigation();

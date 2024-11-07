@@ -23,6 +23,7 @@ import sendNotificationToUser from '../components/notification/SendNotification'
 
 // 네비게이션 프로필 친구 친구리스트 메시지 보내기 누르면 나오는곳
 const ChatUserScreen = ({ route, navigation }) => {
+  console.log('ChatUserScreen 실행');
   console.log("ChatUserScreen 호출"); // 실제 회원 <-> 실제 회원 // if 사용자가 
    const { 
     chatId, // 채팅방 고유
