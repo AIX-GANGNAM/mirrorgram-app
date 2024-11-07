@@ -20,9 +20,7 @@ import {
   getDocs, 
   getDoc, 
   doc, 
-  addDoc, 
-  updateDoc,
-  writeBatch  // 이 부분이 추가되어야 합니다
+  writeBatch
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useSelector } from 'react-redux';
