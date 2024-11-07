@@ -10,6 +10,7 @@ import Village from '../components/village/Village';
 import sendNotification from '../components/notification/SendNotification';
 import VillageV2 from '../components/village/VillageV2';
 
+
 export default function ReelsScreen() {
   console.log("ReelsScreen > 화면 진입");
   const [image, setImage] = useState(null);
