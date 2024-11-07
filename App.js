@@ -62,6 +62,7 @@ import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
 import UpdatePushToken from './components/notification/UpdatePushToken';
+
 import { AppState } from 'react-native';
 
 

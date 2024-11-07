@@ -1,31 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { View, Image, Animated, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Image, Animated, TouchableOpacity, Text, StyleSheet, Modal, Dimensions, TextInput, ScrollView } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { collection, query, where, onSnapshot, getDoc, doc, addDoc, serverTimestamp, orderBy, setDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+
+
+
 
     // 맵 매트릭스 정의
     const mapMatrix = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 2, 2, 2, 0, 0, 0, 3, 3, 3, 3, 0, 1],
-        [1, 0, 2, 2, 2, 0, 1, 1, 3, 3, 3, 3, 0, 1],
-        [1, 0, 2, 8, 2, 0, 1, 1, 3, 3, 8, 3, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 4, 4, 4, 0, 0, 6, 6, 6, 0, 1],
-        [1, 0, 0, 0, 4, 4, 4, 0, 0, 6, 6, 6, 0, 1],
-        [1, 0, 0, 0, 4, 8, 4, 0, 0, 8, 6, 6, 1, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-        [1, 1, 0, 7, 7, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-        [1, 0, 7, 7, 7, 7, 0, 0, 5, 5, 0, 0, 0, 1],
-        [1, 0, 7, 7, 7, 7, 0, 0, 5, 5, 1, 1, 0, 1],
-        [1, 0, 7, 8, 7, 7, 0, 0, 8, 5, 1, 1, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 9, 9, 9, 9, 0, 0,10,10,10, 0, 1],
-        [1, 0, 0, 9, 9, 9, 9, 0, 0,10,10,10, 0, 1],
-        [1, 0, 0, 9, 9, 8, 9, 0, 0, 8,10,10, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-        [1, 0, 1, 1, 1, 0, 0, 0,11,11, 8,11, 1, 1],
-        [1, 0, 1, 1, 1, 0, 0, 1,11,11,11,11, 1, 1],
-        [1, 0, 1, 1, 1, 0, 0, 1,11,11,11,11, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        // ... 맵에 맞게 계속 정의
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 0, 3, 3, 3, 3, 0, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 0, 3, 3, 3, 3, 0, 1],
+        [1, 0, 2, 8, 2, 0, 0, 0, 0, 3, 8, 3, 3, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 0, 1],
+        [1, 0, 0, 0, 5, 5, 5, 5, 0, 0, 4, 4, 4, 0, 1],
+        [1, 0, 0, 0, 5, 5, 5, 5, 0, 0, 4, 4, 4, 0, 1],
+        [1, 0, 0, 0, 5, 8, 5, 5, 0, 0, 8, 4, 4, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
+        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
+        [1, 0, 6, 6, 6, 6, 0, 0, 7, 7, 7, 0, 0, 0, 1],
+        [1, 0, 6, 8, 8, 6, 0, 0, 7, 8, 7, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 0, 1],
+        [1, 0, 0,10,10,10,10,10, 0, 9, 9, 9, 9, 0, 1],
+        [1, 0, 0,10,10,10,10,10, 0, 9, 9, 9, 9, 0, 1],
+        [1, 0, 0,10,10, 8,10,10, 0, 9, 8, 9, 9, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11, 8,11, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0,11,11,11,11, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       ];
       
       // 타일 크기 정의
@@ -57,18 +68,53 @@ const TILE_COLORS = {
 export default function Village() {
 
 
-
+  const auth = getAuth();
   
   const [characters, setCharacters] = useState([
     {
       id: 1,
       position: new Animated.ValueXY({ 
-        x: Tile_WIDTH,  // 첫 번째 이동 가능한 타일 위치
-        y: Tile_HEIGHT
+        x: Tile_WIDTH * 2,
+        y: Tile_HEIGHT * 3
       }),
-      image: require('../../assets/character1.png'),
+      image: require('../../assets/character/yellow.png'),
+    },
+    {
+      id: 2,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 10,
+        y: Tile_HEIGHT * 3
+      }),
+      image: require('../../assets/character/red.png'),
+    },
+    {
+      id: 3,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 5,
+        y: Tile_HEIGHT * 7
+      }),
+      image: require('../../assets/character/blue.png'),
+    },
+    {
+      id: 4,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 8,
+        y: Tile_HEIGHT * 12
+      }),
+      image: require('../../assets/character/jelda.png'),
+    },
+    {
+      id: 5,
+      position: new Animated.ValueXY({ 
+        x: Tile_WIDTH * 9,
+        y: Tile_HEIGHT * 16
+      }),
+      image: require('../../assets/character/black.png'),
     }
   ]);
+  
+  // 모달 관 상태
+  
 
   const moveDistance = {
     x: Tile_WIDTH,
@@ -203,7 +249,7 @@ export default function Village() {
         console.log("Discussion Room에 진입했습니다.");
         // navigation.navigate('DiscussionRoom');
       } else if (x === 8) {
-        // Fear's Home 출입구
+        // Fear's Home 출입
         console.log("Fear's Home에 진입했습니다.");
         // navigation.navigate('FearHome');
       }
@@ -315,7 +361,7 @@ export default function Village() {
     );
   };
 
-  // 스케줄 데이터 타입 정의
+  // 스케줄 이터 타입 정의
   const scheduleData = [
     {'type': 'activity', 'activity': '명상과 간단한 스트레칭', 'location': [1, 2], 'duration': 30, 'zone': 'Joy_home'}, 
     {'type': 'activity', 'activity': '아침 식사를 하며 하루의 계획 세우기', 'location': [1, 2], 'duration': 30, 'zone': 'Joy_home'}, 
@@ -333,12 +379,12 @@ export default function Village() {
     {'type': 'activity', 'activity': '친구들과의 영상 통화나 소셜 미디어 소통', 'location': [10, 3], 'duration': 60, 'zone': 'Discussion Room'}, 
     {'type': 'movement', 'path': [[10, 3], [11, 3], [12, 3], [13, 3], [13, 4], [13, 5], [13, 6], [12, 6], [11, 6], [10, 6], [9, 6], [8, 6], [8, 5], [8, 4], [8, 3], [7, 3], [6, 3], [5, 3], [4, 3], [3, 3], [2, 3]], 'start_zone': 'Discussion Room', 'end_zone': 'Joy_home', 'duration': 20}, 
     {'type': 'activity', 'activity': '편안한 음악을 듣거나 명상하며 하루 마무리', 'location': [2, 3], 'duration': 60, 'zone': 'Joy_home'}, 
-    {'type': 'activity', 'activity': '취침 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
+    {'type': 'activity', 'activity': '취 준비 및 독서', 'location': [2, 3], 'duration': 30, 'zone': 'Joy_home'}
 ]
   // 시간 스케일 조정 (120분의 1)
   const TIME_SCALE = 1/120;
 
-  // 스케줄 실행을 위한 상태 추가
+  // 스케줄 실행 위한 상태 추가
   const [currentScheduleIndex, setCurrentScheduleIndex] = useState(0);
   const [isScheduleRunning, setIsScheduleRunning] = useState(false);
   const [currentPathIndex, setCurrentPathIndex] = useState(0);
@@ -380,7 +426,7 @@ export default function Village() {
       // 다음 위치로 이동
       setTimeout(() => {
         setCurrentPathIndex(currentPathIndex + 1);
-      }, 300); // 이동 애니메이션 시간
+      }, 300); // 이동 니메이션 시간
     } else {
       // 경로 이동 완료
       setCurrentPathIndex(0);
@@ -388,7 +434,7 @@ export default function Village() {
     }
   };
 
-  // 다음 스케줄로 이동
+  // 음 스케줄로 이동
   const moveToNextSchedule = () => {
     if (currentScheduleIndex < scheduleData.length - 1) {
       setCurrentScheduleIndex(currentScheduleIndex + 1);
@@ -419,6 +465,275 @@ export default function Village() {
     }
   }, [currentPathIndex, isScheduleRunning]);
 
+  // 상태와 애니메이션 값 설정
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const animation = useRef(new Animated.Value(0)).current;
+
+  // 메뉴 토글 함수 수정
+  const toggleMenu = () => {
+    const toValue = isMenuOpen ? 0 : 1;
+    
+    Animated.spring(animation, {
+      toValue,
+      useNativeDriver: true,
+      friction: 5,
+      tension: 40,
+      duration: 300
+    }).start();
+    
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // 버튼 데이터 정의
+  // const menuButtons = [
+  //   { icon: 'map', onPress: () => console.log('지도') },
+  //   { icon: 'person', onPress: () => console.log('프로필') },
+  //   { icon: 'settings', onPress: () => console.log('설정') },
+  //   { icon: 'notifications', onPress: () => console.log('알림') },
+  //   { icon: 'menu', onPress: () => console.log('메뉴') },
+  // ];
+
+  const [personaImage, setPersonaImage] = useState(null);
+
+  useEffect(() => {
+    const fetchPersonaImage = async () => {
+      try {
+        const db = getFirestore();
+        const user_doc = collection(db, 'users');
+        const result = await getDoc(doc(user_doc, auth.currentUser.uid));
+        const personaData = result.data().persona;
+        
+        const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/mirrorgram-20713.appspot.com/o/%E2%80%94Pngtree%E2%80%94default%20avatar_5408436.png?alt=media&token=36f0736a-17cb-444f-8fe1-1bca085b28e2'; // 기본 이미지 URL
+        
+        const imageMap = personaData.reduce((acc, item) => {
+          acc[item.Name] = item.IMG || defaultImage; // IMG가 없으면 기본 이미지 사용
+          return acc;
+        }, {});
+        
+        console.log('이미지 데이터 확인 ', imageMap);
+        setPersonaImage(imageMap);
+      } catch (error) {
+        console.error('페르소나 이미지 가져오기 실패:', error);
+      }
+    };
+
+    fetchPersonaImage();
+  }, []);
+
+
+
+  const menuButtons = [
+    {
+      image: { uri: personaImage?.clone },
+      onPress: () => handlePersonaPress('clone'),
+      type: 'clone'
+    },
+    {
+      image: { uri: personaImage?.Joy },
+      onPress: () => handlePersonaPress('Joy'),
+      type: 'Joy'
+    },
+    {
+      image: { uri: personaImage?.Anger },
+      onPress: () => handlePersonaPress('Anger'),
+      type: 'Anger'
+    },
+    {
+      image: { uri: personaImage?.Sadness },
+      onPress: () => handlePersonaPress('Sadness'),
+      type: 'Sadness'
+    },
+    {
+      image: { uri: personaImage?.custom },
+      onPress: () => handlePersonaPress('custom'),
+      type: 'custom'
+    }
+  ];
+
+  // 모달 관련 상태 추가
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState(null);
+
+  // 페르소나 정보 데터 추가
+  const personaInfo = {
+    clone: {
+      type: 'clone',
+      name: "분신",
+      description: "당신의 또 다른 모습",
+      traits: ["적응력", "다면성", "유연성"],
+      specialty: "상황에 따른 역할 전환"
+    },
+    Joy: {
+      type: 'Joy',
+      name: "기쁨",
+      description: "긍정적 에너지의 원천",
+      traits: ["낙관성", "열정", "친근함"],
+      specialty: "즐거운 순간 만들기"
+    },
+    Anger: {
+      type: 'Anger',
+      name: "분노",
+      description: "정의와 변화의 동력",
+      traits: ["결단력", "추진력", "정직함"],
+      specialty: "부당한 상황 개선하기"
+    },
+    Sadness: {
+      type: 'Sadness',
+      name: "슬픔",
+      description: "공감과 치유의 매개체",
+      traits: ["공감능력", "섬세함", "이해심"],
+      specialty: "깊은 감정 이해하기"
+    },
+    custom: {
+      type: 'custom',
+      name: "사용자 정의",
+      description: "나만의 특별한 페르소나",
+      traits: ["창의성", "독창성", "자유로움"],
+      specialty: "새로운 관점 제시하기"
+    }
+  };
+
+  // 페르소나 선택 핸들러 추가
+  const handlePersonaPress = (type) => {
+    setSelectedPersona(personaInfo[type]);
+    setModalVisible(true);
+  };
+
+  // 모달 닫기 핸들러 추가
+  const handleCloseModal = async () => {
+    setModalVisible(false);
+    setSelectedPersona(null);
+
+    setChatInput('');
+
+    if (activeTab==='chat'){
+      try {
+        // exit 메시지 전송
+
+
+        await axios.post('http://10.0.2.2:1919/chat/user', {
+          param: JSON.stringify({
+            uid: auth.currentUser.uid,
+            message: 'exit',
+            persona: selectedPersona.type
+          })
+        });
+        
+        // 모달 닫기
+        
+      } catch (error) {
+        console.error('채팅 종료 메시지 전송 실패:', error);
+        
+      }
+    }
+  };
+
+  // 화면 크기 가져오기
+  const { width, height } = Dimensions.get('window');
+
+  // 상단에 상태 추가
+  const [activeTab, setActiveTab] = useState('log'); // 'log' 또는 'chat'
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+
+  // 상단에 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false);
+
+  // useEffect로 실시간 채팅 리스너 설정
+  useEffect(() => {
+    if (selectedPersona) {
+      try {
+        const db = getFirestore();
+        const chatPath = `village/chat/users/${auth.currentUser.uid}/personas/${selectedPersona.type}/messages`;
+        const chatRef = collection(db, chatPath);
+        
+        // 초기 경로 구조 생성
+        const initializeChat = async () => {
+          const userDocRef = doc(db, 'village/chat/users', auth.currentUser.uid);
+          const personaDocRef = doc(db, `village/chat/users/${auth.currentUser.uid}/personas`, selectedPersona.type);
+          
+          try {
+            await setDoc(userDocRef, { initialized: true }, { merge: true });
+            await setDoc(personaDocRef, { 
+              type: selectedPersona.type,
+              initialized: true 
+            }, { merge: true });
+          } catch (error) {
+            console.log("초기화 중 오류:", error);
+          }
+        };
+        
+        initializeChat();
+
+        // 실시간 리스너 설정
+        const q = query(chatRef, orderBy('timestamp', 'asc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate().toLocaleTimeString()
+          }));
+          setChatMessages(messages);
+        }, (error) => {
+          console.log("채팅 로드 중 오류:", error);
+          setChatMessages([]);
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("채팅 초기화 오류:", error);
+        setChatMessages([]);
+      }
+    }
+  }, [selectedPersona]);
+
+  // 메시지 전송 함수
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+
+    try {
+      setIsLoading(true);
+      const db = getFirestore();
+      const chatPath = `village/chat/users/${auth.currentUser.uid}/personas/${selectedPersona.type}/messages`;
+      const messagesRef = collection(db, chatPath);
+      
+      // 사용자 메시지 저장
+      await addDoc(messagesRef, {
+        message: chatInput,
+        timestamp: serverTimestamp(),
+        sender: 'user'
+      });
+
+      // AI 응답 요청
+
+      // http://110.11.192.148:1919/chat/user
+      // http://10.0.2.2:1919/chat/user
+      const response = await axios.post('http://110.11.192.148:1919/chat/user', {
+        param: JSON.stringify({
+          uid: auth.currentUser.uid,
+          message: chatInput,
+          persona: selectedPersona.type
+        })
+      });
+
+      // AI 응답 저장
+      await addDoc(messagesRef, {
+        message: response.data.message,
+        timestamp: serverTimestamp(),
+        sender: 'bot'
+      });
+
+      setChatInput('');
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 컴포넌트 상단에 ref 추가
+  const scrollViewRef = useRef();
+
   return (
     <View style={styles.container}>
       {/* 배경 맵 */}
@@ -435,25 +750,25 @@ export default function Village() {
             styles.character,
             { 
               transform: character.position.getTranslateTransform(),
-              width: spriteConfig.frameWidth,  // 한 프레임의 너비
-              height: spriteConfig.frameHeight, // 한 프레임의 높이
-              overflow: 'hidden',  // 중요: 프레임 밖의 부분을 잘라냄
+              width: spriteConfig.frameWidth,
+              height: spriteConfig.frameHeight,
+              overflow: 'hidden',
               position: 'absolute'
             }
           ]}
         >
           <Image
-  source={require('../../assets/character/purple.png')}
-  style={{
-    width: spriteConfig.frameWidth * 10,
-    height: spriteConfig.frameHeight * 8,
-    position: 'absolute',
-    left: -spriteConfig.frameWidth * currentFrame,
-    top: -spriteConfig.frameHeight * spriteConfig.animations[
-      isMoving ? direction : `${direction}_idle`
-    ].row,
-  }}
-/>
+            source={character.image}
+            style={{
+              width: spriteConfig.frameWidth * 10,
+              height: spriteConfig.frameHeight * 8,
+              position: 'absolute',
+              left: -spriteConfig.frameWidth * currentFrame,
+              top: -spriteConfig.frameHeight * spriteConfig.animations[
+                isMoving ? direction : `${direction}_idle`
+              ].row,
+            }}
+          />
         </Animated.View>
       ))}
       
@@ -485,6 +800,220 @@ export default function Village() {
           {isScheduleRunning ? '실행 중...' : '일과 시작'}
         </Text>
       </TouchableOpacity>
+
+      {/* 메뉴 버튼들 */}
+      {menuButtons.map((button, index) => {
+        const offsetX = (index + 1) * 60;
+        
+        return (
+          <Animated.View
+            key={index}
+            style={[
+              styles.floatingButton,
+              styles.menuButton,
+              {
+                transform: [
+                  {
+                    translateX: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, offsetX]
+                    })
+                  },
+                  {
+                    scale: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1]
+                    })
+                  }
+                ],
+                opacity: animation
+              }
+            ]}
+          >
+            <TouchableOpacity 
+              onPress={button.onPress}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Image 
+                source={button.image}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  borderRadius: 28,
+                  resizeMode: 'cover'
+                }}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+
+      {/* 메인 버튼 */}
+      <Animated.View
+        style={[
+          styles.floatingButton,
+          {
+            transform: [
+              {
+                rotate: animation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '45deg']
+                })
+              }
+            ]
+          }
+        ]}
+      >
+        <TouchableOpacity onPress={toggleMenu}>
+          <Icon name="add" size={24} color="white" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* 페르소나 모달 추가 */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* 상단 헤더 추가 */}
+            <View style={styles.modalHeader}>
+              {selectedPersona && (
+                <>
+                  <Image 
+                    source={menuButtons.find(btn => btn.type === selectedPersona.type)?.image}
+                    style={styles.selectedPersonaImage}
+                  />
+                  <Text style={styles.selectedPersonaName}>
+                    {selectedPersona.name}
+                  </Text>
+                </>
+              )}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleCloseModal}
+              >
+                <Ionicons name="close-sharp" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* 기존 탭 버튼들 */}
+            <View style={styles.tabButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'log' && styles.activeTabButton
+                ]}
+                onPress={() => setActiveTab('log')}
+              >
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === 'log' && styles.activeTabButtonText
+                ]}>로그</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === 'chat' && styles.activeTabButton
+                ]}
+                onPress={() => setActiveTab('chat')}
+              >
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === 'chat' && styles.activeTabButtonText
+                ]}>채팅</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 탭 컨텐츠 */}
+            {activeTab === 'log' ? (
+              // 로그 탭 컨츠
+              <View style={styles.tabContent}>
+                {selectedPersona && (
+                  <View style={styles.personaInfo}>
+                    <Text style={styles.personaName}>{selectedPersona.name}</Text>
+                    <Text style={styles.personaDescription}>
+                      {selectedPersona.description}
+                    </Text>
+                    
+                    <View style={styles.traitsContainer}>
+                      <Text style={styles.sectionTitle}>특성</Text>
+                      {selectedPersona.traits.map((trait, index) => (
+                        <View key={index} style={styles.traitItem}>
+                          <Text style={styles.traitText}>• {trait}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    
+                    <View style={styles.specialtyContainer}>
+                      <Text style={styles.sectionTitle}>전문 분야</Text>
+                      <Text style={styles.specialtyText}>
+                        {selectedPersona.specialty}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : (
+              // 채팅 탭 컨텐츠
+              <View style={styles.tabContent}>
+                <ScrollView 
+                  style={styles.chatContainer}
+                  ref={scrollViewRef}
+                  onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                >
+                  {chatMessages.map(message => (
+                    <View 
+                      key={message.id} 
+                      style={[
+                        styles.messageContainer,
+                        message.sender === 'user' ? styles.userMessage : styles.botMessage
+                      ]}
+                    >
+                      <View style={[
+                        styles.messageBubble,
+                        message.sender === 'user' ? styles.userBubble : styles.botBubble
+                      ]}>
+                        <Text style={[
+                          styles.messageText,
+                          message.sender === 'user' ? styles.userMessageText : styles.botMessageText
+                        ]}>
+                          {message.message}
+                        </Text>
+                      </View>
+                      <Text style={styles.messageTime}>
+                        {message.timestamp}
+                      </Text>
+                    </View>
+                  ))}
+                  {isLoading && (
+                    <View style={styles.loadingContainer}>
+                      <Text style={styles.loadingText}>...</Text>
+                    </View>
+                  )}
+                </ScrollView>
+                <View style={styles.chatInputContainer}>
+                  <TextInput
+                    style={styles.chatInput}
+                    value={chatInput}
+                    onChangeText={setChatInput}
+                    placeholder="메시지를 입력하세요..."
+                    placeholderTextColor="#999"
+                  />
+                  <TouchableOpacity 
+                    style={styles.sendButton}
+                    onPress={handleSendMessage}
+                  >
+                    <Text style={styles.sendButtonText}>전송</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -528,7 +1057,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1,  // 맵 위에 표시되도록
+    zIndex: 1,  // 맵 위에 표되도록
   },
   matrixRow: {
     flexDirection: 'row',
@@ -584,5 +1113,247 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    zIndex: 1,
+  },
+
+  menuButton: {
+    backgroundColor: '#FFFFFF',
+    zIndex: 0,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    height: '70%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 10,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 15,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  personaInfo: {
+    width: '100%',
+    height: '100%',
+    paddingTop: 40,
+  },
+  personaName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  personaDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#444',
+    marginBottom: 10,
+  },
+  traitsContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  traitItem: {
+    marginVertical: 5,
+  },
+  traitText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  specialtyContainer: {
+    width: '100%',
+  },
+  specialtyText: {
+    fontSize: 16,
+    color: '#555',
+    lineHeight: 22,
+  },
+  tabButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 15,
+    marginTop: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  activeTabButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#4A90E2',
+  },
+  tabButtonText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  activeTabButtonText: {
+    color: '#4A90E2',
+    fontWeight: 'bold',
+  },
+  tabContent: {
+    flex: 1,
+    width: '100%',
+  },
+  chatContainer: {
+    flex: 1,
+    width: '100%',
+    marginBottom: 10,
+  },
+  messageContainer: {
+    marginVertical: 4,
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 20,
+  },
+  userMessage: {
+    alignItems: 'flex-end',
+  },
+  botMessage: {
+    alignItems: 'flex-start',
+  },
+  userBubble: {
+    backgroundColor: '#007AFF',
+    borderTopRightRadius: 4,
+    marginLeft: 'auto',
+  },
+  botBubble: {
+    backgroundColor: '#E9ECEF',
+    borderTopLeftRadius: 4,
+    marginRight: 'auto',
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  userMessageText: {
+    color: '#FFFFFF',
+  },
+  botMessageText: {
+    color: '#000000',
+  },
+  messageTime: {
+    fontSize: 12,
+    color: '#000000',
+    marginTop: 4,
+  },
+  chatInputContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  chatInput: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: '#4A90E2',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    marginBottom: 10,
+  },
+  selectedPersonaImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  selectedPersonaName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: 16,
+    alignItems: 'flex-start',
+  },
+  loadingText: {
+    fontSize: 24,
+    color: '#666666',
+    marginLeft: 16,
   },
 });
