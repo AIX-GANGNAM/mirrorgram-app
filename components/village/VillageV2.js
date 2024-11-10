@@ -31,8 +31,7 @@ import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import app from '../../firebaseConfig';
-
+import app from "../../firebaseConfig";
 
 // Firestore 초기화
 const db = getFirestore(app);
@@ -113,37 +112,50 @@ export default function Village() {
       const initialCharacters = [
         {
           id: 1,
-          name: 'Joy',
+          name: "Joy",
           position: new Animated.ValueXY({
-            x: characterSchedules.Joy?.data[0]?.location?.[0] * Tile_WIDTH || Tile_WIDTH * 2,
-            y: characterSchedules.Joy?.data[0]?.location?.[1] * Tile_HEIGHT || Tile_HEIGHT * 3,
+            x:
+              characterSchedules.Joy?.data[0]?.location?.[0] * Tile_WIDTH ||
+              Tile_WIDTH * 2,
+            y:
+              characterSchedules.Joy?.data[0]?.location?.[1] * Tile_HEIGHT ||
+              Tile_HEIGHT * 3,
           }),
           image: require("../../assets/character/yellow.png"),
         },
         {
           id: 2,
-          name: 'Anger',
+          name: "Anger",
           position: new Animated.ValueXY({
-            x: characterSchedules.Anger?.data[0]?.location?.[0] * Tile_WIDTH || Tile_WIDTH * 10,
-            y: characterSchedules.Anger?.data[0]?.location?.[1] * Tile_HEIGHT || Tile_HEIGHT * 3,
+            x:
+              characterSchedules.Anger?.data[0]?.location?.[0] * Tile_WIDTH ||
+              Tile_WIDTH * 10,
+            y:
+              characterSchedules.Anger?.data[0]?.location?.[1] * Tile_HEIGHT ||
+              Tile_HEIGHT * 3,
           }),
           image: require("../../assets/character/red.png"),
         },
         {
           id: 3,
-          name: 'Sadness',
+          name: "Sadness",
           position: new Animated.ValueXY({
-            x: characterSchedules.Sadness?.data[0]?.location?.[0] * Tile_WIDTH || Tile_WIDTH * 5,
-            y: characterSchedules.Sadness?.data[0]?.location?.[1] * Tile_HEIGHT || Tile_HEIGHT * 7,
+            x:
+              characterSchedules.Sadness?.data[0]?.location?.[0] * Tile_WIDTH ||
+              Tile_WIDTH * 5,
+            y:
+              characterSchedules.Sadness?.data[0]?.location?.[1] *
+                Tile_HEIGHT || Tile_HEIGHT * 7,
           }),
           image: require("../../assets/character/blue.png"),
-        }
+        },
       ];
-      
+
       setCharacters(initialCharacters);
     }
   }, [characterSchedules]);
 
+  
   const [currentFrame, setCurrentFrame] = useState(0);
   const [direction, setDirection] = useState("down");
   const [isMoving, setIsMoving] = useState(false); // 움직임 상태 추가
@@ -160,7 +172,7 @@ export default function Village() {
       right: { row: 2, frames: 3 },
       right_idle: { row: 2, frames: 3 },
       up: { row: 3, frames: 3 },
-      up_idle: { row: 3, frames: 3 }
+      up_idle: { row: 3, frames: 3 },
     },
   };
 
@@ -217,13 +229,13 @@ export default function Village() {
       Animated.timing(character.position, {
         toValue: {
           x: targetX * Tile_WIDTH,
-          y: targetY * Tile_HEIGHT
+          y: targetY * Tile_HEIGHT,
         },
         duration: 300,
         useNativeDriver: false,
       }).start(() => {
         setIsMoving(false);
-        
+
         // 출입구 체크
         if (checkEntrance(targetX, targetY)) {
           handleEnterBuilding(targetX, targetY);
@@ -403,74 +415,74 @@ export default function Village() {
   const [currentPathIndex, setCurrentPathIndex] = useState(0);
 
   // 스케줄 실행 함수
-//   const executeSchedule = async () => {
-//     const schedule = scheduleData[currentScheduleIndex];
+  //   const executeSchedule = async () => {
+  //     const schedule = scheduleData[currentScheduleIndex];
 
-//     if (schedule.type === "activity") {
-//       // 활동 실행
-//       console.log(
-//         `${schedule.activity} 시작 (${schedule.duration * TIME_SCALE}분)`
-//       );
-//       await new Promise((resolve) =>
-//         setTimeout(resolve, schedule.duration * TIME_SCALE * 1000)
-//       );
-//       moveToNextSchedule();
-//     } else if (schedule.type === "movement") {
-//       // 이동 실행
-//       moveAlongPath(schedule.path);
-//     }
-//   };
+  //     if (schedule.type === "activity") {
+  //       // 활동 실행
+  //       console.log(
+  //         `${schedule.activity} 시작 (${schedule.duration * TIME_SCALE}분)`
+  //       );
+  //       await new Promise((resolve) =>
+  //         setTimeout(resolve, schedule.duration * TIME_SCALE * 1000)
+  //       );
+  //       moveToNextSchedule();
+  //     } else if (schedule.type === "movement") {
+  //       // 이동 실행
+  //       moveAlongPath(schedule.path);
+  //     }
+  //   };
 
-//   경로를 따라 이동하는 함수
-    const moveAlongPath = async (characterName, path, schedule) => {
-      if (!path || path.length < 2) {
-        console.log('Invalid path:', path);
-        return;
-      }
+  //   경로를 따라 이동하는 함수
+  const moveAlongPath = async (characterName, path, schedule) => {
+    if (!path || path.length < 2) {
+      console.log("Invalid path:", path);
+      return;
+    }
 
-      const character = characters.find(c => c.name === characterName);
-      if (!character) {
-        console.log('Character not found:', characterName);
-        return;
-      }
+    const character = characters.find((c) => c.name === characterName);
+    if (!character) {
+      console.log("Character not found:", characterName);
+      return;
+    }
 
-      console.log(`Moving ${characterName} along path:`, path);
+    console.log(`Moving ${characterName} along path:`, path);
 
-      for (let i = 0; i < path.length - 1; i++) {
-        const currentPos = path[i];
-        const nextPos = path[i + 1];
-        
-        // 이동 방향 결정
-        let moveDirection;
-        if (nextPos[0] > currentPos[0]) moveDirection = 'right';
-        else if (nextPos[0] < currentPos[0]) moveDirection = 'left';
-        else if (nextPos[1] > currentPos[1]) moveDirection = 'down';
-        else if (nextPos[1] < currentPos[1]) moveDirection = 'up';
+    for (let i = 0; i < path.length - 1; i++) {
+      const currentPos = path[i];
+      const nextPos = path[i + 1];
 
-        // 방향 설정
-        setDirection(moveDirection);
-        setIsMoving(true);
+      // 이동 방향 결정
+      let moveDirection;
+      if (nextPos[0] > currentPos[0]) moveDirection = "right";
+      else if (nextPos[0] < currentPos[0]) moveDirection = "left";
+      else if (nextPos[1] > currentPos[1]) moveDirection = "down";
+      else if (nextPos[1] < currentPos[1]) moveDirection = "up";
 
-        // 타일 좌표를 픽셀 좌표로 변환
-        const targetX = nextPos[0] * Tile_WIDTH;
-        const targetY = nextPos[1] * Tile_HEIGHT;
+      // 방향 설정
+      setDirection(moveDirection);
+      setIsMoving(true);
 
-        await new Promise((resolve) => {
-          Animated.timing(character.position, {
-            toValue: { x: targetX, y: targetY },
-            duration: 300,
-            useNativeDriver: false,
-          }).start(() => {
-            resolve();
-          });
+      // 타일 좌표를 픽셀 좌표로 변환
+      const targetX = nextPos[0] * Tile_WIDTH;
+      const targetY = nextPos[1] * Tile_HEIGHT;
+
+      await new Promise((resolve) => {
+        Animated.timing(character.position, {
+          toValue: { x: targetX, y: targetY },
+          duration: 300,
+          useNativeDriver: false,
+        }).start(() => {
+          resolve();
         });
+      });
 
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
 
-      setIsMoving(false);
-      moveToNextTask(characterName);
-    };
+    setIsMoving(false);
+    moveToNextTask(characterName);
+  };
 
   // 다음 스케줄로 이동
   const moveToNextSchedule = (schedule) => {
@@ -652,7 +664,7 @@ export default function Village() {
         // http://221.148.97.237:1919/chat/user
         // http://110.11.192.148:1919/chat/user
         // http://10.0.2.2:1919/chat/user
-        await axios.post("http://221.148.97.237:1919/chat/user", {
+        await axios.post("http://10.0.2.2:1919/chat/user", {
           param: JSON.stringify({
             uid: auth.currentUser.uid,
             message: "exit",
@@ -764,7 +776,7 @@ export default function Village() {
       // http://221.148.97.237:1919/chat/user
       // http://110.11.192.148:1919/chat/user
       // http://10.0.2.2:1919/chat/user
-      const response = await axios.post("http://221.148.97.237:1919/chat/user", {
+      const response = await axios.post("http://10.0.2.2:1919/chat/user", {
         param: JSON.stringify({
           uid: auth.currentUser.uid,
           message: chatInput,
@@ -805,10 +817,10 @@ export default function Village() {
 
   // 기상 시간에서 숫자만 추출하는 함수
   const extractHourFromWakeUpTime = (wakeUpTime) => {
-    if (typeof wakeUpTime === 'string') {
-        // 숫자만 추출
-        const hour = parseInt(wakeUpTime.replace(/[^0-9]/g, ''));
-        return isNaN(hour) ? 7 : hour; // 파싱 실패시 기본값 7
+    if (typeof wakeUpTime === "string") {
+      // 숫자만 추출
+      const hour = parseInt(wakeUpTime.replace(/[^0-9]/g, ""));
+      return isNaN(hour) ? 7 : hour; // 파싱 실패시 기본값 7
     }
     return 7; // 문자열이 아닌 경우 기본값 7
   };
@@ -816,82 +828,88 @@ export default function Village() {
   // Firestore에서 스케줄 가져오기 및 실시간 업데이트 설정
   useEffect(() => {
     console.log("useEffect 실행됨");
-    
+
     const fetchAndSetupSchedule = async () => {
-        console.log("fetchAndSetupSchedule 실행됨");
-        try {
-            console.log("현재 유저 정보:", {
-                reduxUser: user,
-                uid: user?.uid,
-            });
-            
-            if (!user?.uid) {
-                console.log("유저 ID가 없음");
-                return;
-            }
+      console.log("fetchAndSetupSchedule 실행됨");
+      try {
+        console.log("현재 유저 정보:", {
+          reduxUser: user,
+          uid: user?.uid,
+        });
 
-            // Timestamp로 변환
-            const today = Timestamp.fromDate(new Date(new Date().setHours(0, 0, 0, 0)));
-            const tomorrow = Timestamp.fromDate(new Date(new Date().setHours(24, 0, 0, 0)));
-
-            const schedulesRef = collection(db, 'village', 'schedule', 'schedules');
-            const q = query(
-                schedulesRef,
-                where('uid', '==', user.uid),
-                where('date', '>=', today),
-                where('date', '<', tomorrow),
-            );
-
-            // 실시간 업데이트 리스너 설정
-            const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-                console.log("스냅샷 업데이트 발생");
-                
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    const data = doc.data();
-                    const parsedSchedule = JSON.parse(data.schedule);
-
-                    console.log("parsedSchedule:", parsedSchedule);
-                    
-                    // 캐릭터별 스케줄 데이터 구성
-                    const newSchedules = {};
-                    parsedSchedule.forEach(characterData => {
-                        newSchedules[characterData.name] = {
-                            currentIndex: 0,
-                            isRunning: false,
-                            data: characterData.daily_schedule,
-                            wakeUpTime: extractHourFromWakeUpTime(characterData.wake_up_time)
-                        };
-                    });
-                    
-                    setCharacterSchedules(newSchedules);
-                    console.log("스케줄 업데이트됨:", newSchedules);
-                } else {
-                    console.log("스케줄 없음, 새로 생성 요청");
-                    try {
-                        const response = await axios.post('http://10.0.2.2:1919/start', {
-                            uid: user.uid,
-                            profile: {
-                                mbti: user.profile.mbti
-                            }
-                        });
-                        console.log("새 스케줄 생성 응답:", response.data);
-                    } catch (error) {
-                        console.error("스케줄 생성 요청 실패:", error);
-                    }
-                }
-            });
-
-            return () => unsubscribe();
-        } catch (error) {
-            console.error("스케줄 가져오기 실패:", error);
+        if (!user?.uid) {
+          console.log("유저 ID가 없음");
+          return;
         }
+
+        // Timestamp로 변환
+        const today = Timestamp.fromDate(
+          new Date(new Date().setHours(0, 0, 0, 0))
+        );
+        const tomorrow = Timestamp.fromDate(
+          new Date(new Date().setHours(24, 0, 0, 0))
+        );
+
+        const schedulesRef = collection(db, "village", "schedule", "schedules");
+        const q = query(
+          schedulesRef,
+          where("uid", "==", user.uid),
+          where("date", ">=", today),
+          where("date", "<", tomorrow)
+        );
+
+        // 실시간 업데이트 리스너 설정
+        const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+          console.log("스냅샷 업데이트 발생");
+
+          if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+            const parsedSchedule = JSON.parse(data.schedule);
+
+            console.log("parsedSchedule:", parsedSchedule);
+
+            // 캐릭터별 스케줄 데이터 구성
+            const newSchedules = {};
+            parsedSchedule.forEach((characterData) => {
+              newSchedules[characterData.name] = {
+                currentIndex: 0,
+                isRunning: false,
+                data: characterData.daily_schedule,
+                wakeUpTime: extractHourFromWakeUpTime(
+                  characterData.wake_up_time
+                ),
+              };
+            });
+
+            setCharacterSchedules(newSchedules);
+            console.log("스케줄 업데이트됨:", newSchedules);
+          } else {
+            console.log("스케줄 없음, 새로 생성 요청");
+            try {
+              const response = await axios.post("http://10.0.2.2:1919/start", {
+                uid: user.uid,
+                profile: {
+                  mbti: user.profile.mbti,
+                },
+              });
+              console.log("새 스케줄 생성 응답:", response.data);
+            } catch (error) {
+              console.error("스케줄 생성 요청 실패:", error);
+            }
+          }
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("스케줄 가져오기 실패:", error);
+      }
     };
 
     if (user?.uid) {
-        fetchAndSetupSchedule();
+      fetchAndSetupSchedule();
     }
-}, [user]);
+  }, [user]);
 
   // characterSchedules가 변경될 때마다 실행되는 useEffect 추가
   useEffect(() => {
@@ -906,12 +924,12 @@ export default function Village() {
 
     if (!currentTask) {
       console.log(`No more tasks for ${characterName}`);
-      setCharacterSchedules(prev => ({
+      setCharacterSchedules((prev) => ({
         ...prev,
         [characterName]: {
           ...prev[characterName],
-          isRunning: false
-        }
+          isRunning: false,
+        },
       }));
       return;
     }
@@ -920,8 +938,10 @@ export default function Village() {
 
     try {
       if (currentTask.type === "activity") {
-        console.log(`${characterName} performing activity: ${currentTask.activity}`);
-        const character = characters.find(c => c.name === characterName);
+        console.log(
+          `${characterName} performing activity: ${currentTask.activity}`
+        );
+        const character = characters.find((c) => c.name === characterName);
         if (character) {
           await moveCharacter(
             character.id,
@@ -929,8 +949,8 @@ export default function Village() {
             currentTask.location[1] * Tile_HEIGHT
           );
         }
-        
-        await new Promise(resolve => 
+
+        await new Promise((resolve) =>
           setTimeout(resolve, currentTask.duration * TIME_SCALE * 1000)
         );
         moveToNextTask(characterName);
@@ -946,9 +966,9 @@ export default function Village() {
   // moveCharacter 함수 수정
   const moveCharacter = (characterId, targetX, targetY) => {
     return new Promise((resolve) => {
-      const character = characters.find(c => c.id === characterId);
+      const character = characters.find((c) => c.id === characterId);
       if (!character) {
-        console.log('Character not found:', characterId);
+        console.log("Character not found:", characterId);
         resolve();
         return;
       }
@@ -960,16 +980,20 @@ export default function Village() {
       // 방향 결정
       let newDirection;
       if (Math.abs(dx) > Math.abs(dy)) {
-        newDirection = dx > 0 ? 'right' : 'left';
+        newDirection = dx > 0 ? "right" : "left";
       } else {
-        newDirection = dy > 0 ? 'down' : 'up';
+        newDirection = dy > 0 ? "down" : "up";
       }
 
       // 방향과 이동 상태 설정
       setDirection(newDirection);
       setIsMoving(true);
 
-      console.log(`Moving ${character.name} to:`, {targetX, targetY, newDirection});
+      console.log(`Moving ${character.name} to:`, {
+        targetX,
+        targetY,
+        newDirection,
+      });
 
       Animated.timing(character.position, {
         toValue: { x: targetX, y: targetY },
@@ -985,40 +1009,44 @@ export default function Village() {
   // moveToNextTask 함수 수정
   const moveToNextTask = (characterName) => {
     console.log(`Moving to next task for ${characterName}`);
-    setCharacterSchedules(prev => ({
+    setCharacterSchedules((prev) => ({
       ...prev,
       [characterName]: {
         ...prev[characterName],
-        currentIndex: prev[characterName].currentIndex + 1
-      }
+        currentIndex: prev[characterName].currentIndex + 1,
+      },
     }));
   };
 
   // startAllSchedules 함수 수정
   const startAllSchedules = () => {
-    console.log('Starting all schedules');
+    console.log("Starting all schedules");
     const now = new Date();
     const currentHour = now.getHours();
 
-    setCharacterSchedules(prev => {
+    setCharacterSchedules((prev) => {
       const newSchedules = {};
       Object.entries(prev).forEach(([characterName, schedule]) => {
         newSchedules[characterName] = {
           ...schedule,
           isRunning: true,
-          currentIndex: 0
+          currentIndex: 0,
         };
       });
-      console.log('New schedules:', newSchedules);
+      console.log("New schedules:", newSchedules);
       return newSchedules;
     });
   };
 
   // 스케줄 실행 감시 useEffect 수정
   useEffect(() => {
-    console.log('Schedule state changed:', characterSchedules);
+    console.log("Schedule state changed:", characterSchedules);
     Object.entries(characterSchedules).forEach(([characterName, schedule]) => {
-      if (schedule.isRunning && schedule.data && schedule.data.length > schedule.currentIndex) {
+      if (
+        schedule.isRunning &&
+        schedule.data &&
+        schedule.data.length > schedule.currentIndex
+      ) {
         executeCharacterSchedule(characterName);
       }
     });
@@ -1065,8 +1093,6 @@ export default function Village() {
         </Animated.View>
       ))}
       {/* <MatrixOverlay /> */}
-
-      
 
       <TouchableOpacity
         style={styles.startButton}

@@ -8,7 +8,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Village from '../components/village/Village';
 import sendNotification from '../components/notification/SendNotification';
-import VillageV2 from '../components/village/VillageV2';
+import VillageV3 from '../components/village/villageV3';
 
 
 export default function ReelsScreen() {
@@ -325,7 +325,7 @@ export default function ReelsScreen() {
     } else {
       return (
         <View style={styles.villageContainer}>
-          <VillageV2 />
+          <VillageV3 />
         </View>
       );
     }
