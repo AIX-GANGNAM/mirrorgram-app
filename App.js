@@ -63,13 +63,8 @@ import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
 import UpdatePushToken from './components/notification/UpdatePushToken';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+import { AppState } from 'react-native';
+
 
 const AppWrapper = () => {
   return (
@@ -79,6 +74,22 @@ const AppWrapper = () => {
   );
 };
 
+const configureNotificationHandler = (isAppActive) => {
+  Notifications.setNotificationHandler({
+    handleNotification: async (notification) => {
+      const screenType = notification.request.content.data?.screenType;
+      const isPlayGround = screenType === 'PlayGround';
+      const isCompletedGeneratePersona = screenType === 'CompletedGeneratePersona';
+
+      return {
+        shouldShowAlert: isPlayGround || isCompletedGeneratePersona || !isAppActive,  // PlayGround 화면이거나 앱이 비활성 상태일 때만 알림 표시
+        shouldPlaySound: isPlayGround || isCompletedGeneratePersona || !isAppActive,  // PlayGround 화면이거나 앱이 비활성 상태일 때만 소리 재생
+        shouldSetBadge: true,
+      };
+    },
+  });
+}; 
+
 const App = () => {
   const dispatch = useDispatch();
   const Tab = createBottomTabNavigator();
@@ -86,20 +97,35 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(false);
 
   useEffect(() => {
+    const checkInitialNotification = async () => {
+      // 앱이 종료된 상태에서 알림을 통해 열린 경우 확인
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (response) {
+        // 약간의 지연을 주어 네비게이션이 준비되도록 함
+        setTimeout(() => {
+          const { content } = response.notification.request;
+          GoToScreen({ response: content });
+        }, 1000);
+      }
+    };
+
     const checkAutoLogin = async () => {
+      const auth = getAuth();
       try {
         const autoLogin = await AsyncStorage.getItem('autoLogin');
-        const userToken = await AsyncStorage.getItem('userToken');
+        const userUid = await AsyncStorage.getItem('userUid');
         const userData = await AsyncStorage.getItem('userData');
 
-        if (autoLogin === 'true' && userToken && userData) {
+        if (autoLogin === 'true' && userUid && userData) {
           const parsedUserData = JSON.parse(userData);
           dispatch(setUser(parsedUserData));
           setIsAuthenticated(true);
-          UpdatePushToken(userToken);
-          NowPushToken();
+          UpdatePushToken(userUid);
+          checkInitialNotification();  // 로그인 완료 후 초기 알림 확인
         }
       } catch (error) {
         console.error('자동 로그인 체크 중 오류 발생:', error);
@@ -110,38 +136,40 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      appState.current = nextAppState;
+      setAppStateVisible(nextAppState);
+
+      const isActive = nextAppState === 'active';
+      configureNotificationHandler(isActive);
+    });
+
     const initializeApp = async () => {
-      registerForPushNotificationsAsync();
-      NowPushToken();
+      await registerForPushNotificationsAsync();
     };
-    
     initializeApp();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(async (notification) => {
-      try {
-        await saveNotification(notification);
-        console.log("알림 저장 성공");
-        console.log("알림 수신 : ", notification);
+      const { content } = notification.request;
       
-        const {content}  = notification.request;
-        console.log("알림수신 : content : ", content);
-        console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
-        console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
-        console.log("알림수신 : content.data.URL : ", content.data.URL);
-        console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
-        console.log("알림수신 : content.body : ", content.body);      
-        console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
-        console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
-        console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);      
-      } catch (error) {
-        console.error("알림 저장 중 오류 발생:", error);
-      }
+      console.log("알림수신 : content : ", content);
+      console.log("알림수신 : content.data.screenType : ", content.data.screenType);   
+      console.log("알림수신 : content.data.targetUserUid : ", content.data.targetUserUid);
+      console.log("알림수신 : content.data.URL : ", content.data.URL);
+      console.log("알림수신 : content.data.fromUid : ", content.data.fromUid);
+      console.log("알림수신 : content.body : ", content.body);      
+      console.log("알림수신 : content.data.whoSendMessage : ", content.data.whoSendMessage);      
+      console.log("알림수신 : content.data.highlightImage : ", content.data.highlightImage);      
+      console.log("알림수신 : content.data.pushTime : ", content.data.pushTime);     
+      await saveNotification(notification);
+
     });
 
-    // 알림 클릭 시 실행되는 함수
     responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
-      const { content } = response.notification.request;
-      GoToScreen({response: content});
+      setTimeout(() => {
+        const { content } = response.notification.request;
+        GoToScreen({ response: content });
+      }, 1000);
     });
 
    

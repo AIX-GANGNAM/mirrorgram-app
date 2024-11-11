@@ -8,8 +8,10 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { getFirestore, addDoc, collection, doc, updateDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import axios from 'axios'; // Axios import 추가
 import { Alert } from 'react-native'; // Alert 모듈을 올바르게 import
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const NewPostScreen = ({ navigation }) => {
+  console.log('NewPostScreen 실행');
   const [image, setImage] = useState(null);
   const [caption, setCaption] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -126,29 +128,32 @@ const NewPostScreen = ({ navigation }) => {
 
     try {
         // UUID 생성
-        const uuid = generateUUID(); // 피드에 대한 UUID 생성
+        const feedUuid = generateUUID(); // 피드에 대한 UUID 생성
   
         // userData state를 사용하여 페르소나 이미지 URL 접근
         // const personaImage = userDataState.persona?.[persona.type.toLowerCase()];
   
         // POST 요청으로 데이터 전달
+
         const response = await axios.post('http://10.0.2.2:8000/feedAutomatic', {
-          id: uuid, // 피드 uid
+          id: feedUuid, // 피드 uid
+
           parentNick: user.userId, // 부모 닉네임
           userId: user.uid, // 부모 uid,
         });
 
         // 서버의 응답에서 메시지 가져오기
         if (response.status === 200 && response.data.message) {
+          // name=custom, dpname으로 한다 
+          // targetUserUid, fromUid, inputScreenType, URL
+          // 피드 생성 알림 보내기(누구에게, 내가, 화면위치, 화면에서 자세한 위치)
+          sendNotificationToUser(user.uid, user.uid, 'FeedGeneration', feedUuid);
           Alert.alert('알림', response.data.message);
         } else {
           Alert.alert('알림', '알 수 없는 오류가 발생했습니다.');
         }
 
         console.log('피드 생성 결과:', response.data.message);
-        // name=custom, dpname으로 한다
-        // 피드 생성 알림 보내기(누구에게, 내가, 피드 uid, 화면 위치)
-        sendNotificationToUser(user.uid, user.uid, uuid, 'FEED_GENERATION');
         //refreshPosts(); //(보류)
       clearInterval(progressInterval);
       setGenerationProgress(100);
@@ -242,6 +247,7 @@ const NewPostScreen = ({ navigation }) => {
       
       if (response.status === 200) {
         console.log('페르소나 피드 자동생성이 완료되었습니다.');
+        sendNotificationToUser(user.uid, user.uid, uuid, 'FeedGeneration');
         alert('페르소나 피드 자동생성이 완료되었습니다.');
       } else {
         console.error('피드 생성 중 문제가 발생했습니다.');

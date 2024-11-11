@@ -83,7 +83,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       if (autoLogin) {
         await AsyncStorage.multiSet([
           ['autoLogin', 'true'],
-          ['userToken', user.uid],
+          ['userUid', user.uid],
           ['userData', JSON.stringify(userData)]
         ]);
         console.log('자동 로그인 정보 저장됨');
@@ -112,7 +112,7 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
       // 자동 로그인 정보는 항상 삭제
       await AsyncStorage.multiRemove([
         'autoLogin',
-        'userToken',
+        'userUid',
         'userData'
       ]);
       
@@ -175,7 +175,6 @@ const LoginForm = ({ isAuthenticated, setIsAuthenticated }) => {
         dispatch(setUser(userDataWithId));
         setIsAuthenticated(true);
         UpdatePushToken(user.uid);
-        NowPushToken();
         navigation.navigate('BottomTab', { screen: 'Home' });
       } else {
         console.log('신규 사용자, 인증 단계로 이동');

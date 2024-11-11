@@ -99,7 +99,9 @@ const TILE_DESCRIPTIONS = {
   11: "Restaurant",
 };
 
+
 export default function VillageV2() {
+
 
   // 유저 정보
   const user = useSelector((state) => state.user.user);

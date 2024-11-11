@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const CreatePersonaPostScreen = ({ route, navigation }) => {
+  console.log('CreatePersonaPostScreen 실행');
   const { persona, id, parentNick, userId } = route.params;
   const [trendingKeywords, setTrendingKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
 
   const fetchTrendingKeywords = async () => {
     try {
-      const response = await axios.get('http://10.0.2.2:8000/trendingKeywords');
+      const response = await axios.get('http://10.0.2.2:8010/trendingKeywords');
     //   console.log('실시간 검색어 응답:', response.data);
       
       // trending_keywords 배열 추출
@@ -56,7 +58,7 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
     
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://10.0.2.2:8000/generateFeed', {
+      const response = await axios.post('http://10.0.2.2:8010/generateFeed', {
         keyword,
         persona_type: persona.type,
         // id: id,
@@ -64,6 +66,8 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
         userId: userId,
         title : persona.title
       });
+      const sendNotificationResponse = sendNotificationToUser(userId, persona.type, 'FeedGeneration', response.data.uuid);
+      console.log('sendNotificationResponse : ', sendNotificationResponse);
       
     //   navigation.navigate('PostPreview', { 
     //     postData: response.data,

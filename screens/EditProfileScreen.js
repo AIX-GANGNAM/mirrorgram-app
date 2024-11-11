@@ -10,6 +10,7 @@ import EditForm from '../components/profile/editProfile/EditForm';
 import * as ImagePicker from 'expo-image-picker';
 
 const EditProfileScreen = ({route, navigation}) => {
+	console.log('EditProfileScreen 실행');
 	const dispatch = useDispatch();
 	const auth = getAuth();
 	const db = getFirestore();

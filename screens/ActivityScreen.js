@@ -29,6 +29,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const ActivityScreen = ({ navigation }) => {
+  console.log('ActivityScreen 실행');
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);

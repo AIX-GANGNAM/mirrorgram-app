@@ -128,7 +128,7 @@ export default function ReelsScreen() {
         
         const images = response.data.images;
         const imageUrls = Object.values(images).map(item => item.image_url);
-        const whoSendMessageResult=sendNotification(user.uid,'System', '없음', 'PLAYGROUND');
+        const whoSendMessageResult=sendNotification(user.uid,'System', '없음', 'Playground');
         console.log("ReelsScreen > handleButtonPress > whoSendMessageResult", whoSendMessageResult);
         setDotImages(imageUrls);
       }

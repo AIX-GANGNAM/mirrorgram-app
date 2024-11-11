@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, addDoc } from "firebase/firestore";
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-
+//메인 화면에서 채팅방으로 이동하는곳
 const db = getFirestore();
 
 const generateUniqueId = () => {
@@ -12,6 +12,7 @@ const generateUniqueId = () => {
 };
 
 const ChatScreen = ({ route, navigation }) => {
+  console.log('ChatScreen 실행');
   const { highlightTitle, highlightImage, persona } = route.params;
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');

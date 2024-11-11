@@ -1,7 +1,7 @@
 import { navigationRef ,navigate } from '../../utils/navigationRef';
 
 const GoToScreen = ({response}) => {
-    console.log("GoToScreen.js 실asdaaaf행");
+    console.log("GoToScreen.js 실행");
   console.log("navigationRef.isReady() : ", navigationRef.isReady());
   console.log("navigationRef.current : ", navigationRef.current);
   console.log("navigationRef.navigate : ", navigationRef.navigate);
@@ -29,7 +29,7 @@ if(navigationRef.isReady() ){
 
   // 알림 타입에 따라 화면 이동
   switch (screenType) {
-    case 'LIKE':
+    case 'Like':
       console.log("좋아요 알림 처리");
       navigate('PostDetail', {
         postId: URL
@@ -37,19 +37,19 @@ if(navigationRef.isReady() ){
       break;
       
 
-    case 'PLAYGROUND':
+    case 'Playground':
       console.log("이미지 생성 완료 알림 처리");
       navigate('PlayGround');
       break;
 
-    case 'FRIEND_REQUEST':
-    case 'FRIEND_ACCEPT':
-    case 'FRIEND_REJECT':
+    case 'FriendRequest':
+    case 'FriendAccept':
+    case 'FriendReject':
       console.log("친구 요청 알림 처리");
       navigate('FriendRequests');
       break;
 
-    case 'PERSONA_CHAT':
+    case 'PersonaChat':
       console.log("페르소나 채팅 알림 처리");
       navigate('PersonaChat', {
         chatId: data.chatId,
@@ -57,7 +57,7 @@ if(navigationRef.isReady() ){
       });
       break;
 
-    case 'POST_COMMENT':
+    case 'PostComment':
       console.log("댓글 알림 처리");
       navigate('PostDetail', {
         postId: data.postId,
@@ -65,7 +65,7 @@ if(navigationRef.isReady() ){
       });
       break;
 
-    case 'MENTION':
+    case 'Mention':
       console.log("멘션 알림 처리");
       if (data.locationType === 'post') {
         navigationRef.navigate('PostDetail', {
@@ -78,7 +78,16 @@ if(navigationRef.isReady() ){
         });
       }
       break;
-
+    case 'FeedGeneration':
+      console.log("피드 생성 알림 처리");
+      navigate('PostDetail', {
+        postId: URL
+      });
+      break;
+    case 'CompletedGeneratePersona':
+      console.log("페르소나 생성 완료 알림 처리");
+      navigate('home');
+      break;
     default:
       console.log('알 수 없는 알림 타입:', type);
     }

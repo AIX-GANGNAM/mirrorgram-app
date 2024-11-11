@@ -10,8 +10,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Alert } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+import sendNotificationToUser from '../components/notification/SendNotification';
 // 이미지 생성 API 호출
 const generatePersonaImages = async (formData) => {
+  console.log('generatePersonaImages 실행');
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -223,7 +225,11 @@ export default function CreatePersonaScreen() {
         });
       }
 
-      await generatePersonaImages(formData);
+      const generatePersonaImagesResponse = await generatePersonaImages(formData);
+      console.log('generatePersonaImagesResponse : ', generatePersonaImagesResponse); 
+      // targetUserUid, fromUid, inputScreenType, URL
+      // 페르소나 생성 완료 알람보내기(나에게, 'System', 'CompletedGeneratePersona', '');
+      sendNotificationToUser(auth.currentUser.uid, 'System', 'CompletedGeneratePersona', '');
 
       // 3. 생성 완료 후 홈으로 이동
       Alert.alert(
