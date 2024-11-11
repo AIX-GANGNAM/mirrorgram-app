@@ -20,15 +20,28 @@ const Post = ({post, refreshPosts, navigation}) => {
      return null; // 또는 로딩 인디케이터나 에러 메시지를 표시할 수 있습니다.
    }
 
-   // post.comments가 없으면 빈 배열로 초기화
-   const comments = post.comments || [];
+   // 댓글 갯수 계산 로직 수정
+   const [commentCount, setCommentCount] = useState(() => {
+     const commentsCount = Array.isArray(post.comments) ? post.comments.length : 0;
+     const subCommentsCount = Array.isArray(post.subCommentId) ? post.subCommentId.length : 0;
+     return commentsCount + subCommentsCount;
+   });
+
+   // comments 상태도 수정
+   const comments = [...(post.comments || []), ...(post.subCommentId || [])];
+
+   // useEffect로 댓글 갯수 업데이트 감지
+   useEffect(() => {
+     const commentsCount = Array.isArray(post.comments) ? post.comments.length : 0;
+     const subCommentsCount = Array.isArray(post.subCommentId) ? post.subCommentId.length : 0;
+     setCommentCount(commentsCount + subCommentsCount);
+   }, [post.comments, post.subCommentId]);
 
    const [comment, setComment] = useState(false);
    const [like, setLike] = useState(false);
    const [newComment, setNewComment] = useState('');
    const [showFullCaption, setShowFullCaption] = useState(false);
    const [showCommentModal, setShowCommentModal] = useState(false);
-   const [commentCount, setCommentCount] = useState(post.comments ? post.comments.length : 0);
 
    const user = useSelector(state => state.user.user);
    const db = getFirestore();
