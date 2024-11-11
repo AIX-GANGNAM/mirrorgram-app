@@ -8,7 +8,9 @@ import {useFocusEffect} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Village from '../components/village/Village';
 import sendNotification from '../components/notification/SendNotification';
+
 import VillageV3 from '../components/village/villageV3';
+import VillageV2 from '../components/village/VillageV2';
 
 
 export default function ReelsScreen() {
@@ -21,7 +23,7 @@ export default function ReelsScreen() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const panY = useRef(new Animated.Value(0)).current;
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState('imageGeneration');
+  const [activeTab, setActiveTab] = useState('village');
   const [selectedType, setSelectedType] = useState('스타일');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -30,7 +32,7 @@ export default function ReelsScreen() {
       // 화면에 포커스가 올 때마다 실행
       setSelectedType('스타일');
       setIsDropdownOpen(false);
-      setActiveTab('imageGeneration');
+      setActiveTab('village');
       setSelectedImage(null);
       setModalVisible(false);
     }, [])
@@ -325,7 +327,8 @@ export default function ReelsScreen() {
     } else {
       return (
         <View style={styles.villageContainer}>
-          <VillageV3 />
+          {/* <VillageV3 /> */}
+          <VillageV2 />
         </View>
       );
     }
@@ -337,12 +340,12 @@ export default function ReelsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.tabButton, activeTab === 'imageGeneration' && styles.activeTabButton]}
           onPress={() => setActiveTab('imageGeneration')}
         >
           <Text style={[styles.tabButtonText, activeTab === 'imageGeneration' && styles.activeTabButtonText]}>Generate AI</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'village' && styles.activeTabButton]}
           onPress={() => setActiveTab('village')}
