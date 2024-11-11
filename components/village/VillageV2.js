@@ -170,11 +170,6 @@ export default function VillageV2() {
 
   
 
-  // 이러면 캐릭터 한명한테만 해당하는거 아닌가?
-  const [currentFrame, setCurrentFrame] = useState(0); // 현재 프레임
-  const [direction, setDirection] = useState("down"); // 캐릭터 방향
-  const [isMoving, setIsMoving] = useState(false); // 움직임 상태 추가
-
   // 스프라이트 설정 수정
   const spriteConfig = {
     frameWidth: 30, // 실제 프레임 크기에 맞게 조정
@@ -197,22 +192,30 @@ export default function VillageV2() {
     return spriteConfig.animations[animationKey]?.row ?? 0; // 기본값으로 0 사용
   };
 
-  // 애니메이션 효과 수정
+  // 각 캐릭터별 애니메이션 효과 추가
   useEffect(() => {
-    const animationInterval = setInterval(
-      () => {
-        setCurrentFrame((prev) => {
-          const maxFrames =
-            spriteConfig.animations[isMoving ? direction : `${direction}_idle`]
-              .frames;
-          return (prev + 1) % maxFrames;
-        });
-      },
-      isMoving ? 50 : 200
-    ); // 움직일 때는 더 빠르게, idle일 때는 천천히
+    const animationIntervals = characters.map(character => {
+      return setInterval(
+        () => {
+          setCharacters(prevCharacters => 
+            prevCharacters.map(char => 
+              char.id === character.id
+                ? {
+                    ...char,
+                    currentFrame: (char.currentFrame + 1) % spriteConfig.animations[char.isMoving ? char.direction : `${char.direction}_idle`].frames
+                  }
+                : char
+            )
+          );
+        },
+        character.isMoving ? 50 : 200
+      );
+    });
 
-    return () => clearInterval(animationInterval);
-  }, [isMoving, direction]);
+    return () => {
+      animationIntervals.forEach(interval => clearInterval(interval));
+    };
+  }, [characters]);
 
   
   // 맵 컴포넌트 내부에 추가
@@ -289,7 +292,7 @@ export default function VillageV2() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
 
-  // 메뉴 토글 함수 수정
+  // 메뉴 토글 함수 수
   const toggleMenu = () => {
     const toValue = isMenuOpen ? 0 : 1;
 
@@ -601,7 +604,7 @@ export default function VillageV2() {
         });
 
         if (!user?.uid) {
-          console.log("유��� ID가 없음");
+          console.log("유 ID가 없음");
           return;
         }
 
@@ -757,7 +760,6 @@ export default function VillageV2() {
           : char
       ));
 
-      // 이동 실행
       await new Promise((resolve) => {
         Animated.timing(character.position, {
           toValue: {
@@ -770,10 +772,16 @@ export default function VillageV2() {
         }).start(resolve);
       });
 
+      // 매 이동마다 근접 체크
+      const newCollisions = checkCharacterCollisions();
+      if (newCollisions.length > 0) {
+        handleCharacterCollisions(newCollisions);
+      }
+
       await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    // 이동 완료 후 상태 업데이트
+    // 이동 완료 후 해당 캐릭터만 상태 업데이트
     setCharacters(prev => prev.map(char => 
       char.name === characterName
         ? { ...char, isMoving: false }
@@ -867,8 +875,185 @@ export default function VillageV2() {
     );
   };
 
+  // 캐릭터 위치 체크를 위한 상태 추가
+  const [characterCollisions, setCharacterCollisions] = useState([]);
 
-  
+  // 캐릭터 위치 체크 함수 수정
+  const checkCharacterCollisions = () => {
+    const collisions = [];
+    
+    for (let i = 0; i < characters.length; i++) {
+      for (let j = i + 1; j < characters.length; j++) {
+        const char1 = characters[i];
+        const char2 = characters[j];
+        
+        const char1Pos = {
+          x: Math.round(char1.position.x._value / Tile_WIDTH),
+          y: Math.round(char1.position.y._value / Tile_HEIGHT)
+        };
+        
+        const char2Pos = {
+          x: Math.round(char2.position.x._value / Tile_WIDTH),
+          y: Math.round(char2.position.y._value / Tile_HEIGHT)
+        };
+
+        // 맨해튼 거리 계산 (가로 + 세로 거리의 합)
+        const distance = Math.abs(char1Pos.x - char2Pos.x) + Math.abs(char1Pos.y - char2Pos.y);
+
+        // 거리가 1일 때 (인접한 타일)
+        if (distance === 1) {
+          collisions.push({
+            characters: [
+              { name: char1.name, position: char1Pos },
+              { name: char2.name, position: char2Pos }
+            ],
+            distance: distance,
+            timestamp: new Date().getTime()
+          });
+        }
+      }
+    }
+    
+    return collisions;
+  };
+
+  // 캐릭터 충돌 처리 함수 수정
+  const handleCharacterCollisions = (collisions) => {
+    collisions.forEach(collision => {
+      const [char1, char2] = collision.characters;
+      console.log(
+        `캐릭터 근접 감지: ${char1.name}(${char1.position.x},${char1.position.y})와 ` +
+        `${char2.name}(${char2.position.x},${char2.position.y})가 인접해있습니다.`
+      );
+      
+      // Firestore에 이벤트 기록
+      const saveProximityEvent = async () => {
+        try {
+          const eventRef = collection(db, 'village', 'events', 'proximities');
+          await addDoc(eventRef, {
+            characters: [
+              { name: char1.name, position: char1.position },
+              { name: char2.name, position: char2.position }
+            ],
+            distance: collision.distance,
+            timestamp: serverTimestamp(),
+            userId: user.uid,
+            // 추가적인 이벤트 데이터
+            eventType: 'proximity',
+            status: 'detected'
+          });
+        } catch (error) {
+          console.error('근접 이벤트 저장 실패:', error);
+        }
+      };
+
+      saveProximityEvent();
+
+      // 여기에 근접 시 실행할 추가 이벤트 로직 추가
+      // 예: 대화 시작, 특별 애니메이션, 상호작용 UI 표시 등
+      handleProximityInteraction(char1, char2);
+    });
+  };
+
+  // 근접 상호작용 처리 함수 수정
+  const handleProximityInteraction = async (char1, char2) => {
+    // 캐릭터 조합 확인
+    const interactionKey = `${char1.name}_${char2.name}`;
+    const reverseKey = `${char2.name}_${char1.name}`;
+    
+    try {
+      // FastAPI로 캐릭터 만남 이벤트 전송
+      // http://221.148.97.237:1919/chat/persona
+      // http://110.11.192.148:1919/chat/persona
+      // http://10.0.2.2:1919/chat/persona
+      const response = await axios.post("http://10.0.2.2:1919/chat/persona", {
+        param: JSON.stringify({
+          uid: user.uid,
+          characters: [
+            {
+              name: char1.name,
+              position: char1.position,
+              currentState: char1.isMoving ? 'moving' : 'idle'
+            },
+            {
+              name: char2.name,
+              position: char2.position,
+              currentState: char2.isMoving ? 'moving' : 'idle'
+            }
+          ],
+          timestamp: new Date().toISOString(),
+          interactionType: 'proximity'
+        })
+      });
+
+      // FastAPI 응답 처리
+      if (response.data) {
+        console.log('상호작용 응답:', response.data);
+        
+        // 응답에 따른 추가 처리
+        if (response.data.shouldInteract) {
+          // 특정 캐릭터 조합에 따른 처리
+          const interactionMap = {
+            'Joy_Sadness': () => {
+              console.log('Joy가 Sadness를 위로합니다.');
+              // 특별한 상호작용 로직
+            },
+            'Anger_Fear': () => {
+              console.log('Anger가 Fear를 보호합니다.');
+              // 특별한 상호작용 로직
+            },
+            // 다른 캐릭터 조합에 대한 처리 추가
+          };
+
+          if (interactionMap[interactionKey]) {
+            interactionMap[interactionKey]();
+          } else if (interactionMap[reverseKey]) {
+            interactionMap[reverseKey]();
+          } else {
+            console.log(`${char1.name}와 ${char2.name}가 서로 인사를 나눕니다.`);
+          }
+
+          // 캐릭터 상태 업데이트
+          setCharacters(prev => prev.map(char => {
+            if (char.name === char1.name || char.name === char2.name) {
+              return {
+                ...char,
+                isInteracting: true,
+                interactingWith: char.name === char1.name ? char2.name : char1.name,
+                interactionData: response.data.interactionDetails // FastAPI에서 받은 상호작용 데이터
+              };
+            }
+            return char;
+          }));
+
+          // Firestore에 이벤트 기록
+          const saveProximityEvent = async () => {
+            try {
+              const eventRef = collection(db, 'village', 'events', 'proximities');
+              await addDoc(eventRef, {
+                characters: [
+                  { name: char1.name, position: char1.position },
+                  { name: char2.name, position: char2.position }
+                ],
+                distance: 1,
+                timestamp: serverTimestamp(),
+                userId: user.uid,
+                eventType: 'proximity',
+                status: 'detected',
+                interactionResult: response.data // FastAPI 응답 저장
+              });
+            } catch (error) {
+              console.error('근접 이벤트 저장 실패:', error);
+            }
+          };
+
+          saveProximityEvent();
+        }
+      }
+    } catch (error) {
+      console.error('캐릭터 상호작용 처리 실패:', error);
+    }
+  };
 
   // 렌더링 부분 수정
   return (
@@ -901,7 +1086,7 @@ export default function VillageV2() {
               height: spriteConfig.frameHeight * 8,
               position: "absolute",
               left: -spriteConfig.frameWidth * (character.currentFrame || 0),
-              top: -spriteConfig.frameHeight * getAnimationRow(character.direction || 'down', character.isMoving || false),
+              top: -spriteConfig.frameHeight * getAnimationRow(character.direction, character.isMoving),
             }}
           />
         </Animated.View>
