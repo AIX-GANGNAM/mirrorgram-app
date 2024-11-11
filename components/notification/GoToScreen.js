@@ -88,6 +88,12 @@ if(navigationRef.isReady() ){
       console.log("페르소나 생성 완료 알림 처리");
       navigate('home');
       break;
+    case 'Before10minSchedule':
+    case 'StartSchedule':
+    case 'Calendar':
+      console.log("일정 알림 처리");
+      navigate('Calender');
+      break;
     default:
       console.log('알 수 없는 알림 타입:', type);
     }
