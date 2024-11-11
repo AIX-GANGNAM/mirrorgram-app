@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { getAuth } from 'firebase/auth';
 
 const NowPushToken = async () => {
   console.log("NowPushToken.js 실행");

@@ -62,6 +62,7 @@ import { db } from './firebaseConfig';
 import { navigationRef } from './utils/navigationRef';
 import NowPushToken from './components/notification/NowPushToken';
 import UpdatePushToken from './components/notification/UpdatePushToken';
+import removePushToken from './components/notification/RemovePushToken';
 
 import { AppState } from 'react-native';
 
@@ -101,6 +102,7 @@ const App = () => {
   const [appStateVisible, setAppStateVisible] = useState(false);
 
   useEffect(() => {
+    
     const checkInitialNotification = async () => {
       // 앱이 종료된 상태에서 알림을 통해 열린 경우 확인
       const response = await Notifications.getLastNotificationResponseAsync();
@@ -124,7 +126,6 @@ const App = () => {
           const parsedUserData = JSON.parse(userData);
           dispatch(setUser(parsedUserData));
           setIsAuthenticated(true);
-          UpdatePushToken(userUid);
           checkInitialNotification();  // 로그인 완료 후 초기 알림 확인
         }
       } catch (error) {
@@ -146,6 +147,7 @@ const App = () => {
 
     const initializeApp = async () => {
       await registerForPushNotificationsAsync();
+      UpdatePushToken(auth.currentUser.uid);
     };
     initializeApp();
 
@@ -217,6 +219,7 @@ const App = () => {
     
     const handleLogout = async () => {
       try {
+        await removePushToken(auth.currentUser.uid); // firebase에 저장된 현재 기기의 토큰 삭제 
         await signOut(auth);
         await AsyncStorage.multiRemove([
           'autoLogin',
@@ -382,20 +385,6 @@ async function registerForPushNotificationsAsync() {
             // 알림 및 진동이 울림, 화면에 표시됨, 
       name: 'channel_high',
       importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      enableLights: true,
-      enableVibrate: true,
-      showBadge: true,
-      sound: 'default'
-    });
-
-    await Notifications.setNotificationChannelAsync('channel_low', {
-            // 알림 및 진동이 울리지 않음
-
-      name: 'channel_low',
-      importance: Notifications.AndroidImportance.LOW,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
