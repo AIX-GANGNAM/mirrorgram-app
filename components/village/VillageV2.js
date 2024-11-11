@@ -10,6 +10,7 @@ import {
   Dimensions,
   TextInput,
   ScrollView,
+  Easing,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import {
@@ -98,66 +99,80 @@ const TILE_DESCRIPTIONS = {
   11: "Restaurant",
 };
 
-export default function Village() {
-  const user = useSelector((state) => state.user.user);
+export default function VillageV2() {
 
+  // 유저 정보
+  const user = useSelector((state) => state.user.user);
   const auth = getAuth();
+
 
   // characters 상태 초기화를 useEffect 내부로 이동
   const [characters, setCharacters] = useState([]);
 
-  // characterSchedules가 업데이트될 때 캐릭터 위치 설정
+  // characterSchedules가 업데이트될 때 캐릭터 위치 설정 => 나중에 수정이 필요할듯(처음 위치 및 스프라이트 이미지 적용)
   useEffect(() => {
     if (Object.keys(characterSchedules).length > 0) {
       const initialCharacters = [
         {
           id: 1,
           name: "Joy",
-          position: new Animated.ValueXY({
-            x:
-              characterSchedules.Joy?.data[0]?.location?.[0] * Tile_WIDTH ||
-              Tile_WIDTH * 2,
-            y:
-              characterSchedules.Joy?.data[0]?.location?.[1] * Tile_HEIGHT ||
-              Tile_HEIGHT * 3,
-          }),
+          position: new Animated.ValueXY(),
           image: require("../../assets/character/yellow.png"),
+          direction: 'down',
+          isMoving: false,
+          currentFrame: 0,
+          currentPath: null
         },
         {
           id: 2,
           name: "Anger",
-          position: new Animated.ValueXY({
-            x:
-              characterSchedules.Anger?.data[0]?.location?.[0] * Tile_WIDTH ||
-              Tile_WIDTH * 10,
-            y:
-              characterSchedules.Anger?.data[0]?.location?.[1] * Tile_HEIGHT ||
-              Tile_HEIGHT * 3,
-          }),
+          position: new Animated.ValueXY(),
           image: require("../../assets/character/red.png"),
+          direction: 'down',
+          isMoving: false,
+          currentFrame: 0,
+          currentPath: null
         },
         {
           id: 3,
           name: "Sadness",
-          position: new Animated.ValueXY({
-            x:
-              characterSchedules.Sadness?.data[0]?.location?.[0] * Tile_WIDTH ||
-              Tile_WIDTH * 5,
-            y:
-              characterSchedules.Sadness?.data[0]?.location?.[1] *
-                Tile_HEIGHT || Tile_HEIGHT * 7,
-          }),
+          position: new Animated.ValueXY(),
           image: require("../../assets/character/blue.png"),
+          direction: 'down',
+          isMoving: false,
+          currentFrame: 0,
+          currentPath: null
         },
       ];
+
+      // 각 캐릭터의 초기 위치 설정
+      initialCharacters.forEach(char => {
+        const schedule = characterSchedules[char.name];
+        if (schedule?.data[0]?.path) {
+          // path가 있으면 시작점으로 설정
+          const startPos = schedule.data[0].path[0];
+          char.position.setValue({
+            x: startPos[1] * Tile_WIDTH,
+            y: startPos[0] * Tile_HEIGHT
+          });
+        } else if (schedule?.data[0]?.location) {
+          // location이 있으면 해당 위치로 설정
+          char.position.setValue({
+            x: schedule.data[0].location[1] * Tile_WIDTH,
+            y: schedule.data[0].location[0] * Tile_HEIGHT
+          });
+        }
+      });
 
       setCharacters(initialCharacters);
     }
   }, [characterSchedules]);
 
   
-  const [currentFrame, setCurrentFrame] = useState(0);
-  const [direction, setDirection] = useState("down");
+
+  // 이러면 캐릭터 한명한테만 해당하는거 아닌가?
+  const [currentFrame, setCurrentFrame] = useState(0); // 현재 프레임
+  const [direction, setDirection] = useState("down"); // 캐릭터 방향
   const [isMoving, setIsMoving] = useState(false); // 움직임 상태 추가
 
   // 스프라이트 설정 수정
@@ -166,14 +181,20 @@ export default function Village() {
     frameHeight: 33,
     animations: {
       down: { row: 0, frames: 3 },
-      down_idle: { row: 0, frames: 3 },
-      left: { row: 1, frames: 3 },
-      left_idle: { row: 1, frames: 3 },
-      right: { row: 2, frames: 3 },
-      right_idle: { row: 2, frames: 3 },
       up: { row: 3, frames: 3 },
+      left: { row: 1, frames: 3 },
+      right: { row: 2, frames: 3 },
+      down_idle: { row: 0, frames: 3 },
       up_idle: { row: 3, frames: 3 },
+      left_idle: { row: 1, frames: 3 },
+      right_idle: { row: 2, frames: 3 }
     },
+  };
+
+  // 안전한 animation row 가져오기 함수
+  const getAnimationRow = (direction, isMoving) => {
+    const animationKey = isMoving ? direction : `${direction}_idle`;
+    return spriteConfig.animations[animationKey]?.row ?? 0; // 기본값으로 0 사용
   };
 
   // 애니메이션 효과 수정
@@ -193,194 +214,7 @@ export default function Village() {
     return () => clearInterval(animationInterval);
   }, [isMoving, direction]);
 
-  const handleMove = (moveDirection) => {
-    const character = characters[0];
-    if (!character) return;
-
-    // 현재 매트릭스 좌표 계산
-    const matrixX = Math.round(character.position.x._value / Tile_WIDTH);
-    const matrixY = Math.round(character.position.y._value / Tile_HEIGHT);
-
-    let targetX = matrixX;
-    let targetY = matrixY;
-
-    // 이동할 타일 위치 계산
-    switch (moveDirection) {
-      case "up":
-        targetY = matrixY - 1;
-        break;
-      case "down":
-        targetY = matrixY + 1;
-        break;
-      case "left":
-        targetX = matrixX - 1;
-        break;
-      case "right":
-        targetX = matrixX + 1;
-        break;
-    }
-
-    // 이동 가능 여부 확인
-    if (checkCollision(targetX, targetY)) {
-      setDirection(moveDirection);
-      setIsMoving(true);
-
-      // 정확한 픽셀 위치로 변환하여 이동
-      Animated.timing(character.position, {
-        toValue: {
-          x: targetX * Tile_WIDTH,
-          y: targetY * Tile_HEIGHT,
-        },
-        duration: 300,
-        useNativeDriver: false,
-      }).start(() => {
-        setIsMoving(false);
-
-        // 출입구 체크
-        if (checkEntrance(targetX, targetY)) {
-          handleEnterBuilding(targetX, targetY);
-        }
-      });
-    }
-  };
-
-  // 충돌 감지 함수
-  const checkCollision = (x, y) => {
-    // 맵 경계 체크
-    if (x < 0 || x >= mapMatrix[0].length || y < 0 || y >= mapMatrix.length) {
-      return false;
-    }
-
-    const tileType = mapMatrix[y][x];
-    // 이동 가능한 타일 목록 확장
-    const walkableTiles = [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // 1(벽)을 제외한 모든 타일
-    return walkableTiles.includes(tileType);
-  };
-
-  // 건물 진입 처리 함수 수정
-  const handleEnterBuilding = (x, y) => {
-    const character = characters[0];
-
-    // 출구 위치 매핑
-    const exitPoints = {
-      // Joy's Home
-      "2,3": { exitX: 3, exitY: 4 },
-      "3,4": { exitX: 2, exitY: 3 },
-
-      // Anger's Home
-      "10,3": { exitX: 10, exitY: 4 },
-      "10,4": { exitX: 10, exitY: 3 },
-
-      // Sadness's Home
-      "5,7": { exitX: 5, exitY: 8 },
-      "5,8": { exitX: 5, exitY: 7 },
-
-      // Fear's Home
-      "8,12": { exitX: 8, exitY: 13 },
-      "8,13": { exitX: 8, exitY: 12 },
-
-      // Shopping Center
-      "9,7": { exitX: 9, exitY: 8 },
-      "9,8": { exitX: 9, exitY: 7 },
-
-      // Discussion Room
-      "3,12": { exitX: 3, exitY: 13 },
-      "3,13": { exitX: 3, exitY: 12 },
-
-      // Cafe
-      "5,16": { exitX: 5, exitY: 17 },
-      "5,17": { exitX: 5, exitY: 16 },
-
-      // Cinema
-      "9,16": { exitX: 9, exitY: 17 },
-      "9,17": { exitX: 9, exitY: 16 },
-
-      // Restaurant
-      "10,18": { exitX: 10, exitY: 19 },
-      "10,19": { exitX: 10, exitY: 18 },
-    };
-
-    const currentKey = `${x},${y}`;
-    const exitPoint = exitPoints[currentKey];
-
-    if (exitPoint) {
-      // 출구 위치로 캐릭터 이동
-      moveCharacter(
-        character.id,
-        exitPoint.exitX * Tile_WIDTH,
-        exitPoint.exitY * Tile_HEIGHT
-      );
-
-      console.log(
-        `캐릭터가 ${x},${y}에서 ${exitPoint.exitX},${exitPoint.exitY}로 이동했습니다.`
-      );
-    }
-  };
-
-  // 건물 타입 확인 함수 추가
-  const getBuildingType = (x, y) => {
-    const tileType = mapMatrix[y][x];
-    switch (tileType) {
-      case 2:
-        return "Joy_home";
-      case 3:
-        return "Anger_home";
-      case 4:
-        return "Sadness_home";
-      case 5:
-        return "Fear_home";
-      case 6:
-        return "Shopping_center";
-      case 7:
-        return "Discussion_room";
-      case 9:
-        return "Cafe";
-      case 10:
-        return "Cinema";
-      case 11:
-        return "Restaurant";
-      default:
-        return null;
-    }
-  };
-
-  // checkEntrance 함수 수정 (선택사항: 출입구 근처에서만 진입 가능하도록)
-  const checkEntrance = (x, y) => {
-    if (x < 0 || x >= mapMatrix[0].length || y < 0 || y >= mapMatrix.length) {
-      return false;
-    }
-
-    if (mapMatrix[y][x] === 8) {
-      // 주변 타일 확인하여 어떤 건물의 출입구인지 체크
-      const surroundingTiles = [
-        { x: x - 1, y: y },
-        { x: x + 1, y: y },
-        { x: x, y: y - 1 },
-        { x: x, y: y + 1 },
-      ];
-
-      for (const tile of surroundingTiles) {
-        const buildingType = getBuildingType(tile.x, tile.y);
-        if (buildingType) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  // 캐릭터 동 함수 수정
-  //   const moveCharacter = (characterId, targetX, targetY) => {
-  //     Animated.timing(characters.find(c => c.id === characterId).position, {
-  //       toValue: {
-  //         x: targetX,  // 정확한 타일의 x 좌표
-  //         y: targetY   // 정확한 타일의 y 좌표
-  //       },
-  //       duration: 300,
-  //       useNativeDriver: false,
-  //     }).start();
-  //   };
-
+  
   // 맵 컴포넌트 내부에 추가
   const MatrixOverlay = () => {
     return (
@@ -414,75 +248,6 @@ export default function Village() {
   const [isScheduleRunning, setIsScheduleRunning] = useState(false);
   const [currentPathIndex, setCurrentPathIndex] = useState(0);
 
-  // 스케줄 실행 함수
-  //   const executeSchedule = async () => {
-  //     const schedule = scheduleData[currentScheduleIndex];
-
-  //     if (schedule.type === "activity") {
-  //       // 활동 실행
-  //       console.log(
-  //         `${schedule.activity} 시작 (${schedule.duration * TIME_SCALE}분)`
-  //       );
-  //       await new Promise((resolve) =>
-  //         setTimeout(resolve, schedule.duration * TIME_SCALE * 1000)
-  //       );
-  //       moveToNextSchedule();
-  //     } else if (schedule.type === "movement") {
-  //       // 이동 실행
-  //       moveAlongPath(schedule.path);
-  //     }
-  //   };
-
-  //   경로를 따라 이동하는 함수
-  const moveAlongPath = async (characterName, path, schedule) => {
-    if (!path || path.length < 2) {
-      console.log("Invalid path:", path);
-      return;
-    }
-
-    const character = characters.find((c) => c.name === characterName);
-    if (!character) {
-      console.log("Character not found:", characterName);
-      return;
-    }
-
-    console.log(`Moving ${characterName} along path:`, path);
-
-    for (let i = 0; i < path.length - 1; i++) {
-      const currentPos = path[i];
-      const nextPos = path[i + 1];
-
-      // 이동 방향 결정
-      let moveDirection;
-      if (nextPos[0] > currentPos[0]) moveDirection = "right";
-      else if (nextPos[0] < currentPos[0]) moveDirection = "left";
-      else if (nextPos[1] > currentPos[1]) moveDirection = "down";
-      else if (nextPos[1] < currentPos[1]) moveDirection = "up";
-
-      // 방향 설정
-      setDirection(moveDirection);
-      setIsMoving(true);
-
-      // 타일 좌표를 픽셀 좌표로 변환
-      const targetX = nextPos[0] * Tile_WIDTH;
-      const targetY = nextPos[1] * Tile_HEIGHT;
-
-      await new Promise((resolve) => {
-        Animated.timing(character.position, {
-          toValue: { x: targetX, y: targetY },
-          duration: 300,
-          useNativeDriver: false,
-        }).start(() => {
-          resolve();
-        });
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-
-    setIsMoving(false);
-    moveToNextTask(characterName);
-  };
 
   // 다음 스케줄로 이동
   const moveToNextSchedule = (schedule) => {
@@ -518,6 +283,8 @@ export default function Village() {
     }
   }, [currentPathIndex, isScheduleRunning]);
 
+
+  // 플로팅 버튼 시작
   // 상태와 애니메이션 값 설정
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
@@ -537,15 +304,7 @@ export default function Village() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // 버튼 데이터 정의
-  // const menuButtons = [
-  //   { icon: 'map', onPress: () => console.log('지도') },
-  //   { icon: 'person', onPress: () => console.log('프로필') },
-  //   { icon: 'settings', onPress: () => console.log('설정') },
-  //   { icon: 'notifications', onPress: () => console.log('알림') },
-  //   { icon: 'menu', onPress: () => console.log('메뉴') },
-  // ];
-
+  // 페르소나 이미지 상태 추가
   const [personaImage, setPersonaImage] = useState(null);
 
   useEffect(() => {
@@ -679,15 +438,15 @@ export default function Village() {
     }
   };
 
-  // 화면 크기 가져오기
-  const { width, height } = Dimensions.get("window");
+  // 화면 크기 가져오기 => 이거 는가?
+  // const { width, height } = Dimensions.get("window");
 
   // 상단에 상태 추가
   const [activeTab, setActiveTab] = useState("log"); // 'log' 또는 'chat'
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
 
-  // 상단에 로 상태 추가
+  // 상단에 로딩 상태 추가
   const [isLoading, setIsLoading] = useState(false);
 
   // useEffect로 실시간 채팅 리스너 설정
@@ -801,12 +560,15 @@ export default function Village() {
 
   // 컴포넌트 상단에 ref 추가
   const scrollViewRef = useRef();
+  // 플로팅 버튼 끝
+
+
 
   // 캐릭터별 스케줄 상태 관리
   const [characterSchedules, setCharacterSchedules] = useState({
-    Joy: { currentIndex: 0, isRunning: false, data: [] },
-    Anger: { currentIndex: 0, isRunning: false, data: [] },
-    Sadness: { currentIndex: 0, isRunning: false, data: [] },
+    Joy: { currentIndex: 0, isRunning: false, data: [], completed: false },
+    Anger: { currentIndex: 0, isRunning: false, data: [], completed: false },
+    Sadness: { currentIndex: 0, isRunning: false, data: [], completed: false },
   });
 
   // 오늘 날짜 구하기
@@ -826,6 +588,7 @@ export default function Village() {
   };
 
   // Firestore에서 스케줄 가져오기 및 실시간 업데이트 설정
+  // 스케줄 시작 함수 중요
   useEffect(() => {
     console.log("useEffect 실행됨");
 
@@ -838,7 +601,7 @@ export default function Village() {
         });
 
         if (!user?.uid) {
-          console.log("유저 ID가 없음");
+          console.log("유��� ID가 없음");
           return;
         }
 
@@ -911,148 +674,203 @@ export default function Village() {
     }
   }, [user]);
 
+
   // characterSchedules가 변경될 때마다 실행되는 useEffect 추가
   useEffect(() => {
     console.log("characterSchedules 변경됨:", characterSchedules);
   }, [characterSchedules]);
 
-  // 스케줄 실행 함수 수정
-  const executeCharacterSchedule = async (characterName) => {
-    console.log(`Executing schedule for ${characterName}`);
+
+
+  // 각 캐릭터별 스케줄 실행기 생성
+  const executeIndividualSchedule = async (characterName) => {
+    console.log(`[${characterName}] Starting individual schedule execution`);
+    
     const schedule = characterSchedules[characterName];
-    const currentTask = schedule.data[schedule.currentIndex];
+    if (!schedule || !schedule.data || schedule.completed) return;
 
-    if (!currentTask) {
-      console.log(`No more tasks for ${characterName}`);
-      setCharacterSchedules((prev) => ({
-        ...prev,
-        [characterName]: {
-          ...prev[characterName],
-          isRunning: false,
-        },
-      }));
-      return;
-    }
-
-    console.log(`Current task for ${characterName}:`, currentTask);
-
-    try {
-      if (currentTask.type === "activity") {
-        console.log(
-          `${characterName} performing activity: ${currentTask.activity}`
-        );
-        const character = characters.find((c) => c.name === characterName);
-        if (character) {
-          await moveCharacter(
-            character.id,
-            currentTask.location[0] * Tile_WIDTH,
-            currentTask.location[1] * Tile_HEIGHT
-          );
-        }
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, currentTask.duration * TIME_SCALE * 1000)
-        );
-        moveToNextTask(characterName);
-      } else if (currentTask.type === "movement") {
-        console.log(`${characterName} moving along path`);
-        await moveAlongPath(characterName, currentTask.path, schedule);
-      }
-    } catch (error) {
-      console.error(`Error executing schedule for ${characterName}:`, error);
-    }
-  };
-
-  // moveCharacter 함수 수정
-  const moveCharacter = (characterId, targetX, targetY) => {
-    return new Promise((resolve) => {
-      const character = characters.find((c) => c.id === characterId);
-      if (!character) {
-        console.log("Character not found:", characterId);
-        resolve();
+    // 현재 태스크 실행
+    const executeTask = async (taskIndex) => {
+      if (taskIndex >= schedule.data.length) {
+        // 모든 태스크 완료
+        setCharacterSchedules(prev => ({
+          ...prev,
+          [characterName]: {
+            ...prev[characterName],
+            completed: true,
+            isRunning: false
+          }
+        }));
         return;
       }
 
-      // 현재 위치와 목표 위치의 차이 계산
-      const dx = targetX - character.position.x._value;
-      const dy = targetY - character.position.y._value;
+      const currentTask = schedule.data[taskIndex];
+      console.log(`[${characterName}] Executing task ${taskIndex + 1}/${schedule.data.length}:`, currentTask);
 
-      // 방향 결정
-      let newDirection;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        newDirection = dx > 0 ? "right" : "left";
-      } else {
-        newDirection = dy > 0 ? "down" : "up";
+      try {
+        if (currentTask.type === "movement") {
+          await moveCharacterAlongPath(characterName, currentTask.path);
+        } else if (currentTask.type === "activity") {
+          await performActivity(characterName, currentTask);
+        }
+
+        // 다음 태스크로 이동
+        setCharacterSchedules(prev => ({
+          ...prev,
+          [characterName]: {
+            ...prev[characterName],
+            currentIndex: taskIndex + 1,
+            isRunning: true
+          }
+        }));
+
+        // 재귀적으로 다음 태스크 실행
+        await executeTask(taskIndex + 1);
+
+      } catch (error) {
+        console.error(`[${characterName}] Error executing task:`, error);
       }
+    };
 
-      // 방향과 이동 상태 설정
-      setDirection(newDirection);
-      setIsMoving(true);
+    // 첫 태스크부터 시작
+    await executeTask(schedule.currentIndex);
+  };
 
-      console.log(`Moving ${character.name} to:`, {
-        targetX,
-        targetY,
-        newDirection,
+  // 개별 캐릭터의 경로 이동 함수
+  const moveCharacterAlongPath = async (characterName, path) => {
+    const character = characters.find(c => c.name === characterName);
+    if (!character || !path || path.length < 2) return;
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const currentPos = path[i];
+      const nextPos = path[i + 1];
+
+      // 방향 계산
+      const dx = nextPos[1] - currentPos[1];
+      const dy = nextPos[0] - currentPos[0];
+      const direction = getDirection(dx, dy);
+
+      // 현재 캐릭터의 상태만 업데이트
+      setCharacters(prev => prev.map(char => 
+        char.name === characterName
+          ? { ...char, direction, isMoving: true }
+          : char
+      ));
+
+      // 이동 실행
+      await new Promise((resolve) => {
+        Animated.timing(character.position, {
+          toValue: {
+            x: nextPos[1] * Tile_WIDTH,
+            y: nextPos[0] * Tile_HEIGHT
+          },
+          duration: 800,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }).start(resolve);
       });
 
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    // 이동 완료 후 상태 업데이트
+    setCharacters(prev => prev.map(char => 
+      char.name === characterName
+        ? { ...char, isMoving: false }
+        : char
+    ));
+  };
+
+  // 활동 수행 함수
+  const performActivity = async (characterName, task) => {
+    const character = characters.find(c => c.name === characterName);
+    if (!character || !task.location) return;
+
+    // 활동 위치로 이동
+    await new Promise((resolve) => {
       Animated.timing(character.position, {
-        toValue: { x: targetX, y: targetY },
-        duration: 300,
+        toValue: {
+          x: task.location[1] * Tile_WIDTH,
+          y: task.location[0] * Tile_HEIGHT
+        },
+        duration: 800,
+        easing: Easing.linear,
         useNativeDriver: false,
-      }).start(() => {
-        setIsMoving(false);
-        resolve();
-      });
+      }).start(resolve);
     });
+
+    // 활동 시간 대기
+    await new Promise(resolve => 
+      setTimeout(resolve, task.duration * TIME_SCALE * 1000)
+    );
   };
 
-  // moveToNextTask 함수 수정
-  const moveToNextTask = (characterName) => {
-    console.log(`Moving to next task for ${characterName}`);
-    setCharacterSchedules((prev) => ({
-      ...prev,
-      [characterName]: {
-        ...prev[characterName],
-        currentIndex: prev[characterName].currentIndex + 1,
-      },
-    }));
+  // 방향 계산 헬퍼 함수
+  const getDirection = (dx, dy) => {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? "right" : "left";
+    }
+    return dy > 0 ? "down" : "up";
   };
 
-  // startAllSchedules 함수 수정
+  // 스케줄 시작 함수 수정
   const startAllSchedules = () => {
     console.log("Starting all schedules");
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    setCharacterSchedules((prev) => {
-      const newSchedules = {};
-      Object.entries(prev).forEach(([characterName, schedule]) => {
-        newSchedules[characterName] = {
-          ...schedule,
-          isRunning: true,
+    
+    // 각 캐릭터의 스케줄 초기화 및 시작
+    Object.keys(characterSchedules).forEach(characterName => {
+      setCharacterSchedules(prev => ({
+        ...prev,
+        [characterName]: {
+          ...prev[characterName],
           currentIndex: 0,
-        };
-      });
-      console.log("New schedules:", newSchedules);
-      return newSchedules;
+          isRunning: true,
+          completed: false
+        }
+      }));
+      
+      // 각 캐릭터의 스케줄 독립적으로 실행
+      executeIndividualSchedule(characterName);
     });
   };
 
-  // 스케줄 실행 감시 useEffect 수정
+  // useEffect 수정 - 각 캐릭터의 스케줄 상태 변경 감지
   useEffect(() => {
-    console.log("Schedule state changed:", characterSchedules);
     Object.entries(characterSchedules).forEach(([characterName, schedule]) => {
-      if (
-        schedule.isRunning &&
-        schedule.data &&
-        schedule.data.length > schedule.currentIndex
-      ) {
-        executeCharacterSchedule(characterName);
+      if (schedule.isRunning && !schedule.completed && schedule.currentIndex < schedule.data.length) {
+        executeIndividualSchedule(characterName);
       }
     });
+  }, []); // 의존성 배열을 비워서 초기에만 실행되도록 함
+
+  // 스케줄 완료 상태를 체크하는 함수 추가
+  const checkAllSchedulesCompleted = () => {
+    return Object.values(characterSchedules).every(schedule => schedule.completed);
+  };
+
+  // 전체 스케줄 완료 감시
+  useEffect(() => {
+    if (checkAllSchedulesCompleted()) {
+      console.log("All schedules completed!");
+      // 필요한 경우 여기에 완료 후 처리 로직 추가
+    }
   }, [characterSchedules]);
 
-  // 시작 버튼 컴포넌트
+  // 캐릭터 상태 업데이트 함수
+  const updateCharacterState = (characterId, updates) => {
+    setCharacters(prev => 
+      prev.map(char => 
+        char.id === characterId 
+          ? { ...char, ...updates }
+          : char
+      )
+    );
+  };
+
+
+  
+
+  // 렌더링 부분 수정
   return (
     <View style={styles.container}>
       {/* 배경 맵 */}
@@ -1082,12 +900,8 @@ export default function Village() {
               width: spriteConfig.frameWidth * 10,
               height: spriteConfig.frameHeight * 8,
               position: "absolute",
-              left: -spriteConfig.frameWidth * currentFrame,
-              top:
-                -spriteConfig.frameHeight *
-                spriteConfig.animations[
-                  isMoving ? direction : `${direction}_idle`
-                ].row,
+              left: -spriteConfig.frameWidth * (character.currentFrame || 0),
+              top: -spriteConfig.frameHeight * getAnimationRow(character.direction || 'down', character.isMoving || false),
             }}
           />
         </Animated.View>
@@ -1689,3 +1503,5 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
 });
+
+
