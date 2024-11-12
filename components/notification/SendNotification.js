@@ -104,7 +104,11 @@ const SCREEN_TYPES = {
   CompletedGeneratePersona: {
     type: 'CompletedGeneratePersona',
     getMessage: (data) => `${data.userName}님이 페르소나를 생성했습니다.`
-  }
+  },
+  Calendar:{
+    type: 'Calendar',
+    getMessage: () => `새로운 일정을 추가했습니다`  
+  },
 };
 
 // (누구에게, 누가, 어떤 화면, 어떤 URL)

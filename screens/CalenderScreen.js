@@ -8,6 +8,7 @@ import { getAuth } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios'; // axios 추가
 import { useSelector } from 'react-redux'; // redux useSelector 추가
+import sendNotificationToUser from '../components/notification/SendNotification';
 
 const CalendarScreen = () => {
   console.log('CalendarScreen 실행');
@@ -60,6 +61,8 @@ const CalendarScreen = () => {
         }
       });
     }
+    console.log("알람 전송");
+    sendNotificationToUser(user.uid, 'System', 'Calendar', '');
 
     resetModalState();
   };

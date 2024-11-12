@@ -61,10 +61,10 @@ const SignupForm = () => {
     try {
       const auth = getAuth(app);
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
+
       const pushToken = await NowPushToken();
-      await createUserProfile(user, { displayName: email.split('@')[0]}); // 회원가입 완료 후 프로필 생성
-      // UpdatePushToken(user.uid, pushToken);
-      // console.log("SignupForm > handleSignup > 푸시 알림 토큰 : ", pushToken);
+
+      await createUserProfile(user, { displayName: email.split('@')[0]}, pushToken); // 회원가입 완료 후 프로필 생성
       alert('회원가입이 완료되었습니다.');
       // 여기서 UserVerificationStep1으로 네비게이션을 변경합니다.
       navigation.navigate('UserVerificationStep0');
