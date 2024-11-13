@@ -99,6 +99,32 @@ const TILE_DESCRIPTIONS = {
   11: "Restaurant",
 };
 
+// 말풍선 컴포넌트 추가
+const ChatBubble = ({ position }) => {
+  const [dots, setDots] = useState('...');
+
+  // 말줄임표 애니메이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '.' : prev + '.');
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View style={[
+      styles.chatBubble,
+      {
+        position: 'absolute',
+        left: position.x * Tile_WIDTH + 15, // 캐릭터 중앙에서 약간 오른쪽
+        top: position.y * Tile_HEIGHT - 30, // 캐릭터 위
+      }
+    ]}>
+      <Text style={styles.chatBubbleText}>{dots}</Text>
+    </View>
+  );
+};
 
 export default function VillageV2() {
 
@@ -123,7 +149,9 @@ export default function VillageV2() {
           direction: 'down',
           isMoving: false,
           currentFrame: 0,
-          currentPath: null
+          currentPath: null,
+          isInteracting: false,
+          interactingWith: null
         },
         {
           id: 2,
@@ -133,7 +161,9 @@ export default function VillageV2() {
           direction: 'down',
           isMoving: false,
           currentFrame: 0,
-          currentPath: null
+          currentPath: null,
+          isInteracting: false,
+          interactingWith: null
         },
         {
           id: 3,
@@ -143,7 +173,9 @@ export default function VillageV2() {
           direction: 'down',
           isMoving: false,
           currentFrame: 0,
-          currentPath: null
+          currentPath: null,
+          isInteracting: false,
+          interactingWith: null
         },
       ];
 
@@ -1022,7 +1054,17 @@ export default function VillageV2() {
                 ...char,
                 isInteracting: true,
                 interactingWith: char.name === char1.name ? char2.name : char1.name,
-                interactionData: response.data.interactionDetails // FastAPI에서 받은 상호작용 데이터
+                interactionData: response.data.interactionDetails,
+                // 대화가 끝나면 isInteracting을 false로 변경하기 위한 타이머 설정
+                interactionTimer: setTimeout(() => {
+                  setCharacters(current => 
+                    current.map(c => 
+                      c.name === char.name 
+                        ? { ...c, isInteracting: false, interactingWith: null }
+                        : c
+                    )
+                  );
+                }, 5000) // 5초 후 말풍선 제거
               };
             }
             return char;
@@ -1068,30 +1110,41 @@ export default function VillageV2() {
 
       {/* 캐릭터들 */}
       {characters.map((character) => (
-        <Animated.View
-          key={character.id}
-          style={[
-            styles.character,
-            {
-              transform: character.position.getTranslateTransform(),
-              width: spriteConfig.frameWidth,
-              height: spriteConfig.frameHeight,
-              overflow: "hidden",
-              position: "absolute",
-            },
-          ]}
-        >
-          <Image
-            source={character.image}
-            style={{
-              width: spriteConfig.frameWidth * 10,
-              height: spriteConfig.frameHeight * 8,
-              position: "absolute",
-              left: -spriteConfig.frameWidth * (character.currentFrame || 0),
-              top: -spriteConfig.frameHeight * getAnimationRow(character.direction, character.isMoving),
-            }}
-          />
-        </Animated.View>
+        <React.Fragment key={character.id}>
+          <Animated.View
+            style={[
+              styles.character,
+              {
+                transform: character.position.getTranslateTransform(),
+                width: spriteConfig.frameWidth,
+                height: spriteConfig.frameHeight,
+                overflow: "hidden",
+                position: "absolute",
+              },
+            ]}
+          >
+            <Image
+              source={character.image}
+              style={{
+                width: spriteConfig.frameWidth * 10,
+                height: spriteConfig.frameHeight * 8,
+                position: "absolute",
+                left: -spriteConfig.frameWidth * (character.currentFrame || 0),
+                top: -spriteConfig.frameHeight * getAnimationRow(character.direction, character.isMoving),
+              }}
+            />
+          </Animated.View>
+          
+          {/* 대화 중일 때만 말풍선 표시 */}
+          {character.isInteracting && (
+            <ChatBubble
+              position={{
+                x: Math.round(character.position.x._value / Tile_WIDTH),
+                y: Math.round(character.position.y._value / Tile_HEIGHT)
+              }}
+            />
+          )}
+        </React.Fragment>
       ))}
       {/* <MatrixOverlay /> */}
 
@@ -1688,6 +1741,32 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#666666",
     marginLeft: 16,
+  },
+  chatBubble: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 8,
+    minWidth: 30,
+    minHeight: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    // 말풍선 꼬리 모양
+    transform: [{ rotate: '0deg' }],
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  chatBubbleText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
   },
 });
 
