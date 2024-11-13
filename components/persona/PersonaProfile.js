@@ -261,18 +261,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
         marginBottom: 20,
-        marginLeft : 250,
+        paddingHorizontal: 20, // 좌우 여백 추가
     },
     name: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#333',
+        flex: 1, // 남은 공간 차지
+        textAlign: 'center', // 텍스트 중앙 정렬
     },
     editButton: {
-        marginRight:230,
-        // cursor : 'pointer'
+        padding: 5,
+        position: 'absolute', // 절대 위치로 변경
+        right: 20, // 오른쪽에서 20px 떨어짐
     },
     horizontalLine: {
         width: '90%',
