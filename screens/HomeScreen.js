@@ -137,8 +137,12 @@ const HomeScreen = () => {
   );
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    if (user?.uid) {
+      setLastVisible(null);
+      setHasMorePosts(true);
+      fetchPosts();
+    }
+  }, [user]);
 
   const renderFooter = () => {
     if (!isLoadingMore) return null;
