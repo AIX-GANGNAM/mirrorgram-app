@@ -18,29 +18,27 @@ const generatePersonaImages = async (formData) => {
     const auth = getAuth();
     const user = auth.currentUser;
 
-    console.log('dkdkdkdkdkddkdkdkd')
-    
     if (!user) {
       throw new Error('사용자 인증 정보가 없습니다.');
     }
     
     formData.append('uid', user.uid);
-    // 주소수정 http://221.148.97.237:1818/generate-persona-image
 
-    console.log('generate 이미지 formData', formData)
-
-
-    const response = await axios.post(`http://221.148.97.237:1818/generate-persona-images`, formData, {
+    // 비동기 요청 실행 (응답 대기하지 않음)
+    axios.post(`http://221.148.97.237:1818/generate-persona-images`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+    }).catch(error => {
+      console.error('Error in background persona generation:', error);
     });
-    return response.data.images;
 
+    // 즉시 true 반환
+    return true;
 
   } catch (error) {
     console.error('Error generating persona images:', error);
-    Alert.alert("오류", "페르소나 이미지 생성 중 오류가 발생했습니다.");
+    Alert.alert("오류", "페르소나 이미지 생성 요청 중 오류가 발생했습니다.");
     throw error;
   }
 };
@@ -55,6 +53,7 @@ const generatePersonaDetails = async (customPersona) => {
       throw new Error('사용자 인증 정보가 없습니다.');
     }
 
+    // 성격 생성은 동기식으로 처리
     const response = await axios.post('http://localhost:8000/generate-personality', {
       uid: user.uid,
       name: customPersona.name,
@@ -132,7 +131,7 @@ export default function CreatePersonaScreen() {
 
   // 다음 단계로 이동
   const handleNext = useCallback(() => {
-    // 나만의 페르소나 입��값 확인
+    // 나만의 페르소나 입값 확인
     if (!personaDetails.custom.name || 
         !personaDetails.custom.personality || 
         !personaDetails.custom.speechStyle) {
@@ -174,7 +173,7 @@ export default function CreatePersonaScreen() {
 
       if (!result.canceled) {
         setImage(result.assets[0].uri);
-        // 이미지 선택 시 기존 페르소나 초기화
+        // 이미지 선택 시 custom을 제외한 페르소나만 초기화
         setGeneratedPersonas({
           joy: null,
           anger: null,
@@ -182,13 +181,15 @@ export default function CreatePersonaScreen() {
           custom: null,
           clone: null
         });
-        setPersonaDetails({
+        
+        // custom 데이터 유지하면서 다른 페르소나 초기화
+        setPersonaDetails(prevDetails => ({
           joy: { name: '기쁨이', personality: '', speechStyle: '' },
           anger: { name: '화남이', personality: '', speechStyle: '' },
           sadness: { name: '슬픔이', personality: '', speechStyle: '' },
-          custom: { name: '', personality: '', speechStyle: '' },
+          custom: prevDetails.custom, // 기존 custom 데이터 유지
           clone: { name: '나의 분신', personality: '', speechStyle: '' }
-        });
+        }));
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -196,45 +197,61 @@ export default function CreatePersonaScreen() {
     }
   };
 
+  const auth = getAuth();
+
   // handleGeneratePersonas 함수 수정
   const handleGeneratePersonas = async (skipImage) => {
     if (!personaDetails.custom.name) {
       Alert.alert("알림", "페르소나 정보를 입력해주세요.");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
-      // 1. 성격 생성 API 호출
+      // 1. 성격 생성 API 호출 (동기식)
       await generatePersonaDetails(personaDetails.custom);
-
-      // 2. 이미지 생성 API 호출
+  
+      // 2. 이미지 생성 API 비동기 호출
       const formData = new FormData();
       formData.append('customPersona', JSON.stringify({
         name: personaDetails.custom.name,
         personality: personaDetails.custom.personality,
         speechStyle: personaDetails.custom.speechStyle
       }));
-
-      if (!skipImage) {
+  
+      if (!skipImage && image) {
         formData.append('image', {
           uri: image,
           type: 'image/jpeg',
           name: 'image.jpg'
         });
       }
-
-      const generatePersonaImagesResponse = await generatePersonaImages(formData);
-      console.log('generatePersonaImagesResponse : ', generatePersonaImagesResponse); 
-      // targetUserUid, fromUid, inputScreenType, URL
-      // 페르소나 생성 완료 알람보내기(나에게, 'System', 'CompletedGeneratePersona', '');
-      sendNotificationToUser(auth.currentUser.uid, 'System', 'CompletedGeneratePersona', '');
-
-      // 3. 생성 완료 후 홈으로 이동
+  
+      // **여기에 'uid'를 추가합니다.**
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('사용자 인증 정보가 없습니다.');
+      }
+      formData.append('uid', user.uid);
+  
+      // 이미지 생성은 비동기로 처리
+      axios.post(`http://221.148.97.237:1818/generate-persona-images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }).catch(error => {
+        console.error('Error in background persona generation:', error);
+      });
+      
+      // 페르소나 생성 시작 알림 보내기
+      // await sendNotificationToUser(auth.currentUser.uid, 'System', 'StartGeneratePersona', '');
+  
+      // 3. 즉시 홈으로 이동
       Alert.alert(
-        "생성 완료",
-        "페르소나가 생성되었습니다. 잠시 후 확인하실 수 있습니다.",
+        "생성 요청 완료",
+        "페르소나 생성이 시작되었습니다. 잠시 후 확인하실 수 있습니다.",
         [
           {
             text: "확인",
@@ -242,18 +259,18 @@ export default function CreatePersonaScreen() {
           }
         ]
       );
-
+  
     } catch (error) {
       console.error('Error in handleGeneratePersonas:', error);
       Alert.alert(
         "오류",
-        "페르소나 생성 중 오류가 발생했습니다. 다시 시도해주세요."
+        "페르소나 생성 요청 중 오류가 발생했습니다. 다시 시도해주세요."
       );
     } finally {
       setLoading(false);
     }
   };
-
+  
   const renderPersonaCard = (type) => {
     const persona = generatedPersonas[type];
     const details = personaDetails[type];

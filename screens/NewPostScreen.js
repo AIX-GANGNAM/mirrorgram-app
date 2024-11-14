@@ -135,7 +135,7 @@ const NewPostScreen = ({ navigation }) => {
   
         // POST 요청으로 데이터 전달
 
-        const response = await axios.post('http://10.0.2.2:8010/feedAutomatic', {
+        const response = await axios.post('http://221.148.97.237:8010/feedAutomatic', {
           id: feedUuid, // 피드 uid
 
           parentNick: user.userId, // 부모 닉네임

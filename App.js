@@ -65,7 +65,9 @@ import UpdatePushToken from './components/notification/UpdatePushToken';
 import removePushToken from './components/notification/RemovePushToken';
 
 import { AppState } from 'react-native';
+import { LogBox } from 'react-native';
 
+LogBox.ignoreAllLogs();
 
 const AppWrapper = () => {
   return (
@@ -417,7 +419,7 @@ async function registerForPushNotificationsAsync() {
       return;
     }
   } else {
-    alert('실제 단말기를 사용해주세요');
+    // alert('실제 단말기를 사용해주세요');
   }
 }
 const styles = StyleSheet.create({
