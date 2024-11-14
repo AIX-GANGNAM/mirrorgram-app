@@ -26,7 +26,6 @@ import {
   setDoc,
   getDocs,
   Timestamp,
-  limit,
 } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -42,6 +41,8 @@ const auth = getAuth(app);
 // 맵 매트릭스 정의
 const mapMatrix = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -125,81 +126,7 @@ const ChatBubble = ({ position, interactionData, onPress }) => {
 };
 
 // 대화 모달 컴포넌트 추가
-const InteractionModal = ({ visible, interaction, onClose, user }) => {
-  const [messages, setMessages] = useState([]);
-  const [personaImage, setPersonaImage] = useState({});
-
-  // 페르소나 이미지 가져오기
-  useEffect(() => {
-    const fetchPersonaImage = async () => {
-      try {
-        const db = getFirestore();
-        const user_doc = collection(db, "users");
-        const result = await getDoc(doc(user_doc, auth.currentUser.uid));
-        const personaData = result.data().persona;
-
-        const defaultImage =
-          "https://firebasestorage.googleapis.com/v0/b/mirrorgram-20713.appspot.com/o/%E2%80%94Pngtree%E2%80%94default%20avatar_5408436.png?alt=media&token=36f0736a-17cb-444f-8fe1-1bca085b28e2";
-
-        const imageMap = personaData.reduce((acc, item) => {
-          acc[item.Name] = item.IMG || defaultImage;
-          return acc;
-        }, {});
-
-        setPersonaImage(imageMap);
-      } catch (error) {
-        console.error("페르소나 이미지 가져오기 실패:", error);
-      }
-    };
-
-    if (visible) {
-      fetchPersonaImage();
-    }
-  }, [visible]);
-
-  // 메시지 리스너
-  useEffect(() => {
-    if (!visible || !interaction || !user) return;
-
-    // 대화 참여자들의 ID를 정렬하여 일관된 ID 생성
-    const conversationId = interaction.participants.sort().join('-');
-    
-    const conversationRef = collection(
-      db,
-      'village/convo',
-      user.uid,
-      conversationId,
-      'messages'
-    );
-
-    const q = query(
-      conversationRef,
-      orderBy('timestamp', 'desc'),
-      limit(5)
-    );
-
-    console.log('Starting listener for conversation:', conversationId);
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newMessages = [];
-      snapshot.forEach((doc) => {
-        newMessages.push({
-          ...doc.data(),
-          id: doc.id
-        });
-      });
-      setMessages(newMessages.reverse()); // 시간순으로 정렬
-    });
-
-    // cleanup function
-    return () => {
-      console.log('Cleaning up listener');
-      unsubscribe();
-    };
-  }, [visible, interaction, user]); // 의존성 배열 추가
-  
-  if (!visible) return null;
-
+const InteractionModal = ({ visible, interaction, onClose }) => {
   return (
     <Modal
       animationType="slide"
@@ -217,48 +144,13 @@ const InteractionModal = ({ visible, interaction, onClose, user }) => {
           </View>
           
           <ScrollView style={styles.modalBody}>
-            {messages.map((message) => {
-              const isSelectedCharacter = interaction.participants[0] === message.speaker;
-              
-              return (
-                <View key={message.id} style={styles.messageRow}>
-                  {isSelectedCharacter && (
-                    <Image 
-                      source={{ uri: personaImage[message.speaker] }}
-                      style={styles.characterImage}
-                    />
-                  )}
-                  <View style={[
-                    styles.messageBubble,
-                    isSelectedCharacter ? styles.selectedCharacterMessage : styles.otherCharacterMessage
-                  ]}>
-                    <Text style={styles.speakerName}>{message.speaker}</Text>
-                    <Text style={[
-                      styles.messageText,
-                      isSelectedCharacter ? styles.selectedCharacterText : styles.otherCharacterText
-                    ]}>
-                      {message.content}
-                    </Text>
-                    <View style={styles.messageFooter}>
-                      <Text style={styles.messageTime}>
-                        {new Date(message.timestamp?.toDate()).toLocaleTimeString()}
-                      </Text>
-                      <Text style={styles.locationText}>
-                        {message.location?.zone || ''}
-                      </Text>
-                    </View>
-                  </View>
-                  {!isSelectedCharacter && (
-                    <Image 
-                      source={{ uri: personaImage[message.speaker] }}
-                      style={styles.characterImage}
-                    />
-                  )}
-                </View>
-              );
-            })}
-            {messages.length === 0 && (
-              <Text style={styles.noMessagesText}>아직 대화 내용이 없습니다.</Text>
+            <Text style={styles.interactionText}>
+              {interaction?.content || "대화 내용이 없습니다."}
+            </Text>
+            {interaction?.participants && (
+              <Text style={styles.participantsText}>
+                참여자: {interaction.participants.join(', ')}
+              </Text>
             )}
           </ScrollView>
         </View>
@@ -318,30 +210,6 @@ export default function VillageV2() {
           isInteracting: false,
           interactingWith: null
         },
-        {
-          id: 4,
-          name: "clone",
-          position: new Animated.ValueXY(),
-          image: require("../../assets/character/jelda.png"),
-          direction: 'down',
-          isMoving: false,
-          currentFrame: 0,
-          currentPath: null,
-          isInteracting: false,
-          interactingWith: null
-        },
-        {
-          id: 5,
-          name: "custom",
-          position: new Animated.ValueXY(),
-          image: require("../../assets/character/white.png"),
-          direction: 'down',
-          isMoving: false,
-          currentFrame: 0,
-          currentPath: null,
-          isInteracting: false,
-          interactingWith: null
-        },
       ];
 
       // 각 캐릭터의 초기 위치 설정
@@ -376,24 +244,24 @@ export default function VillageV2() {
     frameWidth: 30, // 실제 프레임 크기에 맞게 조정
     frameHeight: 33,
     animations: {
-      down: { row: 4, frames: 10 },
-      up: { row: 6, frames: 10 },
-      left: { row: 5, frames: 10 },
-      right: { row: 7, frames: 10 },
+      down: { row: 0, frames: 3 },
+      up: { row: 3, frames: 3 },
+      left: { row: 1, frames: 3 },
+      right: { row: 2, frames: 3 },
       down_idle: { row: 0, frames: 3 },
-      up_idle: { row: 2, frames: 1 },
+      up_idle: { row: 3, frames: 3 },
       left_idle: { row: 1, frames: 3 },
-      right_idle: { row: 3, frames: 3 }
+      right_idle: { row: 2, frames: 3 }
     },
   };
 
   // 안전한 animation row 가져오기 함수
   const getAnimationRow = (direction, isMoving) => {
     const animationKey = isMoving ? direction : `${direction}_idle`;
-    return spriteConfig.animations[animationKey]?.row || 0;
+    return spriteConfig.animations[animationKey]?.row ?? 0; // 기본값으로 0 사용
   };
 
-  // 각 캐릭터별 애니메이션  추가
+  // 각 캐릭터별 애니메이션 효과 추가
   useEffect(() => {
     const animationIntervals = characters.map(character => {
       return setInterval(
@@ -453,7 +321,7 @@ export default function VillageV2() {
   const [currentPathIndex, setCurrentPathIndex] = useState(0);
 
 
-  // 다음 케줄로 이동
+  // 다음 스케줄로 이동
   const moveToNextSchedule = (schedule) => {
     if (currentScheduleIndex < schedule.length - 1) {
       setCurrentScheduleIndex(currentScheduleIndex + 1);
@@ -463,7 +331,7 @@ export default function VillageV2() {
     }
   };
 
-  // 스케줄 ��작 버튼 추가
+  // 스케줄 시작 버튼 추가
   const startSchedule = () => {
     setIsScheduleRunning(true);
     setCurrentScheduleIndex(0);
@@ -589,7 +457,7 @@ export default function VillageV2() {
     Anger: {
       type: "Anger",
       name: "분노",
-      description: "정의와 화의 동력",
+      description: "정의와 변화의 동력",
       traits: ["결단력", "추진력", "정직함"],
       specialty: "부당한 상황 개선하기",
     },
@@ -775,8 +643,6 @@ export default function VillageV2() {
     Joy: { currentIndex: 0, isRunning: false, data: [], completed: false },
     Anger: { currentIndex: 0, isRunning: false, data: [], completed: false },
     Sadness: { currentIndex: 0, isRunning: false, data: [], completed: false },
-    clone: { currentIndex: 0, isRunning: false, data: [], completed: false },
-    custom: { currentIndex: 0, isRunning: false, data: [], completed: false },
   });
 
   // 오늘 날짜 구하기
@@ -795,7 +661,7 @@ export default function VillageV2() {
     return 7; // 문자열이 아닌 경우 기본값 7
   };
 
-  // Firestore에서 스케줄 가져기 및 실시간 업데이트 설정
+  // Firestore에서 스케줄 가져오기 및 실시간 업데이트 설정
   // 스케줄 시작 함수 중요
   useEffect(() => {
     console.log("useEffect 실행됨");
@@ -909,19 +775,6 @@ export default function VillageV2() {
             isRunning: false
           }
         }));
-        
-        // 일과 완료 로그 저장
-        const character = characters.find(c => c.name === characterName);
-        if (character) {
-          await saveCharacterLog(
-            character,
-            "일과를 모두 완료했습니다.",
-            'schedule_complete',
-            {
-              totalTasks: schedule.data.length
-            }
-          );
-        }
         return;
       }
 
@@ -929,64 +782,10 @@ export default function VillageV2() {
       console.log(`[${characterName}] Executing task ${taskIndex + 1}/${schedule.data.length}:`, currentTask);
 
       try {
-        const character = characters.find(c => c.name === characterName);
-        if (!character) throw new Error("Character not found");
-
         if (currentTask.type === "movement") {
-          // 이동 시작 로그
-          await saveCharacterLog(
-            character,
-            `${currentTask.destination || '목적지'}로 이동을 시작했습니다.`,
-            'movement_start',
-            {
-              destination: currentTask.destination || '알 수 없는 목적지',
-              pathLength: currentTask.path?.length || 0
-            }
-          );
-
           await moveCharacterAlongPath(characterName, currentTask.path);
-
-          // 이동 완료 로그
-          await saveCharacterLog(
-            character,
-            `${currentTask.destination || '목적지'}에 도착했습니다.`,
-            'movement_complete',
-            {
-              destination: currentTask.destination || '알 수 없는 목적지',
-              pathLength: currentTask.path?.length || 0
-            }
-          );
-
         } else if (currentTask.type === "activity") {
-          const activityName = currentTask.name || currentTask.activity || '이름 없는 활동';
-          
-          // 활동 시작 로그
-          await saveCharacterLog(
-            character,
-            `${activityName}을(를) 시작했습니다.`,
-            'activity_start',
-            {
-              activityName: activityName,
-              duration: currentTask.duration || 0,
-              location: currentTask.location,
-              scheduleName: currentTask.scheduleName || activityName
-            }
-          );
-
           await performActivity(characterName, currentTask);
-
-          // 활동 완료 로그
-          await saveCharacterLog(
-            character,
-            `${activityName}을(를) 완료했습니다.`,
-            'activity_complete',
-            {
-              activityName: activityName,
-              duration: currentTask.duration || 0,
-              location: currentTask.location,
-              scheduleName: currentTask.scheduleName || activityName
-            }
-          );
         }
 
         // 다음 태스크로 이동
@@ -1004,21 +803,6 @@ export default function VillageV2() {
 
       } catch (error) {
         console.error(`[${characterName}] Error executing task:`, error);
-        
-        // 에러 로그 저장
-        const character = characters.find(c => c.name === characterName);
-        if (character) {
-          await saveCharacterLog(
-            character,
-            `태스크 실행 중 오류가 발생했습니다: ${error.message}`,
-            'error',
-            {
-              taskType: currentTask.type,
-              taskIndex: taskIndex,
-              error: error.message
-            }
-          );
-        }
       }
     };
 
@@ -1129,7 +913,7 @@ export default function VillageV2() {
     });
   };
 
-  // useEffect 수정 - 각 캐릭터의 케줄 상태 변경 감
+  // useEffect 수정 - 각 캐릭터의 스케줄 상태 변경 감지
   useEffect(() => {
     Object.entries(characterSchedules).forEach(([characterName, schedule]) => {
       if (schedule.isRunning && !schedule.completed && schedule.currentIndex < schedule.data.length) {
@@ -1253,35 +1037,14 @@ export default function VillageV2() {
         y: 0
       };
       
-      // position이 Animated.ValueXY인 경우와 일반 배열인 경우를 모두 처리
-      if (character.position) {
-        if (character.position._value) {
-          // Animated.ValueXY인 경우
-          coordinates = {
-            x: Math.floor(character.position.x._value / Tile_WIDTH),
-            y: Math.floor(character.position.y._value / Tile_HEIGHT)
-          };
-        } else if (Array.isArray(additionalData.location)) {
-          // location이 배열로 전달된 경우 [y, x] 형태로 가정
-          coordinates = {
-            x: additionalData.location[1],
-            y: additionalData.location[0]
-          };
-        }
+      try {
+        coordinates = {
+          x: Math.floor(character.position.x._value / Tile_WIDTH),
+          y: Math.floor(character.position.y._value / Tile_HEIGHT)
+        };
+      } catch (error) {
+        console.warn('위치 정보 추출 중 오류:', error);
       }
-
-      // undefined 값 제거 및 기본값 설정
-      const cleanAdditionalData = Object.entries(additionalData).reduce((acc, [key, value]) => {
-        if (value !== undefined && value !== null) {
-          // location 필드는 coordinates로 변환
-          if (key === 'location' && Array.isArray(value)) {
-            acc.coordinates = { x: value[1], y: value[0] };
-          } else {
-            acc[key] = value;
-          }
-        }
-        return acc;
-      }, {});
 
       const logRef = collection(
         db, 
@@ -1292,18 +1055,15 @@ export default function VillageV2() {
       );
 
       const logData = {
-        timestamp: serverTimestamp(), // Firestore 서버 타임스탬프 사용
-        activity: activity || '활동 내용 없음',
-        type: type || 'activity',
+        timestamp: serverTimestamp(),
+        activity: activity,
+        type: type,
         location: {
           coordinates: coordinates,
-          zone: getCurrentZone(coordinates) || '일반 구역'
+          zone: getCurrentZone(character.position)
         },
-        ...cleanAdditionalData
+        ...additionalData
       };
-
-      // 로그 데이터 확인
-      console.log('저장할 로그 데이터:', logData);
 
       await addDoc(logRef, logData);
       console.log(`${character.name}의 로그가 저장되었습니다:`, logData);
@@ -1314,13 +1074,13 @@ export default function VillageV2() {
 
   // getCurrentZone 함수 수정
   const getCurrentZone = (position) => {
-    if (!position || typeof position.x === 'undefined' || typeof position.y === 'undefined') {
+    if (!position || !position.x || !position.y) {
       return '알 수 없는 위치';
     }
 
     try {
-      const x = position.x;
-      const y = position.y;
+      const x = Math.floor(position.x._value / Tile_WIDTH);
+      const y = Math.floor(position.y._value / Tile_HEIGHT);
 
       // 구역 정의
       const zones = {
@@ -1495,74 +1255,6 @@ export default function VillageV2() {
     setPersonaModalVisible(true);
   };
 
-  // 캐릭터 이동 방향 계산 함수 추가
-  const calculateDirection = (currentPos, targetPos) => {
-    const dx = targetPos.x - currentPos.x;
-    const dy = targetPos.y - currentPos.y;
-    
-    // 가로 방향의 변화가 더 큰 경우
-    if (Math.abs(dx) > Math.abs(dy)) {
-      return dx > 0 ? 'right' : 'left';
-    } 
-    // 세로 방향의 변화가 더 큰 경우
-    else {
-      return dy > 0 ? 'down' : 'up';
-    }
-  };
-
-  // moveCharacter 함수 수정
-  const moveCharacter = (character, path) => {
-    // path가 비어있을 때의 처리
-    if (!path || path.length === 0) {
-      character.isMoving = false;
-      // idle 상태 유지하면서 현재 방향 유
-      character.direction = character.direction.includes('_idle') 
-        ? character.direction 
-        : `${character.direction}_idle`;
-      return;
-    }
-
-    const currentPos = {
-      x: character.position.x._value,
-      y: character.position.y._value
-    };
-
-    const nextPoint = {
-      x: path[0].x * Tile_WIDTH,
-      y: path[0].y * Tile_HEIGHT
-    };
-
-    // 이동 방향 계산
-    const newDirection = calculateDirection(currentPos, nextPoint);
-    character.direction = newDirection;
-    character.isMoving = true;
-
-    Animated.parallel([
-      Animated.timing(character.position.x, {
-        toValue: nextPoint.x,
-        duration: MOVEMENT_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(character.position.y, {
-        toValue: nextPoint.y,
-        duration: MOVEMENT_DURATION,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      const remainingPath = [...path];
-      remainingPath.shift();
-      
-      if (remainingPath.length === 0) {
-        character.isMoving = false;
-        character.direction = `${newDirection}_idle`;
-        // 상태 업데이트를 강제로 트리거
-        setCharacters(prev => [...prev]);
-      }
-      
-      moveCharacter(character, remainingPath);
-    });
-  };
-
   // 렌더링 부분 수정
   return (
     <View style={styles.container}>
@@ -1593,7 +1285,6 @@ export default function VillageV2() {
                 position: "absolute",
                 left: -spriteConfig.frameWidth * (character.currentFrame || 0),
                 top: -spriteConfig.frameHeight * getAnimationRow(character.direction, character.isMoving),
-                opacity: 1, // 명시적으로 opacity 설정
               }}
             />
           </Animated.View>
@@ -1703,7 +1394,6 @@ export default function VillageV2() {
     setPersonaModalVisible(false);
     setSelectedInteraction(null);
   }}
-  user={user}  // user prop 추가
 />
 
       {/* 페르소나 모달 추가 */}
@@ -1775,8 +1465,6 @@ export default function VillageV2() {
                 </Text>
               </TouchableOpacity>
             </View>
-
-
 
 
 
@@ -2146,7 +1834,7 @@ const styles = StyleSheet.create({
     maxWidth: "80%",
     padding: 12,
     borderRadius: 20,
-    elevation: 1,
+    zIndex: 10000
   },
   userMessage: {
     alignItems: "flex-end",
@@ -2333,7 +2021,8 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     flex: 1,
-    padding: 10,
+    width: '100%',
+    padding: 15,
   },
   interactionText: {
     fontSize: 16,
@@ -2352,78 +2041,6 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
     textAlign: 'center',
-  },
-  modalBody: {
-    flex: 1,
-    padding: 10,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    marginVertical: 5,
-    paddingHorizontal: 10,
-    alignItems: 'flex-end',
-  },
-  messageBubble: {
-    maxWidth: '70%',
-    padding: 12,
-    borderRadius: 20,
-    elevation: 1,
-  },
-  selectedCharacterMessage: {
-    backgroundColor: '#e9ecef',
-    marginRight: 'auto',
-    borderTopLeftRadius: 4,
-  },
-  otherCharacterMessage: {
-    backgroundColor: '#0084ff',
-    marginLeft: 'auto',
-    borderTopRightRadius: 4,
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  selectedCharacterText: {
-    color: '#000000',
-  },
-  otherCharacterText: {
-    color: '#ffffff',
-  },
-  speakerName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 4,
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
-  },
-  messageTime: {
-    fontSize: 10,
-    color: 'rgba(0, 0, 0, 0.5)',
-  },
-  locationText: {
-    fontSize: 10,
-    color: 'rgba(0, 0, 0, 0.5)',
-  },
-  noMessagesText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
-  },
-  characterImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginHorizontal: 8,
-    borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: '#f0f0f0',
-    alignSelf: 'flex-start',
   },
 });
 
