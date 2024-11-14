@@ -320,7 +320,7 @@ export default function VillageV2() {
         },
         {
           id: 4,
-          name: "clone",
+          name: "Clone",
           position: new Animated.ValueXY(),
           image: require("../../assets/character/jelda.png"),
           direction: 'down',
@@ -332,7 +332,7 @@ export default function VillageV2() {
         },
         {
           id: 5,
-          name: "custom",
+          name: "Custom",
           position: new Animated.ValueXY(),
           image: require("../../assets/character/white.png"),
           direction: 'down',
@@ -775,8 +775,8 @@ export default function VillageV2() {
     Joy: { currentIndex: 0, isRunning: false, data: [], completed: false },
     Anger: { currentIndex: 0, isRunning: false, data: [], completed: false },
     Sadness: { currentIndex: 0, isRunning: false, data: [], completed: false },
-    clone: { currentIndex: 0, isRunning: false, data: [], completed: false },
-    custom: { currentIndex: 0, isRunning: false, data: [], completed: false },
+    Clone: { currentIndex: 0, isRunning: false, data: [], completed: false },
+    Custom: { currentIndex: 0, isRunning: false, data: [], completed: false },
   });
 
   // 오늘 날짜 구하기
