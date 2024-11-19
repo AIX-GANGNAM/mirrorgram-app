@@ -1,10 +1,19 @@
 # Mirrorgram (Mirrorgram)
+![메인로고](https://github.com/user-attachments/assets/c547b261-c5d5-4836-8004-d15cb383a8a4)
 
 ## 프로젝트 소개
 
 Mirrorgram 은 사용자의 감정을 기록하고 공유할 수 있는 혁신적인 소셜 네트워킹 앱입니다. 최신 AI 기술을 활용하여 사용자의 감정을 분석하고, 개인화된 페르소나와 상호작용할 수 있는 독특한 기능을 제공합니다. 이 앱은 외로움을 느끼는 사람들을 위해 특별히 설계되었으며, 사용자가 자신의 감정을 표현하고 다른 사람들과 연결될 수 있는 안전한 공간을 제공합니다.
 
 ## 주요 기능
+![image](https://github.com/user-attachments/assets/811e4ae4-ecfb-4145-9c2a-489d96d53c90)
+![자동 피드생성](https://github.com/user-attachments/assets/68acab71-da71-4118-8457-49e6033a8a55)
+![ai빌리지](https://github.com/user-attachments/assets/9e09be9f-5491-4f1a-8dfc-16cb877ae867)
+![이미지 생성](https://github.com/user-attachments/assets/4ad9a0b4-a250-4eee-8604-512ae03f9fb0)
+![친구](https://github.com/user-attachments/assets/2272e64a-c596-4c04-a969-224203f53d20)
+![알림](https://github.com/user-attachments/assets/35d6b08d-c89d-47db-b9bc-b45dc86f01bc)
+
+
 
 1. **AI 기반 페르소나 생성**
    - 사용자의 사진을 기반으로 개인화된 페르소나 생성
