@@ -30,7 +30,7 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
 
   const fetchTrendingKeywords = async () => {
     try {
-      const response = await axios.get('http://221.148.97.237:8010/trendingKeywords');
+      const response = await axios.get('http://10.0.2.2:8010/trendingKeywords');
     //   console.log('실시간 검색어 응답:', response.data);
       
       // trending_keywords 배열 추출
@@ -58,7 +58,7 @@ const CreatePersonaPostScreen = ({ route, navigation }) => {
     
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://221.148.97.237:8010/generateFeed', {
+      const response = await axios.post('http://10.0.2.2:8010/generateFeed', {
         keyword,
         persona_type: persona.type,
         // id: id,
